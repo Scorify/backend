@@ -1,0 +1,22 @@
+type User {
+  id: ID!
+  username: String!
+}
+
+type LoginOutput {
+  name: String!
+  token: String!
+  expires: Int!
+  path: String!
+  domain: String!
+  secure: Boolean!
+  httpOnly: Boolean!
+}
+
+type Query {
+  me: User!
+}
+
+type Mutation {
+  login(username: String!, password: String!): LoginOutput!
+}
