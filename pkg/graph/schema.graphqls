@@ -13,7 +13,9 @@ type LoginOutput {
   httpOnly: Boolean!
 }
 
-type Query {}
+type Query {
+  me: User!
+}
 
 type Mutation {
   login(username: String!, password: String!): LoginOutput!
