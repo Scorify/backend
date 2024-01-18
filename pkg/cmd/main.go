@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/scorify/backend/pkg/cmd/server"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -28,4 +29,7 @@ func Execute() error {
 
 // registers all commands
 func init() {
+	rootCmd.AddCommand(
+		server.Cmd,
+	)
 }
