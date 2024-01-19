@@ -8,11 +8,12 @@ import (
 	"github.com/scorify/backend/pkg/structs"
 )
 
-func GenerateJWT(username string) (string, int, error) {
+func GenerateJWT(username string, role string) (string, int, error) {
 	expiration := time.Now().Add(time.Duration(config.Timeout) * time.Hour)
 
 	claims := &structs.Claims{
 		Username: username,
+		Role:     role,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(expiration),
 		},

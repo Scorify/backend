@@ -45,6 +45,7 @@ func init() {
 		_, err = c.User.Create().
 			SetUsername("admin").
 			SetPassword(hashedPassword).
+			SetRole(user.RoleAdmin).
 			Save(Ctx)
 		if err != nil {
 			logrus.WithError(err).Warnf("failed creating admin user")
