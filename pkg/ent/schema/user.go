@@ -30,6 +30,11 @@ func (User) Fields() []ent.Field {
 			Comment("The password hash of user password").
 			Sensitive().
 			NotEmpty(),
+		field.Enum("role").
+			StructTag(`json:"role"`).
+			Comment("The role of the user").
+			Values("admin", "user").
+			Default("user"),
 	}
 }
 
