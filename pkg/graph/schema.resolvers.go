@@ -31,7 +31,7 @@ func (r *mutationResolver) Login(ctx context.Context, username string, password 
 		return nil, fmt.Errorf("invalid username or password")
 	}
 
-	token, expiration, err := auth.GenerateJWT(username)
+	token, expiration, err := auth.GenerateJWT(username, string(entUser.Role))
 	if err != nil {
 		return nil, err
 	}
