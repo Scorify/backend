@@ -19,4 +19,5 @@ type Query {
 
 type Mutation {
   login(username: String!, password: String!): LoginOutput!
+  changePassword(oldPassword: String!, newPassword: String!): Boolean!
 }

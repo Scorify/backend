@@ -47,6 +47,29 @@ func (r *mutationResolver) Login(ctx context.Context, username string, password 
 	}, nil
 }
 
+// ChangePassword is the resolver for the changePassword field.
+func (r *mutationResolver) ChangePassword(ctx context.Context, oldPassword string, newPassword string) (bool, error) {
+	entUser, err := auth.Parse(ctx)
+	if err != nil {
+		return false, fmt.Errorf("invalid user")
+	}
+
+	success := helpers.ComparePasswords(entUser.Password, oldPassword)
+	if !success {
+		return false, fmt.Errorf("invalid old password")
+	}
+
+	hashedPassword, err := helpers.HashPassword(newPassword)
+	if err != nil {
+		return false, err
+	}
+
+	_, err = r.Ent.User.UpdateOneID(entUser.ID).
+		SetPassword(hashedPassword).
+		Save(ctx)
+	return err == nil, err
+}
+
 // Me is the resolver for the me field.
 func (r *queryResolver) Me(ctx context.Context) (*ent.User, error) {
 	return auth.Parse(ctx)
