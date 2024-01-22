@@ -1,6 +1,11 @@
 package schema
 
-import "entgo.io/ent"
+import (
+	"entgo.io/ent"
+	"entgo.io/ent/schema/edge"
+	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
+)
 
 // Check holds the schema definition for the Check entity.
 type Check struct {
@@ -9,10 +14,28 @@ type Check struct {
 
 // Fields of the Check.
 func (Check) Fields() []ent.Field {
-	return nil
+	return []ent.Field{
+		field.UUID("id", uuid.UUID{}).
+			StructTag(`json:"id"`).
+			Comment("The uuid of a check").
+			Unique().
+			Immutable().
+			Default(uuid.New),
+		field.String("name").
+			StructTag(`json:"name"`).
+			Comment("The name of the check").
+			Unique().
+			Immutable().
+			NotEmpty(),
+	}
 }
 
 // Edges of the Check.
 func (Check) Edges() []ent.Edge {
-	return nil
+	return []ent.Edge{
+		edge.From("config", CheckConfig.Type).
+			StructTag(`json:"config"`).
+			Comment("The configuration of a check").
+			Ref("check"),
+	}
 }
