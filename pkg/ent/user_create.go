@@ -10,6 +10,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
+	"github.com/scorify/backend/pkg/ent/checkconfig"
 	"github.com/scorify/backend/pkg/ent/user"
 )
 
@@ -58,6 +59,21 @@ func (uc *UserCreate) SetNillableID(u *uuid.UUID) *UserCreate {
 		uc.SetID(*u)
 	}
 	return uc
+}
+
+// AddConfigIDs adds the "config" edge to the CheckConfig entity by IDs.
+func (uc *UserCreate) AddConfigIDs(ids ...uuid.UUID) *UserCreate {
+	uc.mutation.AddConfigIDs(ids...)
+	return uc
+}
+
+// AddConfig adds the "config" edges to the CheckConfig entity.
+func (uc *UserCreate) AddConfig(c ...*CheckConfig) *UserCreate {
+	ids := make([]uuid.UUID, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
+	}
+	return uc.AddConfigIDs(ids...)
 }
 
 // Mutation returns the UserMutation object of the builder.
@@ -177,6 +193,22 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 	if value, ok := uc.mutation.Role(); ok {
 		_spec.SetField(user.FieldRole, field.TypeEnum, value)
 		_node.Role = value
+	}
+	if nodes := uc.mutation.ConfigIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   user.ConfigTable,
+			Columns: []string{user.ConfigColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(checkconfig.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
 }

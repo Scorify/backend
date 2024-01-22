@@ -4,13 +4,16 @@ package ent
 
 import (
 	"context"
+	"database/sql/driver"
 	"fmt"
 	"math"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
 	"github.com/scorify/backend/pkg/ent/check"
+	"github.com/scorify/backend/pkg/ent/checkconfig"
 	"github.com/scorify/backend/pkg/ent/predicate"
 )
 
@@ -21,6 +24,7 @@ type CheckQuery struct {
 	order      []check.OrderOption
 	inters     []Interceptor
 	predicates []predicate.Check
+	withConfig *CheckConfigQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -57,6 +61,28 @@ func (cq *CheckQuery) Order(o ...check.OrderOption) *CheckQuery {
 	return cq
 }
 
+// QueryConfig chains the current query on the "config" edge.
+func (cq *CheckQuery) QueryConfig() *CheckConfigQuery {
+	query := (&CheckConfigClient{config: cq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := cq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := cq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(check.Table, check.FieldID, selector),
+			sqlgraph.To(checkconfig.Table, checkconfig.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, check.ConfigTable, check.ConfigColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(cq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
 // First returns the first Check entity from the query.
 // Returns a *NotFoundError when no Check was found.
 func (cq *CheckQuery) First(ctx context.Context) (*Check, error) {
@@ -81,8 +107,8 @@ func (cq *CheckQuery) FirstX(ctx context.Context) *Check {
 
 // FirstID returns the first Check ID from the query.
 // Returns a *NotFoundError when no Check ID was found.
-func (cq *CheckQuery) FirstID(ctx context.Context) (id int, err error) {
-	var ids []int
+func (cq *CheckQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
+	var ids []uuid.UUID
 	if ids, err = cq.Limit(1).IDs(setContextOp(ctx, cq.ctx, "FirstID")); err != nil {
 		return
 	}
@@ -94,7 +120,7 @@ func (cq *CheckQuery) FirstID(ctx context.Context) (id int, err error) {
 }
 
 // FirstIDX is like FirstID, but panics if an error occurs.
-func (cq *CheckQuery) FirstIDX(ctx context.Context) int {
+func (cq *CheckQuery) FirstIDX(ctx context.Context) uuid.UUID {
 	id, err := cq.FirstID(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -132,8 +158,8 @@ func (cq *CheckQuery) OnlyX(ctx context.Context) *Check {
 // OnlyID is like Only, but returns the only Check ID in the query.
 // Returns a *NotSingularError when more than one Check ID is found.
 // Returns a *NotFoundError when no entities are found.
-func (cq *CheckQuery) OnlyID(ctx context.Context) (id int, err error) {
-	var ids []int
+func (cq *CheckQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
+	var ids []uuid.UUID
 	if ids, err = cq.Limit(2).IDs(setContextOp(ctx, cq.ctx, "OnlyID")); err != nil {
 		return
 	}
@@ -149,7 +175,7 @@ func (cq *CheckQuery) OnlyID(ctx context.Context) (id int, err error) {
 }
 
 // OnlyIDX is like OnlyID, but panics if an error occurs.
-func (cq *CheckQuery) OnlyIDX(ctx context.Context) int {
+func (cq *CheckQuery) OnlyIDX(ctx context.Context) uuid.UUID {
 	id, err := cq.OnlyID(ctx)
 	if err != nil {
 		panic(err)
@@ -177,7 +203,7 @@ func (cq *CheckQuery) AllX(ctx context.Context) []*Check {
 }
 
 // IDs executes the query and returns a list of Check IDs.
-func (cq *CheckQuery) IDs(ctx context.Context) (ids []int, err error) {
+func (cq *CheckQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
 	if cq.ctx.Unique == nil && cq.path != nil {
 		cq.Unique(true)
 	}
@@ -189,7 +215,7 @@ func (cq *CheckQuery) IDs(ctx context.Context) (ids []int, err error) {
 }
 
 // IDsX is like IDs, but panics if an error occurs.
-func (cq *CheckQuery) IDsX(ctx context.Context) []int {
+func (cq *CheckQuery) IDsX(ctx context.Context) []uuid.UUID {
 	ids, err := cq.IDs(ctx)
 	if err != nil {
 		panic(err)
@@ -249,14 +275,38 @@ func (cq *CheckQuery) Clone() *CheckQuery {
 		order:      append([]check.OrderOption{}, cq.order...),
 		inters:     append([]Interceptor{}, cq.inters...),
 		predicates: append([]predicate.Check{}, cq.predicates...),
+		withConfig: cq.withConfig.Clone(),
 		// clone intermediate query.
 		sql:  cq.sql.Clone(),
 		path: cq.path,
 	}
 }
 
+// WithConfig tells the query-builder to eager-load the nodes that are connected to
+// the "config" edge. The optional arguments are used to configure the query builder of the edge.
+func (cq *CheckQuery) WithConfig(opts ...func(*CheckConfigQuery)) *CheckQuery {
+	query := (&CheckConfigClient{config: cq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	cq.withConfig = query
+	return cq
+}
+
 // GroupBy is used to group vertices by one or more fields/columns.
 // It is often used with aggregate functions, like: count, max, mean, min, sum.
+//
+// Example:
+//
+//	var v []struct {
+//		Name string `json:"name"`
+//		Count int `json:"count,omitempty"`
+//	}
+//
+//	client.Check.Query().
+//		GroupBy(check.FieldName).
+//		Aggregate(ent.Count()).
+//		Scan(ctx, &v)
 func (cq *CheckQuery) GroupBy(field string, fields ...string) *CheckGroupBy {
 	cq.ctx.Fields = append([]string{field}, fields...)
 	grbuild := &CheckGroupBy{build: cq}
@@ -268,6 +318,16 @@ func (cq *CheckQuery) GroupBy(field string, fields ...string) *CheckGroupBy {
 
 // Select allows the selection one or more fields/columns for the given query,
 // instead of selecting all fields in the entity.
+//
+// Example:
+//
+//	var v []struct {
+//		Name string `json:"name"`
+//	}
+//
+//	client.Check.Query().
+//		Select(check.FieldName).
+//		Scan(ctx, &v)
 func (cq *CheckQuery) Select(fields ...string) *CheckSelect {
 	cq.ctx.Fields = append(cq.ctx.Fields, fields...)
 	sbuild := &CheckSelect{CheckQuery: cq}
@@ -309,8 +369,11 @@ func (cq *CheckQuery) prepareQuery(ctx context.Context) error {
 
 func (cq *CheckQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Check, error) {
 	var (
-		nodes = []*Check{}
-		_spec = cq.querySpec()
+		nodes       = []*Check{}
+		_spec       = cq.querySpec()
+		loadedTypes = [1]bool{
+			cq.withConfig != nil,
+		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*Check).scanValues(nil, columns)
@@ -318,6 +381,7 @@ func (cq *CheckQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Check,
 	_spec.Assign = func(columns []string, values []any) error {
 		node := &Check{config: cq.config}
 		nodes = append(nodes, node)
+		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
 	}
 	for i := range hooks {
@@ -329,7 +393,46 @@ func (cq *CheckQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Check,
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
+	if query := cq.withConfig; query != nil {
+		if err := cq.loadConfig(ctx, query, nodes,
+			func(n *Check) { n.Edges.Config = []*CheckConfig{} },
+			func(n *Check, e *CheckConfig) { n.Edges.Config = append(n.Edges.Config, e) }); err != nil {
+			return nil, err
+		}
+	}
 	return nodes, nil
+}
+
+func (cq *CheckQuery) loadConfig(ctx context.Context, query *CheckConfigQuery, nodes []*Check, init func(*Check), assign func(*Check, *CheckConfig)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Check)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.CheckConfig(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(check.ConfigColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.check_config_check
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "check_config_check" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "check_config_check" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
 }
 
 func (cq *CheckQuery) sqlCount(ctx context.Context) (int, error) {
@@ -342,7 +445,7 @@ func (cq *CheckQuery) sqlCount(ctx context.Context) (int, error) {
 }
 
 func (cq *CheckQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := sqlgraph.NewQuerySpec(check.Table, check.Columns, sqlgraph.NewFieldSpec(check.FieldID, field.TypeInt))
+	_spec := sqlgraph.NewQuerySpec(check.Table, check.Columns, sqlgraph.NewFieldSpec(check.FieldID, field.TypeUUID))
 	_spec.From = cq.sql
 	if unique := cq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique

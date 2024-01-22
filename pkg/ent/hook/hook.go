@@ -21,6 +21,18 @@ func (f CheckFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.CheckMutation", m)
 }
 
+// The CheckConfigFunc type is an adapter to allow the use of ordinary
+// function as CheckConfig mutator.
+type CheckConfigFunc func(context.Context, *ent.CheckConfigMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f CheckConfigFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.CheckConfigMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.CheckConfigMutation", m)
+}
+
 // The CredentialFunc type is an adapter to allow the use of ordinary
 // function as Credential mutator.
 type CredentialFunc func(context.Context, *ent.CredentialMutation) (ent.Value, error)

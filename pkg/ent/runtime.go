@@ -4,6 +4,8 @@ package ent
 
 import (
 	"github.com/google/uuid"
+	"github.com/scorify/backend/pkg/ent/check"
+	"github.com/scorify/backend/pkg/ent/checkconfig"
 	"github.com/scorify/backend/pkg/ent/schema"
 	"github.com/scorify/backend/pkg/ent/user"
 )
@@ -12,6 +14,22 @@ import (
 // (default values, validators, hooks and policies) and stitches it
 // to their package variables.
 func init() {
+	checkFields := schema.Check{}.Fields()
+	_ = checkFields
+	// checkDescName is the schema descriptor for name field.
+	checkDescName := checkFields[1].Descriptor()
+	// check.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	check.NameValidator = checkDescName.Validators[0].(func(string) error)
+	// checkDescID is the schema descriptor for id field.
+	checkDescID := checkFields[0].Descriptor()
+	// check.DefaultID holds the default value on creation for the id field.
+	check.DefaultID = checkDescID.Default.(func() uuid.UUID)
+	checkconfigFields := schema.CheckConfig{}.Fields()
+	_ = checkconfigFields
+	// checkconfigDescID is the schema descriptor for id field.
+	checkconfigDescID := checkconfigFields[0].Descriptor()
+	// checkconfig.DefaultID holds the default value on creation for the id field.
+	checkconfig.DefaultID = checkconfigDescID.Default.(func() uuid.UUID)
 	userFields := schema.User{}.Fields()
 	_ = userFields
 	// userDescUsername is the schema descriptor for username field.
