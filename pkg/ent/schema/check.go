@@ -27,6 +27,10 @@ func (Check) Fields() []ent.Field {
 			Unique().
 			Immutable().
 			NotEmpty(),
+		field.String("source").
+			StructTag(`json:"source"`).
+			Comment("The source of the check").
+			NotEmpty(),
 	}
 }
 
