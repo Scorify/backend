@@ -12,6 +12,7 @@ var (
 	ChecksColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Unique: true},
 		{Name: "name", Type: field.TypeString, Unique: true},
+		{Name: "source", Type: field.TypeString},
 	}
 	// ChecksTable holds the schema information for the "checks" table.
 	ChecksTable = &schema.Table{

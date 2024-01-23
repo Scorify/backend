@@ -59,6 +59,11 @@ func Name(v string) predicate.Check {
 	return predicate.Check(sql.FieldEQ(FieldName, v))
 }
 
+// Source applies equality check predicate on the "source" field. It's identical to SourceEQ.
+func Source(v string) predicate.Check {
+	return predicate.Check(sql.FieldEQ(FieldSource, v))
+}
+
 // NameEQ applies the EQ predicate on the "name" field.
 func NameEQ(v string) predicate.Check {
 	return predicate.Check(sql.FieldEQ(FieldName, v))
@@ -122,6 +127,71 @@ func NameEqualFold(v string) predicate.Check {
 // NameContainsFold applies the ContainsFold predicate on the "name" field.
 func NameContainsFold(v string) predicate.Check {
 	return predicate.Check(sql.FieldContainsFold(FieldName, v))
+}
+
+// SourceEQ applies the EQ predicate on the "source" field.
+func SourceEQ(v string) predicate.Check {
+	return predicate.Check(sql.FieldEQ(FieldSource, v))
+}
+
+// SourceNEQ applies the NEQ predicate on the "source" field.
+func SourceNEQ(v string) predicate.Check {
+	return predicate.Check(sql.FieldNEQ(FieldSource, v))
+}
+
+// SourceIn applies the In predicate on the "source" field.
+func SourceIn(vs ...string) predicate.Check {
+	return predicate.Check(sql.FieldIn(FieldSource, vs...))
+}
+
+// SourceNotIn applies the NotIn predicate on the "source" field.
+func SourceNotIn(vs ...string) predicate.Check {
+	return predicate.Check(sql.FieldNotIn(FieldSource, vs...))
+}
+
+// SourceGT applies the GT predicate on the "source" field.
+func SourceGT(v string) predicate.Check {
+	return predicate.Check(sql.FieldGT(FieldSource, v))
+}
+
+// SourceGTE applies the GTE predicate on the "source" field.
+func SourceGTE(v string) predicate.Check {
+	return predicate.Check(sql.FieldGTE(FieldSource, v))
+}
+
+// SourceLT applies the LT predicate on the "source" field.
+func SourceLT(v string) predicate.Check {
+	return predicate.Check(sql.FieldLT(FieldSource, v))
+}
+
+// SourceLTE applies the LTE predicate on the "source" field.
+func SourceLTE(v string) predicate.Check {
+	return predicate.Check(sql.FieldLTE(FieldSource, v))
+}
+
+// SourceContains applies the Contains predicate on the "source" field.
+func SourceContains(v string) predicate.Check {
+	return predicate.Check(sql.FieldContains(FieldSource, v))
+}
+
+// SourceHasPrefix applies the HasPrefix predicate on the "source" field.
+func SourceHasPrefix(v string) predicate.Check {
+	return predicate.Check(sql.FieldHasPrefix(FieldSource, v))
+}
+
+// SourceHasSuffix applies the HasSuffix predicate on the "source" field.
+func SourceHasSuffix(v string) predicate.Check {
+	return predicate.Check(sql.FieldHasSuffix(FieldSource, v))
+}
+
+// SourceEqualFold applies the EqualFold predicate on the "source" field.
+func SourceEqualFold(v string) predicate.Check {
+	return predicate.Check(sql.FieldEqualFold(FieldSource, v))
+}
+
+// SourceContainsFold applies the ContainsFold predicate on the "source" field.
+func SourceContainsFold(v string) predicate.Check {
+	return predicate.Check(sql.FieldContainsFold(FieldSource, v))
 }
 
 // HasConfig applies the HasEdge predicate on the "config" edge.

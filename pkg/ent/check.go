@@ -20,6 +20,8 @@ type Check struct {
 	ID uuid.UUID `json:"id"`
 	// The name of the check
 	Name string `json:"name"`
+	// The source of the check
+	Source string `json:"source"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the CheckQuery when eager-loading is set.
 	Edges        CheckEdges `json:"edges"`
@@ -49,7 +51,7 @@ func (*Check) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case check.FieldName:
+		case check.FieldName, check.FieldSource:
 			values[i] = new(sql.NullString)
 		case check.FieldID:
 			values[i] = new(uuid.UUID)
@@ -79,6 +81,12 @@ func (c *Check) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field name", values[i])
 			} else if value.Valid {
 				c.Name = value.String
+			}
+		case check.FieldSource:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field source", values[i])
+			} else if value.Valid {
+				c.Source = value.String
 			}
 		default:
 			c.selectValues.Set(columns[i], values[i])
@@ -123,6 +131,9 @@ func (c *Check) String() string {
 	builder.WriteString(fmt.Sprintf("id=%v, ", c.ID))
 	builder.WriteString("name=")
 	builder.WriteString(c.Name)
+	builder.WriteString(", ")
+	builder.WriteString("source=")
+	builder.WriteString(c.Source)
 	builder.WriteByte(')')
 	return builder.String()
 }

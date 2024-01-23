@@ -29,6 +29,20 @@ func (cu *CheckUpdate) Where(ps ...predicate.Check) *CheckUpdate {
 	return cu
 }
 
+// SetSource sets the "source" field.
+func (cu *CheckUpdate) SetSource(s string) *CheckUpdate {
+	cu.mutation.SetSource(s)
+	return cu
+}
+
+// SetNillableSource sets the "source" field if the given value is not nil.
+func (cu *CheckUpdate) SetNillableSource(s *string) *CheckUpdate {
+	if s != nil {
+		cu.SetSource(*s)
+	}
+	return cu
+}
+
 // AddConfigIDs adds the "config" edge to the CheckConfig entity by IDs.
 func (cu *CheckUpdate) AddConfigIDs(ids ...uuid.UUID) *CheckUpdate {
 	cu.mutation.AddConfigIDs(ids...)
@@ -97,7 +111,20 @@ func (cu *CheckUpdate) ExecX(ctx context.Context) {
 	}
 }
 
+// check runs all checks and user-defined validators on the builder.
+func (cu *CheckUpdate) check() error {
+	if v, ok := cu.mutation.Source(); ok {
+		if err := check.SourceValidator(v); err != nil {
+			return &ValidationError{Name: "source", err: fmt.Errorf(`ent: validator failed for field "Check.source": %w`, err)}
+		}
+	}
+	return nil
+}
+
 func (cu *CheckUpdate) sqlSave(ctx context.Context) (n int, err error) {
+	if err := cu.check(); err != nil {
+		return n, err
+	}
 	_spec := sqlgraph.NewUpdateSpec(check.Table, check.Columns, sqlgraph.NewFieldSpec(check.FieldID, field.TypeUUID))
 	if ps := cu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
@@ -105,6 +132,9 @@ func (cu *CheckUpdate) sqlSave(ctx context.Context) (n int, err error) {
 				ps[i](selector)
 			}
 		}
+	}
+	if value, ok := cu.mutation.Source(); ok {
+		_spec.SetField(check.FieldSource, field.TypeString, value)
 	}
 	if cu.mutation.ConfigCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -169,6 +199,20 @@ type CheckUpdateOne struct {
 	fields   []string
 	hooks    []Hook
 	mutation *CheckMutation
+}
+
+// SetSource sets the "source" field.
+func (cuo *CheckUpdateOne) SetSource(s string) *CheckUpdateOne {
+	cuo.mutation.SetSource(s)
+	return cuo
+}
+
+// SetNillableSource sets the "source" field if the given value is not nil.
+func (cuo *CheckUpdateOne) SetNillableSource(s *string) *CheckUpdateOne {
+	if s != nil {
+		cuo.SetSource(*s)
+	}
+	return cuo
 }
 
 // AddConfigIDs adds the "config" edge to the CheckConfig entity by IDs.
@@ -252,7 +296,20 @@ func (cuo *CheckUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
+// check runs all checks and user-defined validators on the builder.
+func (cuo *CheckUpdateOne) check() error {
+	if v, ok := cuo.mutation.Source(); ok {
+		if err := check.SourceValidator(v); err != nil {
+			return &ValidationError{Name: "source", err: fmt.Errorf(`ent: validator failed for field "Check.source": %w`, err)}
+		}
+	}
+	return nil
+}
+
 func (cuo *CheckUpdateOne) sqlSave(ctx context.Context) (_node *Check, err error) {
+	if err := cuo.check(); err != nil {
+		return _node, err
+	}
 	_spec := sqlgraph.NewUpdateSpec(check.Table, check.Columns, sqlgraph.NewFieldSpec(check.FieldID, field.TypeUUID))
 	id, ok := cuo.mutation.ID()
 	if !ok {
@@ -277,6 +334,9 @@ func (cuo *CheckUpdateOne) sqlSave(ctx context.Context) (_node *Check, err error
 				ps[i](selector)
 			}
 		}
+	}
+	if value, ok := cuo.mutation.Source(); ok {
+		_spec.SetField(check.FieldSource, field.TypeString, value)
 	}
 	if cuo.mutation.ConfigCleared() {
 		edge := &sqlgraph.EdgeSpec{

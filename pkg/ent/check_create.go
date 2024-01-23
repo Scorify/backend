@@ -27,6 +27,12 @@ func (cc *CheckCreate) SetName(s string) *CheckCreate {
 	return cc
 }
 
+// SetSource sets the "source" field.
+func (cc *CheckCreate) SetSource(s string) *CheckCreate {
+	cc.mutation.SetSource(s)
+	return cc
+}
+
 // SetID sets the "id" field.
 func (cc *CheckCreate) SetID(u uuid.UUID) *CheckCreate {
 	cc.mutation.SetID(u)
@@ -107,6 +113,14 @@ func (cc *CheckCreate) check() error {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Check.name": %w`, err)}
 		}
 	}
+	if _, ok := cc.mutation.Source(); !ok {
+		return &ValidationError{Name: "source", err: errors.New(`ent: missing required field "Check.source"`)}
+	}
+	if v, ok := cc.mutation.Source(); ok {
+		if err := check.SourceValidator(v); err != nil {
+			return &ValidationError{Name: "source", err: fmt.Errorf(`ent: validator failed for field "Check.source": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -145,6 +159,10 @@ func (cc *CheckCreate) createSpec() (*Check, *sqlgraph.CreateSpec) {
 	if value, ok := cc.mutation.Name(); ok {
 		_spec.SetField(check.FieldName, field.TypeString, value)
 		_node.Name = value
+	}
+	if value, ok := cc.mutation.Source(); ok {
+		_spec.SetField(check.FieldSource, field.TypeString, value)
+		_node.Source = value
 	}
 	if nodes := cc.mutation.ConfigIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

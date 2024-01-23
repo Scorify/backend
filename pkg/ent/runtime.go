@@ -20,6 +20,10 @@ func init() {
 	checkDescName := checkFields[1].Descriptor()
 	// check.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	check.NameValidator = checkDescName.Validators[0].(func(string) error)
+	// checkDescSource is the schema descriptor for source field.
+	checkDescSource := checkFields[2].Descriptor()
+	// check.SourceValidator is a validator for the "source" field. It is called by the builders before save.
+	check.SourceValidator = checkDescSource.Validators[0].(func(string) error)
 	// checkDescID is the schema descriptor for id field.
 	checkDescID := checkFields[0].Descriptor()
 	// check.DefaultID holds the default value on creation for the id field.

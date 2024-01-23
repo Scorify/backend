@@ -15,6 +15,8 @@ const (
 	FieldID = "id"
 	// FieldName holds the string denoting the name field in the database.
 	FieldName = "name"
+	// FieldSource holds the string denoting the source field in the database.
+	FieldSource = "source"
 	// EdgeConfig holds the string denoting the config edge name in mutations.
 	EdgeConfig = "config"
 	// Table holds the table name of the check in the database.
@@ -32,6 +34,7 @@ const (
 var Columns = []string{
 	FieldID,
 	FieldName,
+	FieldSource,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -47,6 +50,8 @@ func ValidColumn(column string) bool {
 var (
 	// NameValidator is a validator for the "name" field. It is called by the builders before save.
 	NameValidator func(string) error
+	// SourceValidator is a validator for the "source" field. It is called by the builders before save.
+	SourceValidator func(string) error
 	// DefaultID holds the default value on creation for the "id" field.
 	DefaultID func() uuid.UUID
 )
@@ -62,6 +67,11 @@ func ByID(opts ...sql.OrderTermOption) OrderOption {
 // ByName orders the results by the name field.
 func ByName(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldName, opts...).ToFunc()
+}
+
+// BySource orders the results by the source field.
+func BySource(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSource, opts...).ToFunc()
 }
 
 // ByConfigCount orders the results by config count.
