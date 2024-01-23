@@ -29,6 +29,20 @@ func (cu *CheckUpdate) Where(ps ...predicate.Check) *CheckUpdate {
 	return cu
 }
 
+// SetName sets the "name" field.
+func (cu *CheckUpdate) SetName(s string) *CheckUpdate {
+	cu.mutation.SetName(s)
+	return cu
+}
+
+// SetNillableName sets the "name" field if the given value is not nil.
+func (cu *CheckUpdate) SetNillableName(s *string) *CheckUpdate {
+	if s != nil {
+		cu.SetName(*s)
+	}
+	return cu
+}
+
 // SetSource sets the "source" field.
 func (cu *CheckUpdate) SetSource(s string) *CheckUpdate {
 	cu.mutation.SetSource(s)
@@ -113,6 +127,11 @@ func (cu *CheckUpdate) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (cu *CheckUpdate) check() error {
+	if v, ok := cu.mutation.Name(); ok {
+		if err := check.NameValidator(v); err != nil {
+			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Check.name": %w`, err)}
+		}
+	}
 	if v, ok := cu.mutation.Source(); ok {
 		if err := check.SourceValidator(v); err != nil {
 			return &ValidationError{Name: "source", err: fmt.Errorf(`ent: validator failed for field "Check.source": %w`, err)}
@@ -132,6 +151,9 @@ func (cu *CheckUpdate) sqlSave(ctx context.Context) (n int, err error) {
 				ps[i](selector)
 			}
 		}
+	}
+	if value, ok := cu.mutation.Name(); ok {
+		_spec.SetField(check.FieldName, field.TypeString, value)
 	}
 	if value, ok := cu.mutation.Source(); ok {
 		_spec.SetField(check.FieldSource, field.TypeString, value)
@@ -199,6 +221,20 @@ type CheckUpdateOne struct {
 	fields   []string
 	hooks    []Hook
 	mutation *CheckMutation
+}
+
+// SetName sets the "name" field.
+func (cuo *CheckUpdateOne) SetName(s string) *CheckUpdateOne {
+	cuo.mutation.SetName(s)
+	return cuo
+}
+
+// SetNillableName sets the "name" field if the given value is not nil.
+func (cuo *CheckUpdateOne) SetNillableName(s *string) *CheckUpdateOne {
+	if s != nil {
+		cuo.SetName(*s)
+	}
+	return cuo
 }
 
 // SetSource sets the "source" field.
@@ -298,6 +334,11 @@ func (cuo *CheckUpdateOne) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (cuo *CheckUpdateOne) check() error {
+	if v, ok := cuo.mutation.Name(); ok {
+		if err := check.NameValidator(v); err != nil {
+			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Check.name": %w`, err)}
+		}
+	}
 	if v, ok := cuo.mutation.Source(); ok {
 		if err := check.SourceValidator(v); err != nil {
 			return &ValidationError{Name: "source", err: fmt.Errorf(`ent: validator failed for field "Check.source": %w`, err)}
@@ -334,6 +375,9 @@ func (cuo *CheckUpdateOne) sqlSave(ctx context.Context) (_node *Check, err error
 				ps[i](selector)
 			}
 		}
+	}
+	if value, ok := cuo.mutation.Name(); ok {
+		_spec.SetField(check.FieldName, field.TypeString, value)
 	}
 	if value, ok := cuo.mutation.Source(); ok {
 		_spec.SetField(check.FieldSource, field.TypeString, value)
