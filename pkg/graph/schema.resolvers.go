@@ -10,6 +10,7 @@ import (
 	"fmt"
 
 	"github.com/scorify/backend/pkg/auth"
+	"github.com/scorify/backend/pkg/checks"
 	"github.com/scorify/backend/pkg/config"
 	"github.com/scorify/backend/pkg/ent"
 	"github.com/scorify/backend/pkg/ent/user"
@@ -24,7 +25,15 @@ func (r *checkResolver) ID(ctx context.Context, obj *ent.Check) (string, error) 
 
 // Source is the resolver for the source field.
 func (r *checkResolver) Source(ctx context.Context, obj *ent.Check) (*model.CheckSource, error) {
-	panic(fmt.Errorf("not implemented: Source - source"))
+	schema, ok := checks.Checks[obj.Source]
+	if !ok {
+		return nil, fmt.Errorf("source \"%s\" does not exist", obj.Source)
+	}
+
+	return &model.CheckSource{
+		Name:   obj.Name,
+		Schema: schema.Schema,
+	}, nil
 }
 
 // ID is the resolver for the id field.
