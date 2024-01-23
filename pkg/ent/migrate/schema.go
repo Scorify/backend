@@ -10,13 +10,42 @@ import (
 var (
 	// ChecksColumns holds the columns for the "checks" table.
 	ChecksColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "id", Type: field.TypeUUID, Unique: true},
+		{Name: "name", Type: field.TypeString, Unique: true},
+		{Name: "source", Type: field.TypeString},
 	}
 	// ChecksTable holds the schema information for the "checks" table.
 	ChecksTable = &schema.Table{
 		Name:       "checks",
 		Columns:    ChecksColumns,
 		PrimaryKey: []*schema.Column{ChecksColumns[0]},
+	}
+	// CheckConfigsColumns holds the columns for the "check_configs" table.
+	CheckConfigsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID, Unique: true},
+		{Name: "config", Type: field.TypeJSON},
+		{Name: "check_config_check", Type: field.TypeUUID},
+		{Name: "check_config_user", Type: field.TypeUUID},
+	}
+	// CheckConfigsTable holds the schema information for the "check_configs" table.
+	CheckConfigsTable = &schema.Table{
+		Name:       "check_configs",
+		Columns:    CheckConfigsColumns,
+		PrimaryKey: []*schema.Column{CheckConfigsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "check_configs_checks_check",
+				Columns:    []*schema.Column{CheckConfigsColumns[2]},
+				RefColumns: []*schema.Column{ChecksColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "check_configs_users_user",
+				Columns:    []*schema.Column{CheckConfigsColumns[3]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
 	}
 	// CredentialsColumns holds the columns for the "credentials" table.
 	CredentialsColumns = []*schema.Column{
@@ -74,6 +103,7 @@ var (
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		ChecksTable,
+		CheckConfigsTable,
 		CredentialsTable,
 		RoundsTable,
 		StatusTable,
@@ -83,4 +113,6 @@ var (
 )
 
 func init() {
+	CheckConfigsTable.ForeignKeys[0].RefTable = ChecksTable
+	CheckConfigsTable.ForeignKeys[1].RefTable = UsersTable
 }

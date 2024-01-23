@@ -11,6 +11,8 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
+	"github.com/scorify/backend/pkg/ent/check"
+	"github.com/scorify/backend/pkg/ent/checkconfig"
 	"github.com/scorify/backend/pkg/ent/predicate"
 	"github.com/scorify/backend/pkg/ent/user"
 )
@@ -24,24 +26,30 @@ const (
 	OpUpdateOne = ent.OpUpdateOne
 
 	// Node types.
-	TypeCheck      = "Check"
-	TypeCredential = "Credential"
-	TypeRound      = "Round"
-	TypeStatus     = "Status"
-	TypeTeam       = "Team"
-	TypeUser       = "User"
+	TypeCheck       = "Check"
+	TypeCheckConfig = "CheckConfig"
+	TypeCredential  = "Credential"
+	TypeRound       = "Round"
+	TypeStatus      = "Status"
+	TypeTeam        = "Team"
+	TypeUser        = "User"
 )
 
 // CheckMutation represents an operation that mutates the Check nodes in the graph.
 type CheckMutation struct {
 	config
-	op            Op
-	typ           string
-	id            *int
-	clearedFields map[string]struct{}
-	done          bool
-	oldValue      func(context.Context) (*Check, error)
-	predicates    []predicate.Check
+	op             Op
+	typ            string
+	id             *uuid.UUID
+	name           *string
+	source         *string
+	clearedFields  map[string]struct{}
+	_config        map[uuid.UUID]struct{}
+	removed_config map[uuid.UUID]struct{}
+	cleared_config bool
+	done           bool
+	oldValue       func(context.Context) (*Check, error)
+	predicates     []predicate.Check
 }
 
 var _ ent.Mutation = (*CheckMutation)(nil)
@@ -64,7 +72,7 @@ func newCheckMutation(c config, op Op, opts ...checkOption) *CheckMutation {
 }
 
 // withCheckID sets the ID field of the mutation.
-func withCheckID(id int) checkOption {
+func withCheckID(id uuid.UUID) checkOption {
 	return func(m *CheckMutation) {
 		var (
 			err   error
@@ -114,9 +122,15 @@ func (m CheckMutation) Tx() (*Tx, error) {
 	return tx, nil
 }
 
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of Check entities.
+func (m *CheckMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
 // ID returns the ID value in the mutation. Note that the ID is only available
 // if it was provided to the builder or after it was returned from the database.
-func (m *CheckMutation) ID() (id int, exists bool) {
+func (m *CheckMutation) ID() (id uuid.UUID, exists bool) {
 	if m.id == nil {
 		return
 	}
@@ -127,12 +141,12 @@ func (m *CheckMutation) ID() (id int, exists bool) {
 // That means, if the mutation is applied within a transaction with an isolation level such
 // as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
 // or updated by the mutation.
-func (m *CheckMutation) IDs(ctx context.Context) ([]int, error) {
+func (m *CheckMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
 	switch {
 	case m.op.Is(OpUpdateOne | OpDeleteOne):
 		id, exists := m.ID()
 		if exists {
-			return []int{id}, nil
+			return []uuid.UUID{id}, nil
 		}
 		fallthrough
 	case m.op.Is(OpUpdate | OpDelete):
@@ -140,6 +154,132 @@ func (m *CheckMutation) IDs(ctx context.Context) ([]int, error) {
 	default:
 		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
 	}
+}
+
+// SetName sets the "name" field.
+func (m *CheckMutation) SetName(s string) {
+	m.name = &s
+}
+
+// Name returns the value of the "name" field in the mutation.
+func (m *CheckMutation) Name() (r string, exists bool) {
+	v := m.name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldName returns the old "name" field's value of the Check entity.
+// If the Check object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CheckMutation) OldName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldName: %w", err)
+	}
+	return oldValue.Name, nil
+}
+
+// ResetName resets all changes to the "name" field.
+func (m *CheckMutation) ResetName() {
+	m.name = nil
+}
+
+// SetSource sets the "source" field.
+func (m *CheckMutation) SetSource(s string) {
+	m.source = &s
+}
+
+// Source returns the value of the "source" field in the mutation.
+func (m *CheckMutation) Source() (r string, exists bool) {
+	v := m.source
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSource returns the old "source" field's value of the Check entity.
+// If the Check object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CheckMutation) OldSource(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSource is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSource requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSource: %w", err)
+	}
+	return oldValue.Source, nil
+}
+
+// ResetSource resets all changes to the "source" field.
+func (m *CheckMutation) ResetSource() {
+	m.source = nil
+}
+
+// AddConfigIDs adds the "config" edge to the CheckConfig entity by ids.
+func (m *CheckMutation) AddConfigIDs(ids ...uuid.UUID) {
+	if m._config == nil {
+		m._config = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m._config[ids[i]] = struct{}{}
+	}
+}
+
+// ClearConfig clears the "config" edge to the CheckConfig entity.
+func (m *CheckMutation) ClearConfig() {
+	m.cleared_config = true
+}
+
+// ConfigCleared reports if the "config" edge to the CheckConfig entity was cleared.
+func (m *CheckMutation) ConfigCleared() bool {
+	return m.cleared_config
+}
+
+// RemoveConfigIDs removes the "config" edge to the CheckConfig entity by IDs.
+func (m *CheckMutation) RemoveConfigIDs(ids ...uuid.UUID) {
+	if m.removed_config == nil {
+		m.removed_config = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m._config, ids[i])
+		m.removed_config[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedConfig returns the removed IDs of the "config" edge to the CheckConfig entity.
+func (m *CheckMutation) RemovedConfigIDs() (ids []uuid.UUID) {
+	for id := range m.removed_config {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ConfigIDs returns the "config" edge IDs in the mutation.
+func (m *CheckMutation) ConfigIDs() (ids []uuid.UUID) {
+	for id := range m._config {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetConfig resets all changes to the "config" edge.
+func (m *CheckMutation) ResetConfig() {
+	m._config = nil
+	m.cleared_config = false
+	m.removed_config = nil
 }
 
 // Where appends a list predicates to the CheckMutation builder.
@@ -176,7 +316,13 @@ func (m *CheckMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *CheckMutation) Fields() []string {
-	fields := make([]string, 0, 0)
+	fields := make([]string, 0, 2)
+	if m.name != nil {
+		fields = append(fields, check.FieldName)
+	}
+	if m.source != nil {
+		fields = append(fields, check.FieldSource)
+	}
 	return fields
 }
 
@@ -184,6 +330,12 @@ func (m *CheckMutation) Fields() []string {
 // return value indicates that this field was not set, or was not defined in the
 // schema.
 func (m *CheckMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case check.FieldName:
+		return m.Name()
+	case check.FieldSource:
+		return m.Source()
+	}
 	return nil, false
 }
 
@@ -191,6 +343,12 @@ func (m *CheckMutation) Field(name string) (ent.Value, bool) {
 // returned if the mutation operation is not UpdateOne, or the query to the
 // database failed.
 func (m *CheckMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case check.FieldName:
+		return m.OldName(ctx)
+	case check.FieldSource:
+		return m.OldSource(ctx)
+	}
 	return nil, fmt.Errorf("unknown Check field %s", name)
 }
 
@@ -199,6 +357,20 @@ func (m *CheckMutation) OldField(ctx context.Context, name string) (ent.Value, e
 // type.
 func (m *CheckMutation) SetField(name string, value ent.Value) error {
 	switch name {
+	case check.FieldName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetName(v)
+		return nil
+	case check.FieldSource:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSource(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Check field %s", name)
 }
@@ -220,6 +392,8 @@ func (m *CheckMutation) AddedField(name string) (ent.Value, bool) {
 // the field is not defined in the schema, or if the type mismatched the field
 // type.
 func (m *CheckMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
 	return fmt.Errorf("unknown Check numeric field %s", name)
 }
 
@@ -245,55 +419,557 @@ func (m *CheckMutation) ClearField(name string) error {
 // ResetField resets all changes in the mutation for the field with the given name.
 // It returns an error if the field is not defined in the schema.
 func (m *CheckMutation) ResetField(name string) error {
+	switch name {
+	case check.FieldName:
+		m.ResetName()
+		return nil
+	case check.FieldSource:
+		m.ResetSource()
+		return nil
+	}
 	return fmt.Errorf("unknown Check field %s", name)
 }
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *CheckMutation) AddedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m._config != nil {
+		edges = append(edges, check.EdgeConfig)
+	}
 	return edges
 }
 
 // AddedIDs returns all IDs (to other nodes) that were added for the given edge
 // name in this mutation.
 func (m *CheckMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case check.EdgeConfig:
+		ids := make([]ent.Value, 0, len(m._config))
+		for id := range m._config {
+			ids = append(ids, id)
+		}
+		return ids
+	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *CheckMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.removed_config != nil {
+		edges = append(edges, check.EdgeConfig)
+	}
 	return edges
 }
 
 // RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
 // the given name in this mutation.
 func (m *CheckMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case check.EdgeConfig:
+		ids := make([]ent.Value, 0, len(m.removed_config))
+		for id := range m.removed_config {
+			ids = append(ids, id)
+		}
+		return ids
+	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *CheckMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.cleared_config {
+		edges = append(edges, check.EdgeConfig)
+	}
 	return edges
 }
 
 // EdgeCleared returns a boolean which indicates if the edge with the given name
 // was cleared in this mutation.
 func (m *CheckMutation) EdgeCleared(name string) bool {
+	switch name {
+	case check.EdgeConfig:
+		return m.cleared_config
+	}
 	return false
 }
 
 // ClearEdge clears the value of the edge with the given name. It returns an error
 // if that edge is not defined in the schema.
 func (m *CheckMutation) ClearEdge(name string) error {
+	switch name {
+	}
 	return fmt.Errorf("unknown Check unique edge %s", name)
 }
 
 // ResetEdge resets all changes to the edge with the given name in this mutation.
 // It returns an error if the edge is not defined in the schema.
 func (m *CheckMutation) ResetEdge(name string) error {
+	switch name {
+	case check.EdgeConfig:
+		m.ResetConfig()
+		return nil
+	}
 	return fmt.Errorf("unknown Check edge %s", name)
+}
+
+// CheckConfigMutation represents an operation that mutates the CheckConfig nodes in the graph.
+type CheckConfigMutation struct {
+	config
+	op            Op
+	typ           string
+	id            *uuid.UUID
+	_config       *map[string]interface{}
+	clearedFields map[string]struct{}
+	check         *uuid.UUID
+	clearedcheck  bool
+	user          *uuid.UUID
+	cleareduser   bool
+	done          bool
+	oldValue      func(context.Context) (*CheckConfig, error)
+	predicates    []predicate.CheckConfig
+}
+
+var _ ent.Mutation = (*CheckConfigMutation)(nil)
+
+// checkconfigOption allows management of the mutation configuration using functional options.
+type checkconfigOption func(*CheckConfigMutation)
+
+// newCheckConfigMutation creates new mutation for the CheckConfig entity.
+func newCheckConfigMutation(c config, op Op, opts ...checkconfigOption) *CheckConfigMutation {
+	m := &CheckConfigMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeCheckConfig,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withCheckConfigID sets the ID field of the mutation.
+func withCheckConfigID(id uuid.UUID) checkconfigOption {
+	return func(m *CheckConfigMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *CheckConfig
+		)
+		m.oldValue = func(ctx context.Context) (*CheckConfig, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().CheckConfig.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withCheckConfig sets the old CheckConfig of the mutation.
+func withCheckConfig(node *CheckConfig) checkconfigOption {
+	return func(m *CheckConfigMutation) {
+		m.oldValue = func(context.Context) (*CheckConfig, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m CheckConfigMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m CheckConfigMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of CheckConfig entities.
+func (m *CheckConfigMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *CheckConfigMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *CheckConfigMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().CheckConfig.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetConfig sets the "config" field.
+func (m *CheckConfigMutation) SetConfig(value map[string]interface{}) {
+	m._config = &value
+}
+
+// Config returns the value of the "config" field in the mutation.
+func (m *CheckConfigMutation) Config() (r map[string]interface{}, exists bool) {
+	v := m._config
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldConfig returns the old "config" field's value of the CheckConfig entity.
+// If the CheckConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CheckConfigMutation) OldConfig(ctx context.Context) (v map[string]interface{}, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldConfig is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldConfig requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldConfig: %w", err)
+	}
+	return oldValue.Config, nil
+}
+
+// ResetConfig resets all changes to the "config" field.
+func (m *CheckConfigMutation) ResetConfig() {
+	m._config = nil
+}
+
+// SetCheckID sets the "check" edge to the Check entity by id.
+func (m *CheckConfigMutation) SetCheckID(id uuid.UUID) {
+	m.check = &id
+}
+
+// ClearCheck clears the "check" edge to the Check entity.
+func (m *CheckConfigMutation) ClearCheck() {
+	m.clearedcheck = true
+}
+
+// CheckCleared reports if the "check" edge to the Check entity was cleared.
+func (m *CheckConfigMutation) CheckCleared() bool {
+	return m.clearedcheck
+}
+
+// CheckID returns the "check" edge ID in the mutation.
+func (m *CheckConfigMutation) CheckID() (id uuid.UUID, exists bool) {
+	if m.check != nil {
+		return *m.check, true
+	}
+	return
+}
+
+// CheckIDs returns the "check" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// CheckID instead. It exists only for internal usage by the builders.
+func (m *CheckConfigMutation) CheckIDs() (ids []uuid.UUID) {
+	if id := m.check; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetCheck resets all changes to the "check" edge.
+func (m *CheckConfigMutation) ResetCheck() {
+	m.check = nil
+	m.clearedcheck = false
+}
+
+// SetUserID sets the "user" edge to the User entity by id.
+func (m *CheckConfigMutation) SetUserID(id uuid.UUID) {
+	m.user = &id
+}
+
+// ClearUser clears the "user" edge to the User entity.
+func (m *CheckConfigMutation) ClearUser() {
+	m.cleareduser = true
+}
+
+// UserCleared reports if the "user" edge to the User entity was cleared.
+func (m *CheckConfigMutation) UserCleared() bool {
+	return m.cleareduser
+}
+
+// UserID returns the "user" edge ID in the mutation.
+func (m *CheckConfigMutation) UserID() (id uuid.UUID, exists bool) {
+	if m.user != nil {
+		return *m.user, true
+	}
+	return
+}
+
+// UserIDs returns the "user" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// UserID instead. It exists only for internal usage by the builders.
+func (m *CheckConfigMutation) UserIDs() (ids []uuid.UUID) {
+	if id := m.user; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetUser resets all changes to the "user" edge.
+func (m *CheckConfigMutation) ResetUser() {
+	m.user = nil
+	m.cleareduser = false
+}
+
+// Where appends a list predicates to the CheckConfigMutation builder.
+func (m *CheckConfigMutation) Where(ps ...predicate.CheckConfig) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the CheckConfigMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *CheckConfigMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.CheckConfig, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *CheckConfigMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *CheckConfigMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (CheckConfig).
+func (m *CheckConfigMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *CheckConfigMutation) Fields() []string {
+	fields := make([]string, 0, 1)
+	if m._config != nil {
+		fields = append(fields, checkconfig.FieldConfig)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *CheckConfigMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case checkconfig.FieldConfig:
+		return m.Config()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *CheckConfigMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case checkconfig.FieldConfig:
+		return m.OldConfig(ctx)
+	}
+	return nil, fmt.Errorf("unknown CheckConfig field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *CheckConfigMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case checkconfig.FieldConfig:
+		v, ok := value.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetConfig(v)
+		return nil
+	}
+	return fmt.Errorf("unknown CheckConfig field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *CheckConfigMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *CheckConfigMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *CheckConfigMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown CheckConfig numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *CheckConfigMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *CheckConfigMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *CheckConfigMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown CheckConfig nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *CheckConfigMutation) ResetField(name string) error {
+	switch name {
+	case checkconfig.FieldConfig:
+		m.ResetConfig()
+		return nil
+	}
+	return fmt.Errorf("unknown CheckConfig field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *CheckConfigMutation) AddedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.check != nil {
+		edges = append(edges, checkconfig.EdgeCheck)
+	}
+	if m.user != nil {
+		edges = append(edges, checkconfig.EdgeUser)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *CheckConfigMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case checkconfig.EdgeCheck:
+		if id := m.check; id != nil {
+			return []ent.Value{*id}
+		}
+	case checkconfig.EdgeUser:
+		if id := m.user; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *CheckConfigMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 2)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *CheckConfigMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *CheckConfigMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.clearedcheck {
+		edges = append(edges, checkconfig.EdgeCheck)
+	}
+	if m.cleareduser {
+		edges = append(edges, checkconfig.EdgeUser)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *CheckConfigMutation) EdgeCleared(name string) bool {
+	switch name {
+	case checkconfig.EdgeCheck:
+		return m.clearedcheck
+	case checkconfig.EdgeUser:
+		return m.cleareduser
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *CheckConfigMutation) ClearEdge(name string) error {
+	switch name {
+	case checkconfig.EdgeCheck:
+		m.ClearCheck()
+		return nil
+	case checkconfig.EdgeUser:
+		m.ClearUser()
+		return nil
+	}
+	return fmt.Errorf("unknown CheckConfig unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *CheckConfigMutation) ResetEdge(name string) error {
+	switch name {
+	case checkconfig.EdgeCheck:
+		m.ResetCheck()
+		return nil
+	case checkconfig.EdgeUser:
+		m.ResetUser()
+		return nil
+	}
+	return fmt.Errorf("unknown CheckConfig edge %s", name)
 }
 
 // CredentialMutation represents an operation that mutates the Credential nodes in the graph.
@@ -1355,16 +2031,19 @@ func (m *TeamMutation) ResetEdge(name string) error {
 // UserMutation represents an operation that mutates the User nodes in the graph.
 type UserMutation struct {
 	config
-	op            Op
-	typ           string
-	id            *uuid.UUID
-	username      *string
-	password      *string
-	role          *user.Role
-	clearedFields map[string]struct{}
-	done          bool
-	oldValue      func(context.Context) (*User, error)
-	predicates    []predicate.User
+	op             Op
+	typ            string
+	id             *uuid.UUID
+	username       *string
+	password       *string
+	role           *user.Role
+	clearedFields  map[string]struct{}
+	_config        map[uuid.UUID]struct{}
+	removed_config map[uuid.UUID]struct{}
+	cleared_config bool
+	done           bool
+	oldValue       func(context.Context) (*User, error)
+	predicates     []predicate.User
 }
 
 var _ ent.Mutation = (*UserMutation)(nil)
@@ -1579,6 +2258,60 @@ func (m *UserMutation) ResetRole() {
 	m.role = nil
 }
 
+// AddConfigIDs adds the "config" edge to the CheckConfig entity by ids.
+func (m *UserMutation) AddConfigIDs(ids ...uuid.UUID) {
+	if m._config == nil {
+		m._config = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m._config[ids[i]] = struct{}{}
+	}
+}
+
+// ClearConfig clears the "config" edge to the CheckConfig entity.
+func (m *UserMutation) ClearConfig() {
+	m.cleared_config = true
+}
+
+// ConfigCleared reports if the "config" edge to the CheckConfig entity was cleared.
+func (m *UserMutation) ConfigCleared() bool {
+	return m.cleared_config
+}
+
+// RemoveConfigIDs removes the "config" edge to the CheckConfig entity by IDs.
+func (m *UserMutation) RemoveConfigIDs(ids ...uuid.UUID) {
+	if m.removed_config == nil {
+		m.removed_config = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m._config, ids[i])
+		m.removed_config[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedConfig returns the removed IDs of the "config" edge to the CheckConfig entity.
+func (m *UserMutation) RemovedConfigIDs() (ids []uuid.UUID) {
+	for id := range m.removed_config {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ConfigIDs returns the "config" edge IDs in the mutation.
+func (m *UserMutation) ConfigIDs() (ids []uuid.UUID) {
+	for id := range m._config {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetConfig resets all changes to the "config" edge.
+func (m *UserMutation) ResetConfig() {
+	m._config = nil
+	m.cleared_config = false
+	m.removed_config = nil
+}
+
 // Where appends a list predicates to the UserMutation builder.
 func (m *UserMutation) Where(ps ...predicate.User) {
 	m.predicates = append(m.predicates, ps...)
@@ -1746,48 +2479,84 @@ func (m *UserMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *UserMutation) AddedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m._config != nil {
+		edges = append(edges, user.EdgeConfig)
+	}
 	return edges
 }
 
 // AddedIDs returns all IDs (to other nodes) that were added for the given edge
 // name in this mutation.
 func (m *UserMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case user.EdgeConfig:
+		ids := make([]ent.Value, 0, len(m._config))
+		for id := range m._config {
+			ids = append(ids, id)
+		}
+		return ids
+	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *UserMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.removed_config != nil {
+		edges = append(edges, user.EdgeConfig)
+	}
 	return edges
 }
 
 // RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
 // the given name in this mutation.
 func (m *UserMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case user.EdgeConfig:
+		ids := make([]ent.Value, 0, len(m.removed_config))
+		for id := range m.removed_config {
+			ids = append(ids, id)
+		}
+		return ids
+	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *UserMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.cleared_config {
+		edges = append(edges, user.EdgeConfig)
+	}
 	return edges
 }
 
 // EdgeCleared returns a boolean which indicates if the edge with the given name
 // was cleared in this mutation.
 func (m *UserMutation) EdgeCleared(name string) bool {
+	switch name {
+	case user.EdgeConfig:
+		return m.cleared_config
+	}
 	return false
 }
 
 // ClearEdge clears the value of the edge with the given name. It returns an error
 // if that edge is not defined in the schema.
 func (m *UserMutation) ClearEdge(name string) error {
+	switch name {
+	}
 	return fmt.Errorf("unknown User unique edge %s", name)
 }
 
 // ResetEdge resets all changes to the edge with the given name in this mutation.
 // It returns an error if the edge is not defined in the schema.
 func (m *UserMutation) ResetEdge(name string) error {
+	switch name {
+	case user.EdgeConfig:
+		m.ResetConfig()
+		return nil
+	}
 	return fmt.Errorf("unknown User edge %s", name)
 }

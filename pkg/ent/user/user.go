@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/google/uuid"
 )
 
@@ -20,8 +21,17 @@ const (
 	FieldPassword = "password"
 	// FieldRole holds the string denoting the role field in the database.
 	FieldRole = "role"
+	// EdgeConfig holds the string denoting the config edge name in mutations.
+	EdgeConfig = "config"
 	// Table holds the table name of the user in the database.
 	Table = "users"
+	// ConfigTable is the table that holds the config relation/edge.
+	ConfigTable = "check_configs"
+	// ConfigInverseTable is the table name for the CheckConfig entity.
+	// It exists in this package in order to avoid circular dependency with the "checkconfig" package.
+	ConfigInverseTable = "check_configs"
+	// ConfigColumn is the table column denoting the config relation/edge.
+	ConfigColumn = "check_config_user"
 )
 
 // Columns holds all SQL columns for user fields.
@@ -98,4 +108,25 @@ func ByPassword(opts ...sql.OrderTermOption) OrderOption {
 // ByRole orders the results by the role field.
 func ByRole(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldRole, opts...).ToFunc()
+}
+
+// ByConfigCount orders the results by config count.
+func ByConfigCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newConfigStep(), opts...)
+	}
+}
+
+// ByConfig orders the results by config terms.
+func ByConfig(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newConfigStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+func newConfigStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ConfigInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, true, ConfigTable, ConfigColumn),
+	)
 }

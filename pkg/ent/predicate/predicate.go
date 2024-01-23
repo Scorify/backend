@@ -9,6 +9,9 @@ import (
 // Check is the predicate function for check builders.
 type Check func(*sql.Selector)
 
+// CheckConfig is the predicate function for checkconfig builders.
+type CheckConfig func(*sql.Selector)
+
 // Credential is the predicate function for credential builders.
 type Credential func(*sql.Selector)
 

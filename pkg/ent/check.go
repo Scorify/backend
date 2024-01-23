@@ -8,15 +8,42 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
+	"github.com/google/uuid"
 	"github.com/scorify/backend/pkg/ent/check"
 )
 
 // Check is the model entity for the Check schema.
 type Check struct {
-	config
+	config `json:"-"`
 	// ID of the ent.
-	ID           int `json:"id,omitempty"`
+	// The uuid of a check
+	ID uuid.UUID `json:"id"`
+	// The name of the check
+	Name string `json:"name"`
+	// The source of the check
+	Source string `json:"source"`
+	// Edges holds the relations/edges for other nodes in the graph.
+	// The values are being populated by the CheckQuery when eager-loading is set.
+	Edges        CheckEdges `json:"edges"`
 	selectValues sql.SelectValues
+}
+
+// CheckEdges holds the relations/edges for other nodes in the graph.
+type CheckEdges struct {
+	// The configuration of a check
+	Config []*CheckConfig `json:"config"`
+	// loadedTypes holds the information for reporting if a
+	// type was loaded (or requested) in eager-loading or not.
+	loadedTypes [1]bool
+}
+
+// ConfigOrErr returns the Config value or an error if the edge
+// was not loaded in eager-loading.
+func (e CheckEdges) ConfigOrErr() ([]*CheckConfig, error) {
+	if e.loadedTypes[0] {
+		return e.Config, nil
+	}
+	return nil, &NotLoadedError{edge: "config"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -24,8 +51,10 @@ func (*Check) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case check.FieldName, check.FieldSource:
+			values[i] = new(sql.NullString)
 		case check.FieldID:
-			values[i] = new(sql.NullInt64)
+			values[i] = new(uuid.UUID)
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -42,11 +71,23 @@ func (c *Check) assignValues(columns []string, values []any) error {
 	for i := range columns {
 		switch columns[i] {
 		case check.FieldID:
-			value, ok := values[i].(*sql.NullInt64)
-			if !ok {
-				return fmt.Errorf("unexpected type %T for field id", value)
+			if value, ok := values[i].(*uuid.UUID); !ok {
+				return fmt.Errorf("unexpected type %T for field id", values[i])
+			} else if value != nil {
+				c.ID = *value
 			}
-			c.ID = int(value.Int64)
+		case check.FieldName:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field name", values[i])
+			} else if value.Valid {
+				c.Name = value.String
+			}
+		case check.FieldSource:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field source", values[i])
+			} else if value.Valid {
+				c.Source = value.String
+			}
 		default:
 			c.selectValues.Set(columns[i], values[i])
 		}
@@ -58,6 +99,11 @@ func (c *Check) assignValues(columns []string, values []any) error {
 // This includes values selected through modifiers, order, etc.
 func (c *Check) Value(name string) (ent.Value, error) {
 	return c.selectValues.Get(name)
+}
+
+// QueryConfig queries the "config" edge of the Check entity.
+func (c *Check) QueryConfig() *CheckConfigQuery {
+	return NewCheckClient(c.config).QueryConfig(c)
 }
 
 // Update returns a builder for updating this Check.
@@ -82,7 +128,12 @@ func (c *Check) Unwrap() *Check {
 func (c *Check) String() string {
 	var builder strings.Builder
 	builder.WriteString("Check(")
-	builder.WriteString(fmt.Sprintf("id=%v", c.ID))
+	builder.WriteString(fmt.Sprintf("id=%v, ", c.ID))
+	builder.WriteString("name=")
+	builder.WriteString(c.Name)
+	builder.WriteString(", ")
+	builder.WriteString("source=")
+	builder.WriteString(c.Source)
 	builder.WriteByte(')')
 	return builder.String()
 }

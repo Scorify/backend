@@ -15,7 +15,9 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/scorify/backend/pkg/ent/check"
+	"github.com/scorify/backend/pkg/ent/checkconfig"
 	"github.com/scorify/backend/pkg/ent/credential"
 	"github.com/scorify/backend/pkg/ent/round"
 	"github.com/scorify/backend/pkg/ent/status"
@@ -30,6 +32,8 @@ type Client struct {
 	Schema *migrate.Schema
 	// Check is the client for interacting with the Check builders.
 	Check *CheckClient
+	// CheckConfig is the client for interacting with the CheckConfig builders.
+	CheckConfig *CheckConfigClient
 	// Credential is the client for interacting with the Credential builders.
 	Credential *CredentialClient
 	// Round is the client for interacting with the Round builders.
@@ -52,6 +56,7 @@ func NewClient(opts ...Option) *Client {
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
 	c.Check = NewCheckClient(c.config)
+	c.CheckConfig = NewCheckConfigClient(c.config)
 	c.Credential = NewCredentialClient(c.config)
 	c.Round = NewRoundClient(c.config)
 	c.Status = NewStatusClient(c.config)
@@ -147,14 +152,15 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	cfg := c.config
 	cfg.driver = tx
 	return &Tx{
-		ctx:        ctx,
-		config:     cfg,
-		Check:      NewCheckClient(cfg),
-		Credential: NewCredentialClient(cfg),
-		Round:      NewRoundClient(cfg),
-		Status:     NewStatusClient(cfg),
-		Team:       NewTeamClient(cfg),
-		User:       NewUserClient(cfg),
+		ctx:         ctx,
+		config:      cfg,
+		Check:       NewCheckClient(cfg),
+		CheckConfig: NewCheckConfigClient(cfg),
+		Credential:  NewCredentialClient(cfg),
+		Round:       NewRoundClient(cfg),
+		Status:      NewStatusClient(cfg),
+		Team:        NewTeamClient(cfg),
+		User:        NewUserClient(cfg),
 	}, nil
 }
 
@@ -172,14 +178,15 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	cfg := c.config
 	cfg.driver = &txDriver{tx: tx, drv: c.driver}
 	return &Tx{
-		ctx:        ctx,
-		config:     cfg,
-		Check:      NewCheckClient(cfg),
-		Credential: NewCredentialClient(cfg),
-		Round:      NewRoundClient(cfg),
-		Status:     NewStatusClient(cfg),
-		Team:       NewTeamClient(cfg),
-		User:       NewUserClient(cfg),
+		ctx:         ctx,
+		config:      cfg,
+		Check:       NewCheckClient(cfg),
+		CheckConfig: NewCheckConfigClient(cfg),
+		Credential:  NewCredentialClient(cfg),
+		Round:       NewRoundClient(cfg),
+		Status:      NewStatusClient(cfg),
+		Team:        NewTeamClient(cfg),
+		User:        NewUserClient(cfg),
 	}, nil
 }
 
@@ -209,7 +216,7 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
-		c.Check, c.Credential, c.Round, c.Status, c.Team, c.User,
+		c.Check, c.CheckConfig, c.Credential, c.Round, c.Status, c.Team, c.User,
 	} {
 		n.Use(hooks...)
 	}
@@ -219,7 +226,7 @@ func (c *Client) Use(hooks ...Hook) {
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
-		c.Check, c.Credential, c.Round, c.Status, c.Team, c.User,
+		c.Check, c.CheckConfig, c.Credential, c.Round, c.Status, c.Team, c.User,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -230,6 +237,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 	switch m := m.(type) {
 	case *CheckMutation:
 		return c.Check.mutate(ctx, m)
+	case *CheckConfigMutation:
+		return c.CheckConfig.mutate(ctx, m)
 	case *CredentialMutation:
 		return c.Credential.mutate(ctx, m)
 	case *RoundMutation:
@@ -306,7 +315,7 @@ func (c *CheckClient) UpdateOne(ch *Check) *CheckUpdateOne {
 }
 
 // UpdateOneID returns an update builder for the given id.
-func (c *CheckClient) UpdateOneID(id int) *CheckUpdateOne {
+func (c *CheckClient) UpdateOneID(id uuid.UUID) *CheckUpdateOne {
 	mutation := newCheckMutation(c.config, OpUpdateOne, withCheckID(id))
 	return &CheckUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
@@ -323,7 +332,7 @@ func (c *CheckClient) DeleteOne(ch *Check) *CheckDeleteOne {
 }
 
 // DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *CheckClient) DeleteOneID(id int) *CheckDeleteOne {
+func (c *CheckClient) DeleteOneID(id uuid.UUID) *CheckDeleteOne {
 	builder := c.Delete().Where(check.ID(id))
 	builder.mutation.id = &id
 	builder.mutation.op = OpDeleteOne
@@ -340,17 +349,33 @@ func (c *CheckClient) Query() *CheckQuery {
 }
 
 // Get returns a Check entity by its id.
-func (c *CheckClient) Get(ctx context.Context, id int) (*Check, error) {
+func (c *CheckClient) Get(ctx context.Context, id uuid.UUID) (*Check, error) {
 	return c.Query().Where(check.ID(id)).Only(ctx)
 }
 
 // GetX is like Get, but panics if an error occurs.
-func (c *CheckClient) GetX(ctx context.Context, id int) *Check {
+func (c *CheckClient) GetX(ctx context.Context, id uuid.UUID) *Check {
 	obj, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)
 	}
 	return obj
+}
+
+// QueryConfig queries the config edge of a Check.
+func (c *CheckClient) QueryConfig(ch *Check) *CheckConfigQuery {
+	query := (&CheckConfigClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := ch.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(check.Table, check.FieldID, id),
+			sqlgraph.To(checkconfig.Table, checkconfig.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, check.ConfigTable, check.ConfigColumn),
+		)
+		fromV = sqlgraph.Neighbors(ch.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
 }
 
 // Hooks returns the client hooks.
@@ -375,6 +400,171 @@ func (c *CheckClient) mutate(ctx context.Context, m *CheckMutation) (Value, erro
 		return (&CheckDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown Check mutation op: %q", m.Op())
+	}
+}
+
+// CheckConfigClient is a client for the CheckConfig schema.
+type CheckConfigClient struct {
+	config
+}
+
+// NewCheckConfigClient returns a client for the CheckConfig from the given config.
+func NewCheckConfigClient(c config) *CheckConfigClient {
+	return &CheckConfigClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `checkconfig.Hooks(f(g(h())))`.
+func (c *CheckConfigClient) Use(hooks ...Hook) {
+	c.hooks.CheckConfig = append(c.hooks.CheckConfig, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `checkconfig.Intercept(f(g(h())))`.
+func (c *CheckConfigClient) Intercept(interceptors ...Interceptor) {
+	c.inters.CheckConfig = append(c.inters.CheckConfig, interceptors...)
+}
+
+// Create returns a builder for creating a CheckConfig entity.
+func (c *CheckConfigClient) Create() *CheckConfigCreate {
+	mutation := newCheckConfigMutation(c.config, OpCreate)
+	return &CheckConfigCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of CheckConfig entities.
+func (c *CheckConfigClient) CreateBulk(builders ...*CheckConfigCreate) *CheckConfigCreateBulk {
+	return &CheckConfigCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *CheckConfigClient) MapCreateBulk(slice any, setFunc func(*CheckConfigCreate, int)) *CheckConfigCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &CheckConfigCreateBulk{err: fmt.Errorf("calling to CheckConfigClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*CheckConfigCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &CheckConfigCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for CheckConfig.
+func (c *CheckConfigClient) Update() *CheckConfigUpdate {
+	mutation := newCheckConfigMutation(c.config, OpUpdate)
+	return &CheckConfigUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *CheckConfigClient) UpdateOne(cc *CheckConfig) *CheckConfigUpdateOne {
+	mutation := newCheckConfigMutation(c.config, OpUpdateOne, withCheckConfig(cc))
+	return &CheckConfigUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *CheckConfigClient) UpdateOneID(id uuid.UUID) *CheckConfigUpdateOne {
+	mutation := newCheckConfigMutation(c.config, OpUpdateOne, withCheckConfigID(id))
+	return &CheckConfigUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for CheckConfig.
+func (c *CheckConfigClient) Delete() *CheckConfigDelete {
+	mutation := newCheckConfigMutation(c.config, OpDelete)
+	return &CheckConfigDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *CheckConfigClient) DeleteOne(cc *CheckConfig) *CheckConfigDeleteOne {
+	return c.DeleteOneID(cc.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *CheckConfigClient) DeleteOneID(id uuid.UUID) *CheckConfigDeleteOne {
+	builder := c.Delete().Where(checkconfig.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &CheckConfigDeleteOne{builder}
+}
+
+// Query returns a query builder for CheckConfig.
+func (c *CheckConfigClient) Query() *CheckConfigQuery {
+	return &CheckConfigQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeCheckConfig},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a CheckConfig entity by its id.
+func (c *CheckConfigClient) Get(ctx context.Context, id uuid.UUID) (*CheckConfig, error) {
+	return c.Query().Where(checkconfig.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *CheckConfigClient) GetX(ctx context.Context, id uuid.UUID) *CheckConfig {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryCheck queries the check edge of a CheckConfig.
+func (c *CheckConfigClient) QueryCheck(cc *CheckConfig) *CheckQuery {
+	query := (&CheckClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := cc.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(checkconfig.Table, checkconfig.FieldID, id),
+			sqlgraph.To(check.Table, check.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, checkconfig.CheckTable, checkconfig.CheckColumn),
+		)
+		fromV = sqlgraph.Neighbors(cc.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryUser queries the user edge of a CheckConfig.
+func (c *CheckConfigClient) QueryUser(cc *CheckConfig) *UserQuery {
+	query := (&UserClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := cc.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(checkconfig.Table, checkconfig.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, checkconfig.UserTable, checkconfig.UserColumn),
+		)
+		fromV = sqlgraph.Neighbors(cc.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *CheckConfigClient) Hooks() []Hook {
+	return c.hooks.CheckConfig
+}
+
+// Interceptors returns the client interceptors.
+func (c *CheckConfigClient) Interceptors() []Interceptor {
+	return c.inters.CheckConfig
+}
+
+func (c *CheckConfigClient) mutate(ctx context.Context, m *CheckConfigMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&CheckConfigCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&CheckConfigUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&CheckConfigUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&CheckConfigDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown CheckConfig mutation op: %q", m.Op())
 	}
 }
 
@@ -1018,6 +1208,22 @@ func (c *UserClient) GetX(ctx context.Context, id uuid.UUID) *User {
 	return obj
 }
 
+// QueryConfig queries the config edge of a User.
+func (c *UserClient) QueryConfig(u *User) *CheckConfigQuery {
+	query := (&CheckConfigClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := u.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, id),
+			sqlgraph.To(checkconfig.Table, checkconfig.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, user.ConfigTable, user.ConfigColumn),
+		)
+		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *UserClient) Hooks() []Hook {
 	return c.hooks.User
@@ -1046,9 +1252,9 @@ func (c *UserClient) mutate(ctx context.Context, m *UserMutation) (Value, error)
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		Check, Credential, Round, Status, Team, User []ent.Hook
+		Check, CheckConfig, Credential, Round, Status, Team, User []ent.Hook
 	}
 	inters struct {
-		Check, Credential, Round, Status, Team, User []ent.Interceptor
+		Check, CheckConfig, Credential, Round, Status, Team, User []ent.Interceptor
 	}
 )

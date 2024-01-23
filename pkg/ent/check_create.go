@@ -4,11 +4,14 @@ package ent
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
 	"github.com/scorify/backend/pkg/ent/check"
+	"github.com/scorify/backend/pkg/ent/checkconfig"
 )
 
 // CheckCreate is the builder for creating a Check entity.
@@ -18,6 +21,47 @@ type CheckCreate struct {
 	hooks    []Hook
 }
 
+// SetName sets the "name" field.
+func (cc *CheckCreate) SetName(s string) *CheckCreate {
+	cc.mutation.SetName(s)
+	return cc
+}
+
+// SetSource sets the "source" field.
+func (cc *CheckCreate) SetSource(s string) *CheckCreate {
+	cc.mutation.SetSource(s)
+	return cc
+}
+
+// SetID sets the "id" field.
+func (cc *CheckCreate) SetID(u uuid.UUID) *CheckCreate {
+	cc.mutation.SetID(u)
+	return cc
+}
+
+// SetNillableID sets the "id" field if the given value is not nil.
+func (cc *CheckCreate) SetNillableID(u *uuid.UUID) *CheckCreate {
+	if u != nil {
+		cc.SetID(*u)
+	}
+	return cc
+}
+
+// AddConfigIDs adds the "config" edge to the CheckConfig entity by IDs.
+func (cc *CheckCreate) AddConfigIDs(ids ...uuid.UUID) *CheckCreate {
+	cc.mutation.AddConfigIDs(ids...)
+	return cc
+}
+
+// AddConfig adds the "config" edges to the CheckConfig entity.
+func (cc *CheckCreate) AddConfig(c ...*CheckConfig) *CheckCreate {
+	ids := make([]uuid.UUID, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
+	}
+	return cc.AddConfigIDs(ids...)
+}
+
 // Mutation returns the CheckMutation object of the builder.
 func (cc *CheckCreate) Mutation() *CheckMutation {
 	return cc.mutation
@@ -25,6 +69,7 @@ func (cc *CheckCreate) Mutation() *CheckMutation {
 
 // Save creates the Check in the database.
 func (cc *CheckCreate) Save(ctx context.Context) (*Check, error) {
+	cc.defaults()
 	return withHooks(ctx, cc.sqlSave, cc.mutation, cc.hooks)
 }
 
@@ -50,8 +95,32 @@ func (cc *CheckCreate) ExecX(ctx context.Context) {
 	}
 }
 
+// defaults sets the default values of the builder before save.
+func (cc *CheckCreate) defaults() {
+	if _, ok := cc.mutation.ID(); !ok {
+		v := check.DefaultID()
+		cc.mutation.SetID(v)
+	}
+}
+
 // check runs all checks and user-defined validators on the builder.
 func (cc *CheckCreate) check() error {
+	if _, ok := cc.mutation.Name(); !ok {
+		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "Check.name"`)}
+	}
+	if v, ok := cc.mutation.Name(); ok {
+		if err := check.NameValidator(v); err != nil {
+			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Check.name": %w`, err)}
+		}
+	}
+	if _, ok := cc.mutation.Source(); !ok {
+		return &ValidationError{Name: "source", err: errors.New(`ent: missing required field "Check.source"`)}
+	}
+	if v, ok := cc.mutation.Source(); ok {
+		if err := check.SourceValidator(v); err != nil {
+			return &ValidationError{Name: "source", err: fmt.Errorf(`ent: validator failed for field "Check.source": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -66,8 +135,13 @@ func (cc *CheckCreate) sqlSave(ctx context.Context) (*Check, error) {
 		}
 		return nil, err
 	}
-	id := _spec.ID.Value.(int64)
-	_node.ID = int(id)
+	if _spec.ID.Value != nil {
+		if id, ok := _spec.ID.Value.(*uuid.UUID); ok {
+			_node.ID = *id
+		} else if err := _node.ID.Scan(_spec.ID.Value); err != nil {
+			return nil, err
+		}
+	}
 	cc.mutation.id = &_node.ID
 	cc.mutation.done = true
 	return _node, nil
@@ -76,8 +150,36 @@ func (cc *CheckCreate) sqlSave(ctx context.Context) (*Check, error) {
 func (cc *CheckCreate) createSpec() (*Check, *sqlgraph.CreateSpec) {
 	var (
 		_node = &Check{config: cc.config}
-		_spec = sqlgraph.NewCreateSpec(check.Table, sqlgraph.NewFieldSpec(check.FieldID, field.TypeInt))
+		_spec = sqlgraph.NewCreateSpec(check.Table, sqlgraph.NewFieldSpec(check.FieldID, field.TypeUUID))
 	)
+	if id, ok := cc.mutation.ID(); ok {
+		_node.ID = id
+		_spec.ID.Value = &id
+	}
+	if value, ok := cc.mutation.Name(); ok {
+		_spec.SetField(check.FieldName, field.TypeString, value)
+		_node.Name = value
+	}
+	if value, ok := cc.mutation.Source(); ok {
+		_spec.SetField(check.FieldSource, field.TypeString, value)
+		_node.Source = value
+	}
+	if nodes := cc.mutation.ConfigIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   check.ConfigTable,
+			Columns: []string{check.ConfigColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(checkconfig.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
 	return _node, _spec
 }
 
@@ -99,6 +201,7 @@ func (ccb *CheckCreateBulk) Save(ctx context.Context) ([]*Check, error) {
 	for i := range ccb.builders {
 		func(i int, root context.Context) {
 			builder := ccb.builders[i]
+			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*CheckMutation)
 				if !ok {
@@ -125,10 +228,6 @@ func (ccb *CheckCreateBulk) Save(ctx context.Context) ([]*Check, error) {
 					return nil, err
 				}
 				mutation.id = &nodes[i].ID
-				if specs[i].ID.Value != nil {
-					id := specs[i].ID.Value.(int64)
-					nodes[i].ID = int(id)
-				}
 				mutation.done = true
 				return nodes[i], nil
 			})
