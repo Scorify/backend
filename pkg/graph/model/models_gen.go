@@ -2,6 +2,11 @@
 
 package model
 
+type CheckSource struct {
+	Name   string `json:"name"`
+	Schema string `json:"schema"`
+}
+
 type LoginOutput struct {
 	Name     string `json:"name"`
 	Token    string `json:"token"`

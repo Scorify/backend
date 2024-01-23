@@ -16,6 +16,36 @@ import (
 	"github.com/scorify/backend/pkg/helpers"
 )
 
+// ID is the resolver for the id field.
+func (r *checkResolver) ID(ctx context.Context, obj *ent.Check) (string, error) {
+	panic(fmt.Errorf("not implemented: ID - id"))
+}
+
+// Source is the resolver for the source field.
+func (r *checkResolver) Source(ctx context.Context, obj *ent.Check) (*model.CheckSource, error) {
+	panic(fmt.Errorf("not implemented: Source - source"))
+}
+
+// ID is the resolver for the id field.
+func (r *checkConfigResolver) ID(ctx context.Context, obj *ent.CheckConfig) (string, error) {
+	panic(fmt.Errorf("not implemented: ID - id"))
+}
+
+// Name is the resolver for the name field.
+func (r *checkConfigResolver) Name(ctx context.Context, obj *ent.CheckConfig) (string, error) {
+	panic(fmt.Errorf("not implemented: Name - name"))
+}
+
+// Check is the resolver for the check field.
+func (r *checkConfigResolver) Check(ctx context.Context, obj *ent.CheckConfig) (*ent.Check, error) {
+	panic(fmt.Errorf("not implemented: Check - check"))
+}
+
+// User is the resolver for the user field.
+func (r *checkConfigResolver) User(ctx context.Context, obj *ent.CheckConfig) (*ent.User, error) {
+	panic(fmt.Errorf("not implemented: User - user"))
+}
+
 // Login is the resolver for the login field.
 func (r *mutationResolver) Login(ctx context.Context, username string, password string) (*model.LoginOutput, error) {
 	entUser, err := r.Ent.User.Query().
@@ -80,6 +110,12 @@ func (r *userResolver) ID(ctx context.Context, obj *ent.User) (string, error) {
 	return obj.ID.String(), nil
 }
 
+// Check returns CheckResolver implementation.
+func (r *Resolver) Check() CheckResolver { return &checkResolver{r} }
+
+// CheckConfig returns CheckConfigResolver implementation.
+func (r *Resolver) CheckConfig() CheckConfigResolver { return &checkConfigResolver{r} }
+
 // Mutation returns MutationResolver implementation.
 func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
 
@@ -89,6 +125,8 @@ func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 // User returns UserResolver implementation.
 func (r *Resolver) User() UserResolver { return &userResolver{r} }
 
+type checkResolver struct{ *Resolver }
+type checkConfigResolver struct{ *Resolver }
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
 type userResolver struct{ *Resolver }
