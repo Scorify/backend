@@ -9,10 +9,14 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/google/uuid"
 	"github.com/scorify/backend/pkg/auth"
 	"github.com/scorify/backend/pkg/checks"
 	"github.com/scorify/backend/pkg/config"
 	"github.com/scorify/backend/pkg/ent"
+	"github.com/scorify/backend/pkg/ent/check"
+	"github.com/scorify/backend/pkg/ent/checkconfig"
+	"github.com/scorify/backend/pkg/ent/predicate"
 	"github.com/scorify/backend/pkg/ent/user"
 	"github.com/scorify/backend/pkg/graph/model"
 	"github.com/scorify/backend/pkg/helpers"
@@ -111,9 +115,377 @@ func (r *mutationResolver) ChangePassword(ctx context.Context, oldPassword strin
 	return err == nil, err
 }
 
+// CreateCheck is the resolver for the createCheck field.
+func (r *mutationResolver) CreateCheck(ctx context.Context, name string, source string, config string) (*ent.Check, error) {
+	entUser, err := auth.Parse(ctx)
+	if err == nil {
+		return nil, fmt.Errorf("invalid user")
+	}
+
+	if entUser.Role != user.RoleAdmin {
+		return nil, fmt.Errorf("invalid permissions")
+	}
+
+	_, ok := checks.Checks[source]
+	if !ok {
+		return nil, fmt.Errorf("source \"%s\" does not exist", source)
+	}
+
+	entCheck, err := r.Ent.Check.Create().
+		SetName(name).
+		SetSource(source).
+		Save(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create check: %v", err)
+	}
+
+	entUsers, err := r.Ent.User.Query().
+		Where(
+			user.RoleEQ(user.RoleUser),
+		).All(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get users: %v", err)
+	}
+
+	configSchema, ok := checks.Checks[source]
+	if !ok {
+		return nil, fmt.Errorf("source \"%s\" does not exist", source)
+	}
+
+	var schemaMap map[string]interface{}
+	err = json.Unmarshal([]byte(configSchema.Schema), &schemaMap)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal schema: %v", err)
+	}
+
+	var configMap map[string]interface{}
+	err = json.Unmarshal([]byte(config), &configMap)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal config: %v", err)
+	}
+
+	defaultConfig := map[string]interface{}{}
+	for key, value := range schemaMap {
+		switch value {
+		case "string":
+			configValue, ok := configMap[key]
+			if !ok {
+				return nil, fmt.Errorf("invalid config, missing key \"%s\"", key)
+			}
+
+			configString, ok := configValue.(string)
+			if !ok {
+				return nil, fmt.Errorf("invalid config, key \"%s\" is not a string", key)
+			}
+
+			defaultConfig[key] = configString
+		case "int":
+			configValue, ok := configMap[key]
+			if !ok {
+				return nil, fmt.Errorf("invalid config, missing key \"%s\"", key)
+			}
+
+			configInt, ok := configValue.(int)
+			if !ok {
+				return nil, fmt.Errorf("invalid config, key \"%s\" is not an int", key)
+			}
+
+			defaultConfig[key] = configInt
+		case "boolean":
+			configValue, ok := configMap[key]
+			if !ok {
+				return nil, fmt.Errorf("invalid config, missing key \"%s\"", key)
+			}
+
+			configBool, ok := configValue.(bool)
+			if !ok {
+				return nil, fmt.Errorf("invalid config, key \"%s\" is not a boolean", key)
+			}
+
+			defaultConfig[key] = configBool
+		default:
+			return nil, fmt.Errorf("invalid schema, unknown type \"%s\" for key \"%s\"", value, key)
+		}
+	}
+
+	entCheckConfigs := []*ent.CheckConfigCreate{}
+
+	for _, entUser := range entUsers {
+		entCheckConfigs = append(entCheckConfigs, r.Ent.CheckConfig.Create().
+			SetCheck(entCheck).
+			SetUser(entUser).
+			SetConfig(defaultConfig))
+	}
+
+	_, err = r.Ent.CheckConfig.CreateBulk(entCheckConfigs...).Save(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create check configs: %v", err)
+	}
+
+	return entCheck, nil
+}
+
+// UpdateCheck is the resolver for the updateCheck field.
+func (r *mutationResolver) UpdateCheck(ctx context.Context, id string, name *string, source *string, config *string) (*ent.Check, error) {
+	entUser, err := auth.Parse(ctx)
+	if err == nil {
+		return nil, fmt.Errorf("invalid user")
+	}
+
+	if entUser.Role != user.RoleAdmin {
+		return nil, fmt.Errorf("invalid permissions")
+	}
+
+	uuid, err := uuid.Parse(id)
+	if err != nil {
+		return nil, fmt.Errorf("invalid id")
+	}
+
+	entCheck, err := r.Ent.Check.Query().
+		Where(
+			check.IDEQ(uuid),
+		).Only(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("error encounted while getting check: %v", err)
+	}
+
+	checkUpdate := r.Ent.Check.UpdateOneID(uuid)
+
+	if name != nil {
+		checkUpdate.SetName(*name)
+	}
+
+	if source != nil {
+		_, ok := checks.Checks[*source]
+		if !ok {
+			return nil, fmt.Errorf("source \"%s\" does not exist", *source)
+		}
+
+		checkUpdate.SetSource(*source)
+	}
+
+	if config != nil {
+		var confSource string
+		if source != nil {
+			confSource = *source
+		} else {
+			confSource = entCheck.Source
+		}
+
+		configSchema, ok := checks.Checks[confSource]
+		if !ok {
+			return nil, fmt.Errorf("source \"%s\" does not exist", confSource)
+		}
+
+		var schemaMap map[string]interface{}
+		err = json.Unmarshal([]byte(configSchema.Schema), &schemaMap)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal schema: %v", err)
+		}
+
+		var configMap map[string]interface{}
+		err = json.Unmarshal([]byte(*config), &configMap)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal config: %v", err)
+		}
+
+		defaultConfig := map[string]interface{}{}
+		for key, value := range schemaMap {
+			switch value {
+			case "string":
+				configValue, ok := configMap[key]
+				if !ok {
+					return nil, fmt.Errorf("invalid config, missing key \"%s\"", key)
+				}
+
+				configString, ok := configValue.(string)
+				if !ok {
+					return nil, fmt.Errorf("invalid config, key \"%s\" is not a string", key)
+				}
+
+				defaultConfig[key] = configString
+			case "int":
+				configValue, ok := configMap[key]
+				if !ok {
+					return nil, fmt.Errorf("invalid config, missing key \"%s\"", key)
+				}
+
+				configInt, ok := configValue.(int)
+				if !ok {
+					return nil, fmt.Errorf("invalid config, key \"%s\" is not an int", key)
+				}
+
+				defaultConfig[key] = configInt
+			case "boolean":
+				configValue, ok := configMap[key]
+				if !ok {
+					return nil, fmt.Errorf("invalid config, missing key \"%s\"", key)
+				}
+
+				configBool, ok := configValue.(bool)
+				if !ok {
+					return nil, fmt.Errorf("invalid config, key \"%s\" is not a boolean", key)
+				}
+
+				defaultConfig[key] = configBool
+			default:
+				return nil, fmt.Errorf("invalid schema, unknown type \"%s\" for key \"%s\"", value, key)
+			}
+		}
+	}
+
+	return checkUpdate.Save(ctx)
+}
+
+// DeleteCheck is the resolver for the deleteCheck field.
+func (r *mutationResolver) DeleteCheck(ctx context.Context, id string) (bool, error) {
+	entUser, err := auth.Parse(ctx)
+	if err == nil {
+		return false, fmt.Errorf("invalid user")
+	}
+
+	if entUser.Role != user.RoleAdmin {
+		return false, fmt.Errorf("invalid permissions")
+	}
+
+	uuid, err := uuid.Parse(id)
+	if err != nil {
+		return false, fmt.Errorf("invalid id")
+	}
+
+	err = r.Ent.Check.DeleteOneID(uuid).Exec(ctx)
+
+	return err == nil, err
+}
+
+// EditCheckConfig is the resolver for the editCheckConfig field.
+func (r *mutationResolver) EditCheckConfig(ctx context.Context, id string, config string) (*ent.CheckConfig, error) {
+	entUser, err := auth.Parse(ctx)
+	if err == nil {
+		return nil, fmt.Errorf("invalid user")
+	}
+
+	uuid, err := uuid.Parse(id)
+	if err != nil {
+		return nil, fmt.Errorf("invalid id")
+	}
+
+	entCheckConfig, err := r.Ent.CheckConfig.Query().
+		Where(
+			checkconfig.IDEQ(uuid),
+			checkconfig.HasUserWith(
+				user.IDEQ(
+					entUser.ID,
+				),
+			),
+		).Only(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("no check config found")
+	}
+
+	var newConfig map[string]interface{}
+	err = json.Unmarshal([]byte(config), &newConfig)
+	if err != nil {
+		return nil, fmt.Errorf("invalid config")
+	}
+
+	oldConfig := entCheckConfig.Config
+
+	for key, value := range newConfig {
+		oldConfig[key] = value
+	}
+
+	return r.Ent.CheckConfig.UpdateOneID(uuid).Save(ctx)
+}
+
 // Me is the resolver for the me field.
 func (r *queryResolver) Me(ctx context.Context) (*ent.User, error) {
 	return auth.Parse(ctx)
+}
+
+// CheckSources is the resolver for the checkSources field.
+func (r *queryResolver) CheckSources(ctx context.Context) ([]*model.CheckSource, error) {
+	entUser, err := auth.Parse(ctx)
+	if err == nil {
+		return nil, fmt.Errorf("invalid user")
+	}
+
+	if entUser.Role != user.RoleAdmin {
+		return nil, fmt.Errorf("invalid permissions")
+	}
+
+	var checkSources []*model.CheckSource
+
+	for name, schema := range checks.Checks {
+		checkSources = append(checkSources, &model.CheckSource{
+			Name:   name,
+			Schema: schema.Schema,
+		})
+	}
+
+	return checkSources, nil
+}
+
+// CheckSource is the resolver for the checkSource field.
+func (r *queryResolver) CheckSource(ctx context.Context, name string) (*model.CheckSource, error) {
+	checkSource, ok := checks.Checks[name]
+	if !ok {
+		return nil, fmt.Errorf("source \"%s\" does not exist", name)
+	}
+
+	return &model.CheckSource{
+		Name:   name,
+		Schema: checkSource.Schema,
+	}, nil
+}
+
+// Checks is the resolver for the checks field.
+func (r *queryResolver) Checks(ctx context.Context) ([]*ent.Check, error) {
+	return r.Ent.Check.Query().All(ctx)
+}
+
+// Check is the resolver for the check field.
+func (r *queryResolver) Check(ctx context.Context, id *string, name *string) (*ent.Check, error) {
+	checkQueryPredicates := []predicate.Check{}
+
+	if id != nil {
+		uuid, err := uuid.Parse(*id)
+		if err != nil {
+			return nil, fmt.Errorf("invalid id")
+		}
+
+		checkQueryPredicates = append(checkQueryPredicates, check.IDEQ(uuid))
+	}
+
+	if name != nil {
+		checkQueryPredicates = append(checkQueryPredicates, check.NameEQ(*name))
+	}
+
+	return r.Ent.Check.Query().
+		Where(
+			checkQueryPredicates...,
+		).Only(ctx)
+}
+
+// CheckConfigs is the resolver for the checkConfigs field.
+func (r *queryResolver) CheckConfigs(ctx context.Context) ([]*ent.CheckConfig, error) {
+	entUser, err := auth.Parse(ctx)
+	if err == nil {
+		return nil, fmt.Errorf("invalid user")
+	}
+
+	if entUser.Role == user.RoleAdmin {
+		return r.Ent.CheckConfig.Query().All(ctx)
+	} else {
+		return r.Ent.CheckConfig.Query().
+			Where(
+				checkconfig.HasUserWith(
+					user.IDEQ(
+						entUser.ID,
+					),
+				),
+			).All(ctx)
+	}
 }
 
 // ID is the resolver for the id field.
