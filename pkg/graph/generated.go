@@ -58,10 +58,10 @@ type ComplexityRoot struct {
 	}
 
 	CheckConfig struct {
-		Check func(childComplexity int) int
-		ID    func(childComplexity int) int
-		Name  func(childComplexity int) int
-		User  func(childComplexity int) int
+		Check  func(childComplexity int) int
+		Config func(childComplexity int) int
+		ID     func(childComplexity int) int
+		User   func(childComplexity int) int
 	}
 
 	CheckSource struct {
@@ -101,7 +101,7 @@ type CheckResolver interface {
 }
 type CheckConfigResolver interface {
 	ID(ctx context.Context, obj *ent.CheckConfig) (string, error)
-	Name(ctx context.Context, obj *ent.CheckConfig) (string, error)
+	Config(ctx context.Context, obj *ent.CheckConfig) (string, error)
 	Check(ctx context.Context, obj *ent.CheckConfig) (*ent.Check, error)
 	User(ctx context.Context, obj *ent.CheckConfig) (*ent.User, error)
 }
@@ -163,19 +163,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.CheckConfig.Check(childComplexity), true
 
+	case "CheckConfig.config":
+		if e.complexity.CheckConfig.Config == nil {
+			break
+		}
+
+		return e.complexity.CheckConfig.Config(childComplexity), true
+
 	case "CheckConfig.id":
 		if e.complexity.CheckConfig.ID == nil {
 			break
 		}
 
 		return e.complexity.CheckConfig.ID(childComplexity), true
-
-	case "CheckConfig.name":
-		if e.complexity.CheckConfig.Name == nil {
-			break
-		}
-
-		return e.complexity.CheckConfig.Name(childComplexity), true
 
 	case "CheckConfig.user":
 		if e.complexity.CheckConfig.User == nil {
@@ -698,8 +698,8 @@ func (ec *executionContext) fieldContext_CheckConfig_id(ctx context.Context, fie
 	return fc, nil
 }
 
-func (ec *executionContext) _CheckConfig_name(ctx context.Context, field graphql.CollectedField, obj *ent.CheckConfig) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_CheckConfig_name(ctx, field)
+func (ec *executionContext) _CheckConfig_config(ctx context.Context, field graphql.CollectedField, obj *ent.CheckConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CheckConfig_config(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -712,7 +712,7 @@ func (ec *executionContext) _CheckConfig_name(ctx context.Context, field graphql
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.CheckConfig().Name(rctx, obj)
+		return ec.resolvers.CheckConfig().Config(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -729,7 +729,7 @@ func (ec *executionContext) _CheckConfig_name(ctx context.Context, field graphql
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_CheckConfig_name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_CheckConfig_config(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "CheckConfig",
 		Field:      field,
@@ -3572,7 +3572,7 @@ func (ec *executionContext) _CheckConfig(ctx context.Context, sel ast.SelectionS
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-		case "name":
+		case "config":
 			field := field
 
 			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
@@ -3581,7 +3581,7 @@ func (ec *executionContext) _CheckConfig(ctx context.Context, sel ast.SelectionS
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._CheckConfig_name(ctx, field, obj)
+				res = ec._CheckConfig_config(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}

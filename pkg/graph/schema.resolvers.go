@@ -6,6 +6,7 @@ package graph
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/scorify/backend/pkg/auth"
@@ -18,7 +19,7 @@ import (
 
 // ID is the resolver for the id field.
 func (r *checkResolver) ID(ctx context.Context, obj *ent.Check) (string, error) {
-	panic(fmt.Errorf("not implemented: ID - id"))
+	return obj.ID.String(), nil
 }
 
 // Source is the resolver for the source field.
@@ -28,22 +29,23 @@ func (r *checkResolver) Source(ctx context.Context, obj *ent.Check) (*model.Chec
 
 // ID is the resolver for the id field.
 func (r *checkConfigResolver) ID(ctx context.Context, obj *ent.CheckConfig) (string, error) {
-	panic(fmt.Errorf("not implemented: ID - id"))
+	return obj.ID.String(), nil
 }
 
-// Name is the resolver for the name field.
-func (r *checkConfigResolver) Name(ctx context.Context, obj *ent.CheckConfig) (string, error) {
-	panic(fmt.Errorf("not implemented: Name - name"))
+// Config is the resolver for the config field.
+func (r *checkConfigResolver) Config(ctx context.Context, obj *ent.CheckConfig) (string, error) {
+	out, err := json.Marshal(obj.Config)
+	return string(out), err
 }
 
 // Check is the resolver for the check field.
 func (r *checkConfigResolver) Check(ctx context.Context, obj *ent.CheckConfig) (*ent.Check, error) {
-	panic(fmt.Errorf("not implemented: Check - check"))
+	return obj.QueryCheck().Only(ctx)
 }
 
 // User is the resolver for the user field.
 func (r *checkConfigResolver) User(ctx context.Context, obj *ent.CheckConfig) (*ent.User, error) {
-	panic(fmt.Errorf("not implemented: User - user"))
+	return obj.QueryUser().Only(ctx)
 }
 
 // Login is the resolver for the login field.
