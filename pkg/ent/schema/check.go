@@ -25,7 +25,6 @@ func (Check) Fields() []ent.Field {
 			StructTag(`json:"name"`).
 			Comment("The name of the check").
 			Unique().
-			Immutable().
 			NotEmpty(),
 		field.String("source").
 			StructTag(`json:"source"`).
