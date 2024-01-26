@@ -28,37 +28,36 @@ func (r *checkResolver) ID(ctx context.Context, obj *ent.Check) (string, error) 
 }
 
 // Source is the resolver for the source field.
-func (r *checkResolver) Source(ctx context.Context, obj *ent.Check) (*model.CheckSource, error) {
+func (r *checkResolver) Source(ctx context.Context, obj *ent.Check) (*model.Source, error) {
 	schema, ok := checks.Checks[obj.Source]
 	if !ok {
 		return nil, fmt.Errorf("source \"%s\" does not exist", obj.Source)
 	}
 
-	return &model.CheckSource{
+	return &model.Source{
 		Name:   obj.Name,
 		Schema: schema.Schema,
 	}, nil
 }
 
 // ID is the resolver for the id field.
-func (r *checkConfigResolver) ID(ctx context.Context, obj *ent.CheckConfig) (string, error) {
-	return obj.ID.String(), nil
+func (r *configResolver) ID(ctx context.Context, obj *ent.CheckConfig) (string, error) {
+	panic(fmt.Errorf("not implemented: ID - id"))
 }
 
 // Config is the resolver for the config field.
-func (r *checkConfigResolver) Config(ctx context.Context, obj *ent.CheckConfig) (string, error) {
-	out, err := json.Marshal(obj.Config)
-	return string(out), err
+func (r *configResolver) Config(ctx context.Context, obj *ent.CheckConfig) (string, error) {
+	panic(fmt.Errorf("not implemented: Config - config"))
 }
 
 // Check is the resolver for the check field.
-func (r *checkConfigResolver) Check(ctx context.Context, obj *ent.CheckConfig) (*ent.Check, error) {
-	return obj.QueryCheck().Only(ctx)
+func (r *configResolver) Check(ctx context.Context, obj *ent.CheckConfig) (*ent.Check, error) {
+	panic(fmt.Errorf("not implemented: Check - check"))
 }
 
 // User is the resolver for the user field.
-func (r *checkConfigResolver) User(ctx context.Context, obj *ent.CheckConfig) (*ent.User, error) {
-	return obj.QueryUser().Only(ctx)
+func (r *configResolver) User(ctx context.Context, obj *ent.CheckConfig) (*ent.User, error) {
+	panic(fmt.Errorf("not implemented: User - user"))
 }
 
 // Login is the resolver for the login field.
@@ -118,7 +117,7 @@ func (r *mutationResolver) ChangePassword(ctx context.Context, oldPassword strin
 // CreateCheck is the resolver for the createCheck field.
 func (r *mutationResolver) CreateCheck(ctx context.Context, name string, source string, config string) (*ent.Check, error) {
 	entUser, err := auth.Parse(ctx)
-	if err == nil {
+	if err != nil {
 		return nil, fmt.Errorf("invalid user")
 	}
 
@@ -228,7 +227,7 @@ func (r *mutationResolver) CreateCheck(ctx context.Context, name string, source 
 // UpdateCheck is the resolver for the updateCheck field.
 func (r *mutationResolver) UpdateCheck(ctx context.Context, id string, name *string, source *string, config *string) (*ent.Check, error) {
 	entUser, err := auth.Parse(ctx)
-	if err == nil {
+	if err != nil {
 		return nil, fmt.Errorf("invalid user")
 	}
 
@@ -238,7 +237,7 @@ func (r *mutationResolver) UpdateCheck(ctx context.Context, id string, name *str
 
 	uuid, err := uuid.Parse(id)
 	if err != nil {
-		return nil, fmt.Errorf("invalid id")
+		return nil, fmt.Errorf("encounter error while parsing id: %v", err)
 	}
 
 	entCheck, err := r.Ent.Check.Query().
@@ -340,7 +339,7 @@ func (r *mutationResolver) UpdateCheck(ctx context.Context, id string, name *str
 // DeleteCheck is the resolver for the deleteCheck field.
 func (r *mutationResolver) DeleteCheck(ctx context.Context, id string) (bool, error) {
 	entUser, err := auth.Parse(ctx)
-	if err == nil {
+	if err != nil {
 		return false, fmt.Errorf("invalid user")
 	}
 
@@ -350,7 +349,7 @@ func (r *mutationResolver) DeleteCheck(ctx context.Context, id string) (bool, er
 
 	uuid, err := uuid.Parse(id)
 	if err != nil {
-		return false, fmt.Errorf("invalid id")
+		return false, fmt.Errorf("encounter error while parsing id: %v", err)
 	}
 
 	err = r.Ent.Check.DeleteOneID(uuid).Exec(ctx)
@@ -358,16 +357,16 @@ func (r *mutationResolver) DeleteCheck(ctx context.Context, id string) (bool, er
 	return err == nil, err
 }
 
-// EditCheckConfig is the resolver for the editCheckConfig field.
-func (r *mutationResolver) EditCheckConfig(ctx context.Context, id string, config string) (*ent.CheckConfig, error) {
+// EditConfig is the resolver for the editConfig field.
+func (r *mutationResolver) EditConfig(ctx context.Context, id string, config string) (*ent.CheckConfig, error) {
 	entUser, err := auth.Parse(ctx)
-	if err == nil {
+	if err != nil {
 		return nil, fmt.Errorf("invalid user")
 	}
 
 	uuid, err := uuid.Parse(id)
 	if err != nil {
-		return nil, fmt.Errorf("invalid id")
+		return nil, fmt.Errorf("encounter error while parsing id: %v", err)
 	}
 
 	entCheckConfig, err := r.Ent.CheckConfig.Query().
@@ -403,10 +402,10 @@ func (r *queryResolver) Me(ctx context.Context) (*ent.User, error) {
 	return auth.Parse(ctx)
 }
 
-// CheckSources is the resolver for the checkSources field.
-func (r *queryResolver) CheckSources(ctx context.Context) ([]*model.CheckSource, error) {
+// Sources is the resolver for the sources field.
+func (r *queryResolver) Sources(ctx context.Context) ([]*model.Source, error) {
 	entUser, err := auth.Parse(ctx)
-	if err == nil {
+	if err != nil {
 		return nil, fmt.Errorf("invalid user")
 	}
 
@@ -414,10 +413,10 @@ func (r *queryResolver) CheckSources(ctx context.Context) ([]*model.CheckSource,
 		return nil, fmt.Errorf("invalid permissions")
 	}
 
-	var checkSources []*model.CheckSource
+	var checkSources []*model.Source
 
 	for name, schema := range checks.Checks {
-		checkSources = append(checkSources, &model.CheckSource{
+		checkSources = append(checkSources, &model.Source{
 			Name:   name,
 			Schema: schema.Schema,
 		})
@@ -426,14 +425,14 @@ func (r *queryResolver) CheckSources(ctx context.Context) ([]*model.CheckSource,
 	return checkSources, nil
 }
 
-// CheckSource is the resolver for the checkSource field.
-func (r *queryResolver) CheckSource(ctx context.Context, name string) (*model.CheckSource, error) {
+// Source is the resolver for the source field.
+func (r *queryResolver) Source(ctx context.Context, name string) (*model.Source, error) {
 	checkSource, ok := checks.Checks[name]
 	if !ok {
 		return nil, fmt.Errorf("source \"%s\" does not exist", name)
 	}
 
-	return &model.CheckSource{
+	return &model.Source{
 		Name:   name,
 		Schema: checkSource.Schema,
 	}, nil
@@ -451,7 +450,7 @@ func (r *queryResolver) Check(ctx context.Context, id *string, name *string) (*e
 	if id != nil {
 		uuid, err := uuid.Parse(*id)
 		if err != nil {
-			return nil, fmt.Errorf("invalid id")
+			return nil, fmt.Errorf("encounter error while parsing id: %v", err)
 		}
 
 		checkQueryPredicates = append(checkQueryPredicates, check.IDEQ(uuid))
@@ -467,10 +466,10 @@ func (r *queryResolver) Check(ctx context.Context, id *string, name *string) (*e
 		).Only(ctx)
 }
 
-// CheckConfigs is the resolver for the checkConfigs field.
-func (r *queryResolver) CheckConfigs(ctx context.Context) ([]*ent.CheckConfig, error) {
+// Configs is the resolver for the configs field.
+func (r *queryResolver) Configs(ctx context.Context) ([]*ent.CheckConfig, error) {
 	entUser, err := auth.Parse(ctx)
-	if err == nil {
+	if err != nil {
 		return nil, fmt.Errorf("invalid user")
 	}
 
@@ -488,6 +487,19 @@ func (r *queryResolver) CheckConfigs(ctx context.Context) ([]*ent.CheckConfig, e
 	}
 }
 
+// Config is the resolver for the config field.
+func (r *queryResolver) Config(ctx context.Context, id string) (*ent.CheckConfig, error) {
+	uuid, err := uuid.Parse(id)
+	if err != nil {
+		return nil, fmt.Errorf("encounter error while parsing id: %v", err)
+	}
+
+	return r.Ent.CheckConfig.Query().
+		Where(
+			checkconfig.IDEQ(uuid),
+		).Only(ctx)
+}
+
 // ID is the resolver for the id field.
 func (r *userResolver) ID(ctx context.Context, obj *ent.User) (string, error) {
 	return obj.ID.String(), nil
@@ -496,8 +508,8 @@ func (r *userResolver) ID(ctx context.Context, obj *ent.User) (string, error) {
 // Check returns CheckResolver implementation.
 func (r *Resolver) Check() CheckResolver { return &checkResolver{r} }
 
-// CheckConfig returns CheckConfigResolver implementation.
-func (r *Resolver) CheckConfig() CheckConfigResolver { return &checkConfigResolver{r} }
+// Config returns ConfigResolver implementation.
+func (r *Resolver) Config() ConfigResolver { return &configResolver{r} }
 
 // Mutation returns MutationResolver implementation.
 func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
@@ -509,7 +521,7 @@ func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 func (r *Resolver) User() UserResolver { return &userResolver{r} }
 
 type checkResolver struct{ *Resolver }
-type checkConfigResolver struct{ *Resolver }
+type configResolver struct{ *Resolver }
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
 type userResolver struct{ *Resolver }
