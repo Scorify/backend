@@ -184,13 +184,13 @@ func (r *mutationResolver) CreateCheck(ctx context.Context, name string, source 
 				return nil, fmt.Errorf("invalid config, missing key \"%s\"", key)
 			}
 
-			configInt, ok := configValue.(int)
+			configFloat, ok := configValue.(float64)
 			if !ok {
 				return nil, fmt.Errorf("invalid config, key \"%s\" is not an int", key)
 			}
 
-			defaultConfig[key] = configInt
-		case "boolean":
+			defaultConfig[key] = int(configFloat)
+		case "bool":
 			configValue, ok := configMap[key]
 			if !ok {
 				return nil, fmt.Errorf("invalid config, missing key \"%s\"", key)
