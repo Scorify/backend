@@ -41,7 +41,7 @@ type Config struct {
 
 type ResolverRoot interface {
 	Check() CheckResolver
-	CheckConfig() CheckConfigResolver
+	Config() ConfigResolver
 	Mutation() MutationResolver
 	Query() QueryResolver
 	User() UserResolver
@@ -57,16 +57,11 @@ type ComplexityRoot struct {
 		Source func(childComplexity int) int
 	}
 
-	CheckConfig struct {
+	Config struct {
 		Check  func(childComplexity int) int
 		Config func(childComplexity int) int
 		ID     func(childComplexity int) int
 		User   func(childComplexity int) int
-	}
-
-	CheckSource struct {
-		Name   func(childComplexity int) int
-		Schema func(childComplexity int) int
 	}
 
 	LoginOutput struct {
@@ -80,21 +75,27 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		ChangePassword  func(childComplexity int, oldPassword string, newPassword string) int
-		CreateCheck     func(childComplexity int, name string, source string, config string) int
-		DeleteCheck     func(childComplexity int, id string) int
-		EditCheckConfig func(childComplexity int, id string, config string) int
-		Login           func(childComplexity int, username string, password string) int
-		UpdateCheck     func(childComplexity int, id string, name *string, source *string, config *string) int
+		ChangePassword func(childComplexity int, oldPassword string, newPassword string) int
+		CreateCheck    func(childComplexity int, name string, source string, config string) int
+		DeleteCheck    func(childComplexity int, id string) int
+		EditConfig     func(childComplexity int, id string, config string) int
+		Login          func(childComplexity int, username string, password string) int
+		UpdateCheck    func(childComplexity int, id string, name *string, source *string, config *string) int
 	}
 
 	Query struct {
-		Check        func(childComplexity int, id *string, name *string) int
-		CheckConfigs func(childComplexity int) int
-		CheckSource  func(childComplexity int, name string) int
-		CheckSources func(childComplexity int) int
-		Checks       func(childComplexity int) int
-		Me           func(childComplexity int) int
+		Check   func(childComplexity int, id *string, name *string) int
+		Checks  func(childComplexity int) int
+		Config  func(childComplexity int, id string) int
+		Configs func(childComplexity int) int
+		Me      func(childComplexity int) int
+		Source  func(childComplexity int, name string) int
+		Sources func(childComplexity int) int
+	}
+
+	Source struct {
+		Name   func(childComplexity int) int
+		Schema func(childComplexity int) int
 	}
 
 	User struct {
@@ -106,9 +107,9 @@ type ComplexityRoot struct {
 type CheckResolver interface {
 	ID(ctx context.Context, obj *ent.Check) (string, error)
 
-	Source(ctx context.Context, obj *ent.Check) (*model.CheckSource, error)
+	Source(ctx context.Context, obj *ent.Check) (*model.Source, error)
 }
-type CheckConfigResolver interface {
+type ConfigResolver interface {
 	ID(ctx context.Context, obj *ent.CheckConfig) (string, error)
 	Config(ctx context.Context, obj *ent.CheckConfig) (string, error)
 	Check(ctx context.Context, obj *ent.CheckConfig) (*ent.Check, error)
@@ -120,15 +121,16 @@ type MutationResolver interface {
 	CreateCheck(ctx context.Context, name string, source string, config string) (*ent.Check, error)
 	UpdateCheck(ctx context.Context, id string, name *string, source *string, config *string) (*ent.Check, error)
 	DeleteCheck(ctx context.Context, id string) (bool, error)
-	EditCheckConfig(ctx context.Context, id string, config string) (*ent.CheckConfig, error)
+	EditConfig(ctx context.Context, id string, config string) (*ent.CheckConfig, error)
 }
 type QueryResolver interface {
 	Me(ctx context.Context) (*ent.User, error)
-	CheckSources(ctx context.Context) ([]*model.CheckSource, error)
-	CheckSource(ctx context.Context, name string) (*model.CheckSource, error)
+	Sources(ctx context.Context) ([]*model.Source, error)
+	Source(ctx context.Context, name string) (*model.Source, error)
 	Checks(ctx context.Context) ([]*ent.Check, error)
 	Check(ctx context.Context, id *string, name *string) (*ent.Check, error)
-	CheckConfigs(ctx context.Context) ([]*ent.CheckConfig, error)
+	Configs(ctx context.Context) ([]*ent.CheckConfig, error)
+	Config(ctx context.Context, id string) (*ent.CheckConfig, error)
 }
 type UserResolver interface {
 	ID(ctx context.Context, obj *ent.User) (string, error)
@@ -174,47 +176,33 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Check.Source(childComplexity), true
 
-	case "CheckConfig.check":
-		if e.complexity.CheckConfig.Check == nil {
+	case "Config.check":
+		if e.complexity.Config.Check == nil {
 			break
 		}
 
-		return e.complexity.CheckConfig.Check(childComplexity), true
+		return e.complexity.Config.Check(childComplexity), true
 
-	case "CheckConfig.config":
-		if e.complexity.CheckConfig.Config == nil {
+	case "Config.config":
+		if e.complexity.Config.Config == nil {
 			break
 		}
 
-		return e.complexity.CheckConfig.Config(childComplexity), true
+		return e.complexity.Config.Config(childComplexity), true
 
-	case "CheckConfig.id":
-		if e.complexity.CheckConfig.ID == nil {
+	case "Config.id":
+		if e.complexity.Config.ID == nil {
 			break
 		}
 
-		return e.complexity.CheckConfig.ID(childComplexity), true
+		return e.complexity.Config.ID(childComplexity), true
 
-	case "CheckConfig.user":
-		if e.complexity.CheckConfig.User == nil {
+	case "Config.user":
+		if e.complexity.Config.User == nil {
 			break
 		}
 
-		return e.complexity.CheckConfig.User(childComplexity), true
-
-	case "CheckSource.name":
-		if e.complexity.CheckSource.Name == nil {
-			break
-		}
-
-		return e.complexity.CheckSource.Name(childComplexity), true
-
-	case "CheckSource.schema":
-		if e.complexity.CheckSource.Schema == nil {
-			break
-		}
-
-		return e.complexity.CheckSource.Schema(childComplexity), true
+		return e.complexity.Config.User(childComplexity), true
 
 	case "LoginOutput.domain":
 		if e.complexity.LoginOutput.Domain == nil {
@@ -301,17 +289,17 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.DeleteCheck(childComplexity, args["id"].(string)), true
 
-	case "Mutation.editCheckConfig":
-		if e.complexity.Mutation.EditCheckConfig == nil {
+	case "Mutation.editConfig":
+		if e.complexity.Mutation.EditConfig == nil {
 			break
 		}
 
-		args, err := ec.field_Mutation_editCheckConfig_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_editConfig_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Mutation.EditCheckConfig(childComplexity, args["id"].(string), args["config"].(string)), true
+		return e.complexity.Mutation.EditConfig(childComplexity, args["id"].(string), args["config"].(string)), true
 
 	case "Mutation.login":
 		if e.complexity.Mutation.Login == nil {
@@ -349,32 +337,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Check(childComplexity, args["id"].(*string), args["name"].(*string)), true
 
-	case "Query.checkConfigs":
-		if e.complexity.Query.CheckConfigs == nil {
-			break
-		}
-
-		return e.complexity.Query.CheckConfigs(childComplexity), true
-
-	case "Query.checkSource":
-		if e.complexity.Query.CheckSource == nil {
-			break
-		}
-
-		args, err := ec.field_Query_checkSource_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Query.CheckSource(childComplexity, args["name"].(string)), true
-
-	case "Query.checkSources":
-		if e.complexity.Query.CheckSources == nil {
-			break
-		}
-
-		return e.complexity.Query.CheckSources(childComplexity), true
-
 	case "Query.checks":
 		if e.complexity.Query.Checks == nil {
 			break
@@ -382,12 +344,64 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Checks(childComplexity), true
 
+	case "Query.config":
+		if e.complexity.Query.Config == nil {
+			break
+		}
+
+		args, err := ec.field_Query_config_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Config(childComplexity, args["id"].(string)), true
+
+	case "Query.configs":
+		if e.complexity.Query.Configs == nil {
+			break
+		}
+
+		return e.complexity.Query.Configs(childComplexity), true
+
 	case "Query.me":
 		if e.complexity.Query.Me == nil {
 			break
 		}
 
 		return e.complexity.Query.Me(childComplexity), true
+
+	case "Query.source":
+		if e.complexity.Query.Source == nil {
+			break
+		}
+
+		args, err := ec.field_Query_source_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Source(childComplexity, args["name"].(string)), true
+
+	case "Query.sources":
+		if e.complexity.Query.Sources == nil {
+			break
+		}
+
+		return e.complexity.Query.Sources(childComplexity), true
+
+	case "Source.name":
+		if e.complexity.Source.Name == nil {
+			break
+		}
+
+		return e.complexity.Source.Name(childComplexity), true
+
+	case "Source.schema":
+		if e.complexity.Source.Schema == nil {
+			break
+		}
+
+		return e.complexity.Source.Schema(childComplexity), true
 
 	case "User.id":
 		if e.complexity.User.ID == nil {
@@ -598,7 +612,7 @@ func (ec *executionContext) field_Mutation_deleteCheck_args(ctx context.Context,
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_editCheckConfig_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Mutation_editConfig_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
@@ -703,21 +717,6 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 	return args, nil
 }
 
-func (ec *executionContext) field_Query_checkSource_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["name"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["name"] = arg0
-	return args, nil
-}
-
 func (ec *executionContext) field_Query_check_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -739,6 +738,36 @@ func (ec *executionContext) field_Query_check_args(ctx context.Context, rawArgs 
 		}
 	}
 	args["name"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_config_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_source_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["name"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["name"] = arg0
 	return args, nil
 }
 
@@ -894,9 +923,9 @@ func (ec *executionContext) _Check_source(ctx context.Context, field graphql.Col
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.CheckSource)
+	res := resTmp.(*model.Source)
 	fc.Result = res
-	return ec.marshalNCheckSource2ᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋgraphᚋmodelᚐCheckSource(ctx, field.Selections, res)
+	return ec.marshalNSource2ᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋgraphᚋmodelᚐSource(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Check_source(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -908,18 +937,18 @@ func (ec *executionContext) fieldContext_Check_source(ctx context.Context, field
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "name":
-				return ec.fieldContext_CheckSource_name(ctx, field)
+				return ec.fieldContext_Source_name(ctx, field)
 			case "schema":
-				return ec.fieldContext_CheckSource_schema(ctx, field)
+				return ec.fieldContext_Source_schema(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type CheckSource", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type Source", field.Name)
 		},
 	}
 	return fc, nil
 }
 
-func (ec *executionContext) _CheckConfig_id(ctx context.Context, field graphql.CollectedField, obj *ent.CheckConfig) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_CheckConfig_id(ctx, field)
+func (ec *executionContext) _Config_id(ctx context.Context, field graphql.CollectedField, obj *ent.CheckConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Config_id(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -932,7 +961,7 @@ func (ec *executionContext) _CheckConfig_id(ctx context.Context, field graphql.C
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.CheckConfig().ID(rctx, obj)
+		return ec.resolvers.Config().ID(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -949,9 +978,9 @@ func (ec *executionContext) _CheckConfig_id(ctx context.Context, field graphql.C
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_CheckConfig_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Config_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "CheckConfig",
+		Object:     "Config",
 		Field:      field,
 		IsMethod:   true,
 		IsResolver: true,
@@ -962,8 +991,8 @@ func (ec *executionContext) fieldContext_CheckConfig_id(ctx context.Context, fie
 	return fc, nil
 }
 
-func (ec *executionContext) _CheckConfig_config(ctx context.Context, field graphql.CollectedField, obj *ent.CheckConfig) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_CheckConfig_config(ctx, field)
+func (ec *executionContext) _Config_config(ctx context.Context, field graphql.CollectedField, obj *ent.CheckConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Config_config(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -976,7 +1005,7 @@ func (ec *executionContext) _CheckConfig_config(ctx context.Context, field graph
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.CheckConfig().Config(rctx, obj)
+		return ec.resolvers.Config().Config(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -993,9 +1022,9 @@ func (ec *executionContext) _CheckConfig_config(ctx context.Context, field graph
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_CheckConfig_config(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Config_config(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "CheckConfig",
+		Object:     "Config",
 		Field:      field,
 		IsMethod:   true,
 		IsResolver: true,
@@ -1006,8 +1035,8 @@ func (ec *executionContext) fieldContext_CheckConfig_config(ctx context.Context,
 	return fc, nil
 }
 
-func (ec *executionContext) _CheckConfig_check(ctx context.Context, field graphql.CollectedField, obj *ent.CheckConfig) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_CheckConfig_check(ctx, field)
+func (ec *executionContext) _Config_check(ctx context.Context, field graphql.CollectedField, obj *ent.CheckConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Config_check(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -1020,7 +1049,7 @@ func (ec *executionContext) _CheckConfig_check(ctx context.Context, field graphq
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.CheckConfig().Check(rctx, obj)
+		return ec.resolvers.Config().Check(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1037,9 +1066,9 @@ func (ec *executionContext) _CheckConfig_check(ctx context.Context, field graphq
 	return ec.marshalNCheck2ᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚐCheck(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_CheckConfig_check(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Config_check(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "CheckConfig",
+		Object:     "Config",
 		Field:      field,
 		IsMethod:   true,
 		IsResolver: true,
@@ -1058,8 +1087,8 @@ func (ec *executionContext) fieldContext_CheckConfig_check(ctx context.Context, 
 	return fc, nil
 }
 
-func (ec *executionContext) _CheckConfig_user(ctx context.Context, field graphql.CollectedField, obj *ent.CheckConfig) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_CheckConfig_user(ctx, field)
+func (ec *executionContext) _Config_user(ctx context.Context, field graphql.CollectedField, obj *ent.CheckConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Config_user(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -1072,7 +1101,7 @@ func (ec *executionContext) _CheckConfig_user(ctx context.Context, field graphql
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.CheckConfig().User(rctx, obj)
+		return ec.resolvers.Config().User(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1089,9 +1118,9 @@ func (ec *executionContext) _CheckConfig_user(ctx context.Context, field graphql
 	return ec.marshalNUser2ᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚐUser(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_CheckConfig_user(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Config_user(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "CheckConfig",
+		Object:     "Config",
 		Field:      field,
 		IsMethod:   true,
 		IsResolver: true,
@@ -1103,94 +1132,6 @@ func (ec *executionContext) fieldContext_CheckConfig_user(ctx context.Context, f
 				return ec.fieldContext_User_username(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _CheckSource_name(ctx context.Context, field graphql.CollectedField, obj *model.CheckSource) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_CheckSource_name(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Name, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_CheckSource_name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "CheckSource",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _CheckSource_schema(ctx context.Context, field graphql.CollectedField, obj *model.CheckSource) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_CheckSource_schema(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Schema, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_CheckSource_schema(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "CheckSource",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -1811,8 +1752,8 @@ func (ec *executionContext) fieldContext_Mutation_deleteCheck(ctx context.Contex
 	return fc, nil
 }
 
-func (ec *executionContext) _Mutation_editCheckConfig(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Mutation_editCheckConfig(ctx, field)
+func (ec *executionContext) _Mutation_editConfig(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_editConfig(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -1825,7 +1766,7 @@ func (ec *executionContext) _Mutation_editCheckConfig(ctx context.Context, field
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().EditCheckConfig(rctx, fc.Args["id"].(string), fc.Args["config"].(string))
+		return ec.resolvers.Mutation().EditConfig(rctx, fc.Args["id"].(string), fc.Args["config"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1839,10 +1780,10 @@ func (ec *executionContext) _Mutation_editCheckConfig(ctx context.Context, field
 	}
 	res := resTmp.(*ent.CheckConfig)
 	fc.Result = res
-	return ec.marshalNCheckConfig2ᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚐCheckConfig(ctx, field.Selections, res)
+	return ec.marshalNConfig2ᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚐCheckConfig(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Mutation_editCheckConfig(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Mutation_editConfig(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Mutation",
 		Field:      field,
@@ -1851,15 +1792,15 @@ func (ec *executionContext) fieldContext_Mutation_editCheckConfig(ctx context.Co
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "id":
-				return ec.fieldContext_CheckConfig_id(ctx, field)
+				return ec.fieldContext_Config_id(ctx, field)
 			case "config":
-				return ec.fieldContext_CheckConfig_config(ctx, field)
+				return ec.fieldContext_Config_config(ctx, field)
 			case "check":
-				return ec.fieldContext_CheckConfig_check(ctx, field)
+				return ec.fieldContext_Config_check(ctx, field)
 			case "user":
-				return ec.fieldContext_CheckConfig_user(ctx, field)
+				return ec.fieldContext_Config_user(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type CheckConfig", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type Config", field.Name)
 		},
 	}
 	defer func() {
@@ -1869,7 +1810,7 @@ func (ec *executionContext) fieldContext_Mutation_editCheckConfig(ctx context.Co
 		}
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Mutation_editCheckConfig_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+	if fc.Args, err = ec.field_Mutation_editConfig_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -1926,8 +1867,8 @@ func (ec *executionContext) fieldContext_Query_me(ctx context.Context, field gra
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_checkSources(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_checkSources(ctx, field)
+func (ec *executionContext) _Query_sources(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_sources(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -1940,7 +1881,7 @@ func (ec *executionContext) _Query_checkSources(ctx context.Context, field graph
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().CheckSources(rctx)
+		return ec.resolvers.Query().Sources(rctx)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1952,12 +1893,12 @@ func (ec *executionContext) _Query_checkSources(ctx context.Context, field graph
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*model.CheckSource)
+	res := resTmp.([]*model.Source)
 	fc.Result = res
-	return ec.marshalNCheckSource2ᚕᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋgraphᚋmodelᚐCheckSourceᚄ(ctx, field.Selections, res)
+	return ec.marshalNSource2ᚕᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋgraphᚋmodelᚐSourceᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Query_checkSources(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Query_sources(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
@@ -1966,18 +1907,18 @@ func (ec *executionContext) fieldContext_Query_checkSources(ctx context.Context,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "name":
-				return ec.fieldContext_CheckSource_name(ctx, field)
+				return ec.fieldContext_Source_name(ctx, field)
 			case "schema":
-				return ec.fieldContext_CheckSource_schema(ctx, field)
+				return ec.fieldContext_Source_schema(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type CheckSource", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type Source", field.Name)
 		},
 	}
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_checkSource(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_checkSource(ctx, field)
+func (ec *executionContext) _Query_source(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_source(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -1990,7 +1931,7 @@ func (ec *executionContext) _Query_checkSource(ctx context.Context, field graphq
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().CheckSource(rctx, fc.Args["name"].(string))
+		return ec.resolvers.Query().Source(rctx, fc.Args["name"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2002,12 +1943,12 @@ func (ec *executionContext) _Query_checkSource(ctx context.Context, field graphq
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.CheckSource)
+	res := resTmp.(*model.Source)
 	fc.Result = res
-	return ec.marshalNCheckSource2ᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋgraphᚋmodelᚐCheckSource(ctx, field.Selections, res)
+	return ec.marshalNSource2ᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋgraphᚋmodelᚐSource(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Query_checkSource(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Query_source(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
@@ -2016,11 +1957,11 @@ func (ec *executionContext) fieldContext_Query_checkSource(ctx context.Context, 
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "name":
-				return ec.fieldContext_CheckSource_name(ctx, field)
+				return ec.fieldContext_Source_name(ctx, field)
 			case "schema":
-				return ec.fieldContext_CheckSource_schema(ctx, field)
+				return ec.fieldContext_Source_schema(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type CheckSource", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type Source", field.Name)
 		},
 	}
 	defer func() {
@@ -2030,7 +1971,7 @@ func (ec *executionContext) fieldContext_Query_checkSource(ctx context.Context, 
 		}
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_checkSource_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+	if fc.Args, err = ec.field_Query_source_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -2152,8 +2093,8 @@ func (ec *executionContext) fieldContext_Query_check(ctx context.Context, field 
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_checkConfigs(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_checkConfigs(ctx, field)
+func (ec *executionContext) _Query_configs(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_configs(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -2166,7 +2107,7 @@ func (ec *executionContext) _Query_checkConfigs(ctx context.Context, field graph
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().CheckConfigs(rctx)
+		return ec.resolvers.Query().Configs(rctx)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2180,10 +2121,10 @@ func (ec *executionContext) _Query_checkConfigs(ctx context.Context, field graph
 	}
 	res := resTmp.([]*ent.CheckConfig)
 	fc.Result = res
-	return ec.marshalNCheckConfig2ᚕᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚐCheckConfigᚄ(ctx, field.Selections, res)
+	return ec.marshalNConfig2ᚕᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚐCheckConfigᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Query_checkConfigs(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Query_configs(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
@@ -2192,16 +2133,81 @@ func (ec *executionContext) fieldContext_Query_checkConfigs(ctx context.Context,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "id":
-				return ec.fieldContext_CheckConfig_id(ctx, field)
+				return ec.fieldContext_Config_id(ctx, field)
 			case "config":
-				return ec.fieldContext_CheckConfig_config(ctx, field)
+				return ec.fieldContext_Config_config(ctx, field)
 			case "check":
-				return ec.fieldContext_CheckConfig_check(ctx, field)
+				return ec.fieldContext_Config_check(ctx, field)
 			case "user":
-				return ec.fieldContext_CheckConfig_user(ctx, field)
+				return ec.fieldContext_Config_user(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type CheckConfig", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type Config", field.Name)
 		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_config(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_config(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Config(rctx, fc.Args["id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*ent.CheckConfig)
+	fc.Result = res
+	return ec.marshalNConfig2ᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚐCheckConfig(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_config(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Config_id(ctx, field)
+			case "config":
+				return ec.fieldContext_Config_config(ctx, field)
+			case "check":
+				return ec.fieldContext_Config_check(ctx, field)
+			case "user":
+				return ec.fieldContext_Config_user(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Config", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_config_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }
@@ -2330,6 +2336,94 @@ func (ec *executionContext) fieldContext_Query___schema(ctx context.Context, fie
 				return ec.fieldContext___Schema_directives(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type __Schema", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Source_name(ctx context.Context, field graphql.CollectedField, obj *model.Source) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Source_name(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Source_name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Source",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Source_schema(ctx context.Context, field graphql.CollectedField, obj *model.Source) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Source_schema(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Schema, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Source_schema(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Source",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -4315,17 +4409,17 @@ func (ec *executionContext) _Check(ctx context.Context, sel ast.SelectionSet, ob
 	return out
 }
 
-var checkConfigImplementors = []string{"CheckConfig"}
+var configImplementors = []string{"Config"}
 
-func (ec *executionContext) _CheckConfig(ctx context.Context, sel ast.SelectionSet, obj *ent.CheckConfig) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, checkConfigImplementors)
+func (ec *executionContext) _Config(ctx context.Context, sel ast.SelectionSet, obj *ent.CheckConfig) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, configImplementors)
 
 	out := graphql.NewFieldSet(fields)
 	deferred := make(map[string]*graphql.FieldSet)
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("CheckConfig")
+			out.Values[i] = graphql.MarshalString("Config")
 		case "id":
 			field := field
 
@@ -4335,7 +4429,7 @@ func (ec *executionContext) _CheckConfig(ctx context.Context, sel ast.SelectionS
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._CheckConfig_id(ctx, field, obj)
+				res = ec._Config_id(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -4371,7 +4465,7 @@ func (ec *executionContext) _CheckConfig(ctx context.Context, sel ast.SelectionS
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._CheckConfig_config(ctx, field, obj)
+				res = ec._Config_config(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -4407,7 +4501,7 @@ func (ec *executionContext) _CheckConfig(ctx context.Context, sel ast.SelectionS
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._CheckConfig_check(ctx, field, obj)
+				res = ec._Config_check(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -4443,7 +4537,7 @@ func (ec *executionContext) _CheckConfig(ctx context.Context, sel ast.SelectionS
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._CheckConfig_user(ctx, field, obj)
+				res = ec._Config_user(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -4470,50 +4564,6 @@ func (ec *executionContext) _CheckConfig(ctx context.Context, sel ast.SelectionS
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch(ctx)
-	if out.Invalids > 0 {
-		return graphql.Null
-	}
-
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
-
-	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
-			Label:    label,
-			Path:     graphql.GetPath(ctx),
-			FieldSet: dfs,
-			Context:  ctx,
-		})
-	}
-
-	return out
-}
-
-var checkSourceImplementors = []string{"CheckSource"}
-
-func (ec *executionContext) _CheckSource(ctx context.Context, sel ast.SelectionSet, obj *model.CheckSource) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, checkSourceImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	deferred := make(map[string]*graphql.FieldSet)
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("CheckSource")
-		case "name":
-			out.Values[i] = ec._CheckSource_name(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "schema":
-			out.Values[i] = ec._CheckSource_schema(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -4660,9 +4710,9 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "editCheckConfig":
+		case "editConfig":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Mutation_editCheckConfig(ctx, field)
+				return ec._Mutation_editConfig(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -4731,7 +4781,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "checkSources":
+		case "sources":
 			field := field
 
 			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
@@ -4740,7 +4790,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_checkSources(ctx, field)
+				res = ec._Query_sources(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -4753,7 +4803,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "checkSource":
+		case "source":
 			field := field
 
 			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
@@ -4762,7 +4812,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_checkSource(ctx, field)
+				res = ec._Query_source(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -4819,7 +4869,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "checkConfigs":
+		case "configs":
 			field := field
 
 			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
@@ -4828,7 +4878,29 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_checkConfigs(ctx, field)
+				res = ec._Query_configs(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "config":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_config(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -4849,6 +4921,50 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Query___schema(ctx, field)
 			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var sourceImplementors = []string{"Source"}
+
+func (ec *executionContext) _Source(ctx context.Context, sel ast.SelectionSet, obj *model.Source) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, sourceImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Source")
+		case "name":
+			out.Values[i] = ec._Source_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "schema":
+			out.Values[i] = ec._Source_schema(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -5346,11 +5462,11 @@ func (ec *executionContext) marshalNCheck2ᚖgithubᚗcomᚋscorifyᚋbackendᚋ
 	return ec._Check(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNCheckConfig2githubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚐCheckConfig(ctx context.Context, sel ast.SelectionSet, v ent.CheckConfig) graphql.Marshaler {
-	return ec._CheckConfig(ctx, sel, &v)
+func (ec *executionContext) marshalNConfig2githubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚐCheckConfig(ctx context.Context, sel ast.SelectionSet, v ent.CheckConfig) graphql.Marshaler {
+	return ec._Config(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNCheckConfig2ᚕᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚐCheckConfigᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.CheckConfig) graphql.Marshaler {
+func (ec *executionContext) marshalNConfig2ᚕᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚐCheckConfigᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.CheckConfig) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -5374,7 +5490,7 @@ func (ec *executionContext) marshalNCheckConfig2ᚕᚖgithubᚗcomᚋscorifyᚋb
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNCheckConfig2ᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚐCheckConfig(ctx, sel, v[i])
+			ret[i] = ec.marshalNConfig2ᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚐCheckConfig(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -5394,72 +5510,14 @@ func (ec *executionContext) marshalNCheckConfig2ᚕᚖgithubᚗcomᚋscorifyᚋb
 	return ret
 }
 
-func (ec *executionContext) marshalNCheckConfig2ᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚐCheckConfig(ctx context.Context, sel ast.SelectionSet, v *ent.CheckConfig) graphql.Marshaler {
+func (ec *executionContext) marshalNConfig2ᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚐCheckConfig(ctx context.Context, sel ast.SelectionSet, v *ent.CheckConfig) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
 		}
 		return graphql.Null
 	}
-	return ec._CheckConfig(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalNCheckSource2githubᚗcomᚋscorifyᚋbackendᚋpkgᚋgraphᚋmodelᚐCheckSource(ctx context.Context, sel ast.SelectionSet, v model.CheckSource) graphql.Marshaler {
-	return ec._CheckSource(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNCheckSource2ᚕᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋgraphᚋmodelᚐCheckSourceᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.CheckSource) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNCheckSource2ᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋgraphᚋmodelᚐCheckSource(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-
-	for _, e := range ret {
-		if e == graphql.Null {
-			return graphql.Null
-		}
-	}
-
-	return ret
-}
-
-func (ec *executionContext) marshalNCheckSource2ᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋgraphᚋmodelᚐCheckSource(ctx context.Context, sel ast.SelectionSet, v *model.CheckSource) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-		return graphql.Null
-	}
-	return ec._CheckSource(ctx, sel, v)
+	return ec._Config(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNID2string(ctx context.Context, v interface{}) (string, error) {
@@ -5504,6 +5562,64 @@ func (ec *executionContext) marshalNLoginOutput2ᚖgithubᚗcomᚋscorifyᚋback
 		return graphql.Null
 	}
 	return ec._LoginOutput(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNSource2githubᚗcomᚋscorifyᚋbackendᚋpkgᚋgraphᚋmodelᚐSource(ctx context.Context, sel ast.SelectionSet, v model.Source) graphql.Marshaler {
+	return ec._Source(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNSource2ᚕᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋgraphᚋmodelᚐSourceᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Source) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNSource2ᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋgraphᚋmodelᚐSource(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNSource2ᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋgraphᚋmodelᚐSource(ctx context.Context, sel ast.SelectionSet, v *model.Source) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._Source(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v interface{}) (string, error) {
