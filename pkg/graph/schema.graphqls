@@ -13,7 +13,7 @@ type LoginOutput {
   httpOnly: Boolean!
 }
 
-type CheckSource {
+type Source {
   name: String!
   schema: String!
 }
@@ -21,10 +21,10 @@ type CheckSource {
 type Check {
   id: ID!
   name: String!
-  source: CheckSource!
+  source: Source!
 }
 
-type CheckConfig {
+type Config {
   id: ID!
   config: String!
   check: Check!
@@ -34,13 +34,14 @@ type CheckConfig {
 type Query {
   me: User!
 
-  checkSources: [CheckSource!]!
-  checkSource(name: String!): CheckSource!
+  sources: [Source!]!
+  source(name: String!): Source!
 
   checks: [Check!]!
   check(id: ID, name: String): Check!
 
-  checkConfigs: [CheckConfig!]!
+  configs: [Config!]!
+  config(id: ID!): Config!
 }
 
 type Mutation {
@@ -51,5 +52,5 @@ type Mutation {
   updateCheck(id: ID!, name: String, source: String, config: String): Check!
   deleteCheck(id: ID!): Boolean!
 
-  editCheckConfig(id: ID!, config: String!): CheckConfig!
+  editConfig(id: ID!, config: String!): Config!
 }
