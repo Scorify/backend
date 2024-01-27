@@ -40,6 +40,13 @@ func (r *checkResolver) Source(ctx context.Context, obj *ent.Check) (*model.Sour
 	}, nil
 }
 
+// Config is the resolver for the config field.
+func (r *checkResolver) Config(ctx context.Context, obj *ent.Check) (string, error) {
+	out, err := json.Marshal(obj.DefaultConfig)
+
+	return string(out), err
+}
+
 // ID is the resolver for the id field.
 func (r *configResolver) ID(ctx context.Context, obj *ent.CheckConfig) (string, error) {
 	return obj.ID.String(), nil
