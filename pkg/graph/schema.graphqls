@@ -22,6 +22,7 @@ type Check {
   id: ID!
   name: String!
   source: Source!
+  config: String!
 }
 
 type Config {
