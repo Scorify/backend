@@ -61,14 +61,14 @@ func (uc *UserCreate) SetNillableID(u *uuid.UUID) *UserCreate {
 	return uc
 }
 
-// AddConfigIDs adds the "config" edge to the CheckConfig entity by IDs.
+// AddConfigIDs adds the "configs" edge to the CheckConfig entity by IDs.
 func (uc *UserCreate) AddConfigIDs(ids ...uuid.UUID) *UserCreate {
 	uc.mutation.AddConfigIDs(ids...)
 	return uc
 }
 
-// AddConfig adds the "config" edges to the CheckConfig entity.
-func (uc *UserCreate) AddConfig(c ...*CheckConfig) *UserCreate {
+// AddConfigs adds the "configs" edges to the CheckConfig entity.
+func (uc *UserCreate) AddConfigs(c ...*CheckConfig) *UserCreate {
 	ids := make([]uuid.UUID, len(c))
 	for i := range c {
 		ids[i] = c[i].ID
@@ -194,12 +194,12 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 		_spec.SetField(user.FieldRole, field.TypeEnum, value)
 		_node.Role = value
 	}
-	if nodes := uc.mutation.ConfigIDs(); len(nodes) > 0 {
+	if nodes := uc.mutation.ConfigsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
-			Table:   user.ConfigTable,
-			Columns: []string{user.ConfigColumn},
+			Table:   user.ConfigsTable,
+			Columns: []string{user.ConfigsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(checkconfig.FieldID, field.TypeUUID),

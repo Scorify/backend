@@ -20,11 +20,11 @@ import (
 // UserQuery is the builder for querying User entities.
 type UserQuery struct {
 	config
-	ctx        *QueryContext
-	order      []user.OrderOption
-	inters     []Interceptor
-	predicates []predicate.User
-	withConfig *CheckConfigQuery
+	ctx         *QueryContext
+	order       []user.OrderOption
+	inters      []Interceptor
+	predicates  []predicate.User
+	withConfigs *CheckConfigQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -61,8 +61,8 @@ func (uq *UserQuery) Order(o ...user.OrderOption) *UserQuery {
 	return uq
 }
 
-// QueryConfig chains the current query on the "config" edge.
-func (uq *UserQuery) QueryConfig() *CheckConfigQuery {
+// QueryConfigs chains the current query on the "configs" edge.
+func (uq *UserQuery) QueryConfigs() *CheckConfigQuery {
 	query := (&CheckConfigClient{config: uq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := uq.prepareQuery(ctx); err != nil {
@@ -75,7 +75,7 @@ func (uq *UserQuery) QueryConfig() *CheckConfigQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(user.Table, user.FieldID, selector),
 			sqlgraph.To(checkconfig.Table, checkconfig.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, true, user.ConfigTable, user.ConfigColumn),
+			sqlgraph.Edge(sqlgraph.O2M, true, user.ConfigsTable, user.ConfigsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(uq.driver.Dialect(), step)
 		return fromU, nil
@@ -270,26 +270,26 @@ func (uq *UserQuery) Clone() *UserQuery {
 		return nil
 	}
 	return &UserQuery{
-		config:     uq.config,
-		ctx:        uq.ctx.Clone(),
-		order:      append([]user.OrderOption{}, uq.order...),
-		inters:     append([]Interceptor{}, uq.inters...),
-		predicates: append([]predicate.User{}, uq.predicates...),
-		withConfig: uq.withConfig.Clone(),
+		config:      uq.config,
+		ctx:         uq.ctx.Clone(),
+		order:       append([]user.OrderOption{}, uq.order...),
+		inters:      append([]Interceptor{}, uq.inters...),
+		predicates:  append([]predicate.User{}, uq.predicates...),
+		withConfigs: uq.withConfigs.Clone(),
 		// clone intermediate query.
 		sql:  uq.sql.Clone(),
 		path: uq.path,
 	}
 }
 
-// WithConfig tells the query-builder to eager-load the nodes that are connected to
-// the "config" edge. The optional arguments are used to configure the query builder of the edge.
-func (uq *UserQuery) WithConfig(opts ...func(*CheckConfigQuery)) *UserQuery {
+// WithConfigs tells the query-builder to eager-load the nodes that are connected to
+// the "configs" edge. The optional arguments are used to configure the query builder of the edge.
+func (uq *UserQuery) WithConfigs(opts ...func(*CheckConfigQuery)) *UserQuery {
 	query := (&CheckConfigClient{config: uq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	uq.withConfig = query
+	uq.withConfigs = query
 	return uq
 }
 
@@ -372,7 +372,7 @@ func (uq *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 		nodes       = []*User{}
 		_spec       = uq.querySpec()
 		loadedTypes = [1]bool{
-			uq.withConfig != nil,
+			uq.withConfigs != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -393,17 +393,17 @@ func (uq *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
-	if query := uq.withConfig; query != nil {
-		if err := uq.loadConfig(ctx, query, nodes,
-			func(n *User) { n.Edges.Config = []*CheckConfig{} },
-			func(n *User, e *CheckConfig) { n.Edges.Config = append(n.Edges.Config, e) }); err != nil {
+	if query := uq.withConfigs; query != nil {
+		if err := uq.loadConfigs(ctx, query, nodes,
+			func(n *User) { n.Edges.Configs = []*CheckConfig{} },
+			func(n *User, e *CheckConfig) { n.Edges.Configs = append(n.Edges.Configs, e) }); err != nil {
 			return nil, err
 		}
 	}
 	return nodes, nil
 }
 
-func (uq *UserQuery) loadConfig(ctx context.Context, query *CheckConfigQuery, nodes []*User, init func(*User), assign func(*User, *CheckConfig)) error {
+func (uq *UserQuery) loadConfigs(ctx context.Context, query *CheckConfigQuery, nodes []*User, init func(*User), assign func(*User, *CheckConfig)) error {
 	fks := make([]driver.Value, 0, len(nodes))
 	nodeids := make(map[uuid.UUID]*User)
 	for i := range nodes {
@@ -415,7 +415,7 @@ func (uq *UserQuery) loadConfig(ctx context.Context, query *CheckConfigQuery, no
 	}
 	query.withFKs = true
 	query.Where(predicate.CheckConfig(func(s *sql.Selector) {
-		s.Where(sql.InValues(s.C(user.ConfigColumn), fks...))
+		s.Where(sql.InValues(s.C(user.ConfigsColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

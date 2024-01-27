@@ -194,21 +194,21 @@ func SourceContainsFold(v string) predicate.Check {
 	return predicate.Check(sql.FieldContainsFold(FieldSource, v))
 }
 
-// HasConfig applies the HasEdge predicate on the "config" edge.
-func HasConfig() predicate.Check {
+// HasConfigs applies the HasEdge predicate on the "configs" edge.
+func HasConfigs() predicate.Check {
 	return predicate.Check(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, true, ConfigTable, ConfigColumn),
+			sqlgraph.Edge(sqlgraph.O2M, true, ConfigsTable, ConfigsColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
 }
 
-// HasConfigWith applies the HasEdge predicate on the "config" edge with a given conditions (other predicates).
-func HasConfigWith(preds ...predicate.CheckConfig) predicate.Check {
+// HasConfigsWith applies the HasEdge predicate on the "configs" edge with a given conditions (other predicates).
+func HasConfigsWith(preds ...predicate.CheckConfig) predicate.Check {
 	return predicate.Check(func(s *sql.Selector) {
-		step := newConfigStep()
+		step := newConfigsStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)
