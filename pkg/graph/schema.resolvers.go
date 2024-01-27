@@ -42,22 +42,24 @@ func (r *checkResolver) Source(ctx context.Context, obj *ent.Check) (*model.Sour
 
 // ID is the resolver for the id field.
 func (r *configResolver) ID(ctx context.Context, obj *ent.CheckConfig) (string, error) {
-	panic(fmt.Errorf("not implemented: ID - id"))
+	return obj.ID.String(), nil
 }
 
 // Config is the resolver for the config field.
 func (r *configResolver) Config(ctx context.Context, obj *ent.CheckConfig) (string, error) {
-	panic(fmt.Errorf("not implemented: Config - config"))
+	out, err := json.Marshal(obj.Config)
+
+	return string(out), err
 }
 
 // Check is the resolver for the check field.
 func (r *configResolver) Check(ctx context.Context, obj *ent.CheckConfig) (*ent.Check, error) {
-	panic(fmt.Errorf("not implemented: Check - check"))
+	return obj.QueryCheck().Only(ctx)
 }
 
 // User is the resolver for the user field.
 func (r *configResolver) User(ctx context.Context, obj *ent.CheckConfig) (*ent.User, error) {
-	panic(fmt.Errorf("not implemented: User - user"))
+	return obj.QueryUser().Only(ctx)
 }
 
 // Login is the resolver for the login field.
