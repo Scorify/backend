@@ -30,6 +30,9 @@ func (Check) Fields() []ent.Field {
 			StructTag(`json:"source"`).
 			Comment("The source of the check").
 			NotEmpty(),
+		field.JSON("config", map[string]interface{}{}).
+			StructTag(`json:"config"`).
+			Comment("The default configuration of a check"),
 	}
 }
 
