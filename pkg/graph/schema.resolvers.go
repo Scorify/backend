@@ -35,7 +35,7 @@ func (r *checkResolver) Source(ctx context.Context, obj *ent.Check) (*model.Sour
 	}
 
 	return &model.Source{
-		Name:   obj.Name,
+		Name:   obj.Source,
 		Schema: schema.Schema,
 	}, nil
 }
