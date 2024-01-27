@@ -2,6 +2,7 @@ package schema
 
 import (
 	"entgo.io/ent"
+	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
@@ -39,7 +40,12 @@ func (Check) Fields() []ent.Field {
 // Edges of the Check.
 func (Check) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.From("config", CheckConfig.Type).
+		edge.From("configs", CheckConfig.Type).
+			Annotations(
+				entsql.Annotation{
+					OnDelete: entsql.Cascade,
+				},
+			).
 			StructTag(`json:"config"`).
 			Comment("The configuration of a check").
 			Ref("check"),
