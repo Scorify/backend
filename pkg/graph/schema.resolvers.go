@@ -134,27 +134,6 @@ func (r *mutationResolver) CreateCheck(ctx context.Context, name string, source 
 		return nil, fmt.Errorf("invalid permissions")
 	}
 
-	_, ok := checks.Checks[source]
-	if !ok {
-		return nil, fmt.Errorf("source \"%s\" does not exist", source)
-	}
-
-	entCheck, err := r.Ent.Check.Create().
-		SetName(name).
-		SetSource(source).
-		Save(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create check: %v", err)
-	}
-
-	entUsers, err := r.Ent.User.Query().
-		Where(
-			user.RoleEQ(user.RoleUser),
-		).All(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get users: %v", err)
-	}
-
 	configSchema, ok := checks.Checks[source]
 	if !ok {
 		return nil, fmt.Errorf("source \"%s\" does not exist", source)
@@ -214,6 +193,28 @@ func (r *mutationResolver) CreateCheck(ctx context.Context, name string, source 
 		default:
 			return nil, fmt.Errorf("invalid schema, unknown type \"%s\" for key \"%s\"", value, key)
 		}
+	}
+
+	_, ok = checks.Checks[source]
+	if !ok {
+		return nil, fmt.Errorf("source \"%s\" does not exist", source)
+	}
+
+	entCheck, err := r.Ent.Check.Create().
+		SetName(name).
+		SetSource(source).
+		SetDefaultConfig(defaultConfig).
+		Save(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create check: %v", err)
+	}
+
+	entUsers, err := r.Ent.User.Query().
+		Where(
+			user.RoleEQ(user.RoleUser),
+		).All(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get users: %v", err)
 	}
 
 	entCheckConfigs := []*ent.CheckConfigCreate{}
@@ -340,6 +341,24 @@ func (r *mutationResolver) UpdateCheck(ctx context.Context, id string, name *str
 				return nil, fmt.Errorf("invalid schema, unknown type \"%s\" for key \"%s\"", value, key)
 			}
 		}
+
+		checkUpdate.SetDefaultConfig(defaultConfig)
+
+		checkUpdateResult, err := checkUpdate.Save(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to update check: %v", err)
+		}
+
+		_, err = r.Ent.CheckConfig.Update().
+			Where(
+				checkconfig.HasCheckWith(
+					check.IDEQ(uuid),
+				),
+			).
+			SetConfig(defaultConfig).
+			Save(ctx)
+
+		return checkUpdateResult, err
 	}
 
 	return checkUpdate.Save(ctx)
