@@ -43,6 +43,7 @@ type CheckMutation struct {
 	id             *uuid.UUID
 	name           *string
 	source         *string
+	default_config *map[string]interface{}
 	clearedFields  map[string]struct{}
 	_config        map[uuid.UUID]struct{}
 	removed_config map[uuid.UUID]struct{}
@@ -228,6 +229,42 @@ func (m *CheckMutation) ResetSource() {
 	m.source = nil
 }
 
+// SetDefaultConfig sets the "default_config" field.
+func (m *CheckMutation) SetDefaultConfig(value map[string]interface{}) {
+	m.default_config = &value
+}
+
+// DefaultConfig returns the value of the "default_config" field in the mutation.
+func (m *CheckMutation) DefaultConfig() (r map[string]interface{}, exists bool) {
+	v := m.default_config
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDefaultConfig returns the old "default_config" field's value of the Check entity.
+// If the Check object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CheckMutation) OldDefaultConfig(ctx context.Context) (v map[string]interface{}, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDefaultConfig is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDefaultConfig requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDefaultConfig: %w", err)
+	}
+	return oldValue.DefaultConfig, nil
+}
+
+// ResetDefaultConfig resets all changes to the "default_config" field.
+func (m *CheckMutation) ResetDefaultConfig() {
+	m.default_config = nil
+}
+
 // AddConfigIDs adds the "config" edge to the CheckConfig entity by ids.
 func (m *CheckMutation) AddConfigIDs(ids ...uuid.UUID) {
 	if m._config == nil {
@@ -316,12 +353,15 @@ func (m *CheckMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *CheckMutation) Fields() []string {
-	fields := make([]string, 0, 2)
+	fields := make([]string, 0, 3)
 	if m.name != nil {
 		fields = append(fields, check.FieldName)
 	}
 	if m.source != nil {
 		fields = append(fields, check.FieldSource)
+	}
+	if m.default_config != nil {
+		fields = append(fields, check.FieldDefaultConfig)
 	}
 	return fields
 }
@@ -335,6 +375,8 @@ func (m *CheckMutation) Field(name string) (ent.Value, bool) {
 		return m.Name()
 	case check.FieldSource:
 		return m.Source()
+	case check.FieldDefaultConfig:
+		return m.DefaultConfig()
 	}
 	return nil, false
 }
@@ -348,6 +390,8 @@ func (m *CheckMutation) OldField(ctx context.Context, name string) (ent.Value, e
 		return m.OldName(ctx)
 	case check.FieldSource:
 		return m.OldSource(ctx)
+	case check.FieldDefaultConfig:
+		return m.OldDefaultConfig(ctx)
 	}
 	return nil, fmt.Errorf("unknown Check field %s", name)
 }
@@ -370,6 +414,13 @@ func (m *CheckMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetSource(v)
+		return nil
+	case check.FieldDefaultConfig:
+		v, ok := value.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDefaultConfig(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Check field %s", name)
@@ -425,6 +476,9 @@ func (m *CheckMutation) ResetField(name string) error {
 		return nil
 	case check.FieldSource:
 		m.ResetSource()
+		return nil
+	case check.FieldDefaultConfig:
+		m.ResetDefaultConfig()
 		return nil
 	}
 	return fmt.Errorf("unknown Check field %s", name)

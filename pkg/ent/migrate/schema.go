@@ -13,6 +13,7 @@ var (
 		{Name: "id", Type: field.TypeUUID, Unique: true},
 		{Name: "name", Type: field.TypeString, Unique: true},
 		{Name: "source", Type: field.TypeString},
+		{Name: "default_config", Type: field.TypeJSON},
 	}
 	// ChecksTable holds the schema information for the "checks" table.
 	ChecksTable = &schema.Table{

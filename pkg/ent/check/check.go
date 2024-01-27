@@ -17,6 +17,8 @@ const (
 	FieldName = "name"
 	// FieldSource holds the string denoting the source field in the database.
 	FieldSource = "source"
+	// FieldDefaultConfig holds the string denoting the default_config field in the database.
+	FieldDefaultConfig = "default_config"
 	// EdgeConfig holds the string denoting the config edge name in mutations.
 	EdgeConfig = "config"
 	// Table holds the table name of the check in the database.
@@ -35,6 +37,7 @@ var Columns = []string{
 	FieldID,
 	FieldName,
 	FieldSource,
+	FieldDefaultConfig,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).

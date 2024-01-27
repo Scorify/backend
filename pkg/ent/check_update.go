@@ -57,6 +57,12 @@ func (cu *CheckUpdate) SetNillableSource(s *string) *CheckUpdate {
 	return cu
 }
 
+// SetDefaultConfig sets the "default_config" field.
+func (cu *CheckUpdate) SetDefaultConfig(m map[string]interface{}) *CheckUpdate {
+	cu.mutation.SetDefaultConfig(m)
+	return cu
+}
+
 // AddConfigIDs adds the "config" edge to the CheckConfig entity by IDs.
 func (cu *CheckUpdate) AddConfigIDs(ids ...uuid.UUID) *CheckUpdate {
 	cu.mutation.AddConfigIDs(ids...)
@@ -158,6 +164,9 @@ func (cu *CheckUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := cu.mutation.Source(); ok {
 		_spec.SetField(check.FieldSource, field.TypeString, value)
 	}
+	if value, ok := cu.mutation.DefaultConfig(); ok {
+		_spec.SetField(check.FieldDefaultConfig, field.TypeJSON, value)
+	}
 	if cu.mutation.ConfigCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -248,6 +257,12 @@ func (cuo *CheckUpdateOne) SetNillableSource(s *string) *CheckUpdateOne {
 	if s != nil {
 		cuo.SetSource(*s)
 	}
+	return cuo
+}
+
+// SetDefaultConfig sets the "default_config" field.
+func (cuo *CheckUpdateOne) SetDefaultConfig(m map[string]interface{}) *CheckUpdateOne {
+	cuo.mutation.SetDefaultConfig(m)
 	return cuo
 }
 
@@ -381,6 +396,9 @@ func (cuo *CheckUpdateOne) sqlSave(ctx context.Context) (_node *Check, err error
 	}
 	if value, ok := cuo.mutation.Source(); ok {
 		_spec.SetField(check.FieldSource, field.TypeString, value)
+	}
+	if value, ok := cuo.mutation.DefaultConfig(); ok {
+		_spec.SetField(check.FieldDefaultConfig, field.TypeJSON, value)
 	}
 	if cuo.mutation.ConfigCleared() {
 		edge := &sqlgraph.EdgeSpec{
