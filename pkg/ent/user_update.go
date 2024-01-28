@@ -158,6 +158,9 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := uu.mutation.Role(); ok {
 		_spec.SetField(user.FieldRole, field.TypeEnum, value)
 	}
+	if uu.mutation.NumberCleared() {
+		_spec.ClearField(user.FieldNumber, field.TypeInt)
+	}
 	if uu.mutation.ConfigsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -381,6 +384,9 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 	}
 	if value, ok := uuo.mutation.Role(); ok {
 		_spec.SetField(user.FieldRole, field.TypeEnum, value)
+	}
+	if uuo.mutation.NumberCleared() {
+		_spec.ClearField(user.FieldNumber, field.TypeInt)
 	}
 	if uuo.mutation.ConfigsCleared() {
 		edge := &sqlgraph.EdgeSpec{

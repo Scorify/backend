@@ -24,6 +24,8 @@ type User struct {
 	Password string `json:"-"`
 	// The role of the user
 	Role user.Role `json:"role"`
+	// The number of the user
+	Number int `json:"number"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the UserQuery when eager-loading is set.
 	Edges        UserEdges `json:"edges"`
@@ -53,6 +55,8 @@ func (*User) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case user.FieldNumber:
+			values[i] = new(sql.NullInt64)
 		case user.FieldUsername, user.FieldPassword, user.FieldRole:
 			values[i] = new(sql.NullString)
 		case user.FieldID:
@@ -95,6 +99,12 @@ func (u *User) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field role", values[i])
 			} else if value.Valid {
 				u.Role = user.Role(value.String)
+			}
+		case user.FieldNumber:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field number", values[i])
+			} else if value.Valid {
+				u.Number = int(value.Int64)
 			}
 		default:
 			u.selectValues.Set(columns[i], values[i])
@@ -144,6 +154,9 @@ func (u *User) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("role=")
 	builder.WriteString(fmt.Sprintf("%v", u.Role))
+	builder.WriteString(", ")
+	builder.WriteString("number=")
+	builder.WriteString(fmt.Sprintf("%v", u.Number))
 	builder.WriteByte(')')
 	return builder.String()
 }

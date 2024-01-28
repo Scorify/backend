@@ -21,6 +21,8 @@ const (
 	FieldPassword = "password"
 	// FieldRole holds the string denoting the role field in the database.
 	FieldRole = "role"
+	// FieldNumber holds the string denoting the number field in the database.
+	FieldNumber = "number"
 	// EdgeConfigs holds the string denoting the configs edge name in mutations.
 	EdgeConfigs = "configs"
 	// Table holds the table name of the user in the database.
@@ -40,6 +42,7 @@ var Columns = []string{
 	FieldUsername,
 	FieldPassword,
 	FieldRole,
+	FieldNumber,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -57,6 +60,8 @@ var (
 	UsernameValidator func(string) error
 	// PasswordValidator is a validator for the "password" field. It is called by the builders before save.
 	PasswordValidator func(string) error
+	// NumberValidator is a validator for the "number" field. It is called by the builders before save.
+	NumberValidator func(int) error
 	// DefaultID holds the default value on creation for the "id" field.
 	DefaultID func() uuid.UUID
 )
@@ -108,6 +113,11 @@ func ByPassword(opts ...sql.OrderTermOption) OrderOption {
 // ByRole orders the results by the role field.
 func ByRole(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldRole, opts...).ToFunc()
+}
+
+// ByNumber orders the results by the number field.
+func ByNumber(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldNumber, opts...).ToFunc()
 }
 
 // ByConfigsCount orders the results by configs count.
