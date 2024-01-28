@@ -90,4 +90,8 @@ models:
   Config:
     model:
       - github.com/scorify/backend/pkg/ent.CheckConfig
+  
+  Role:
+    model:
+      - github.com/scorify/backend/pkg/ent/user.Role
 
