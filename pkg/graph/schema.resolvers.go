@@ -506,6 +506,11 @@ func (r *queryResolver) Me(ctx context.Context) (*ent.User, error) {
 	return auth.Parse(ctx)
 }
 
+// Users is the resolver for the users field.
+func (r *queryResolver) Users(ctx context.Context) ([]*ent.User, error) {
+	panic(fmt.Errorf("not implemented: Users - users"))
+}
+
 // Sources is the resolver for the sources field.
 func (r *queryResolver) Sources(ctx context.Context) ([]*model.Source, error) {
 	entUser, err := auth.Parse(ctx)
