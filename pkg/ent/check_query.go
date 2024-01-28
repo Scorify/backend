@@ -20,11 +20,11 @@ import (
 // CheckQuery is the builder for querying Check entities.
 type CheckQuery struct {
 	config
-	ctx        *QueryContext
-	order      []check.OrderOption
-	inters     []Interceptor
-	predicates []predicate.Check
-	withConfig *CheckConfigQuery
+	ctx         *QueryContext
+	order       []check.OrderOption
+	inters      []Interceptor
+	predicates  []predicate.Check
+	withConfigs *CheckConfigQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -61,8 +61,8 @@ func (cq *CheckQuery) Order(o ...check.OrderOption) *CheckQuery {
 	return cq
 }
 
-// QueryConfig chains the current query on the "config" edge.
-func (cq *CheckQuery) QueryConfig() *CheckConfigQuery {
+// QueryConfigs chains the current query on the "configs" edge.
+func (cq *CheckQuery) QueryConfigs() *CheckConfigQuery {
 	query := (&CheckConfigClient{config: cq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := cq.prepareQuery(ctx); err != nil {
@@ -75,7 +75,7 @@ func (cq *CheckQuery) QueryConfig() *CheckConfigQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(check.Table, check.FieldID, selector),
 			sqlgraph.To(checkconfig.Table, checkconfig.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, true, check.ConfigTable, check.ConfigColumn),
+			sqlgraph.Edge(sqlgraph.O2M, true, check.ConfigsTable, check.ConfigsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(cq.driver.Dialect(), step)
 		return fromU, nil
@@ -270,26 +270,26 @@ func (cq *CheckQuery) Clone() *CheckQuery {
 		return nil
 	}
 	return &CheckQuery{
-		config:     cq.config,
-		ctx:        cq.ctx.Clone(),
-		order:      append([]check.OrderOption{}, cq.order...),
-		inters:     append([]Interceptor{}, cq.inters...),
-		predicates: append([]predicate.Check{}, cq.predicates...),
-		withConfig: cq.withConfig.Clone(),
+		config:      cq.config,
+		ctx:         cq.ctx.Clone(),
+		order:       append([]check.OrderOption{}, cq.order...),
+		inters:      append([]Interceptor{}, cq.inters...),
+		predicates:  append([]predicate.Check{}, cq.predicates...),
+		withConfigs: cq.withConfigs.Clone(),
 		// clone intermediate query.
 		sql:  cq.sql.Clone(),
 		path: cq.path,
 	}
 }
 
-// WithConfig tells the query-builder to eager-load the nodes that are connected to
-// the "config" edge. The optional arguments are used to configure the query builder of the edge.
-func (cq *CheckQuery) WithConfig(opts ...func(*CheckConfigQuery)) *CheckQuery {
+// WithConfigs tells the query-builder to eager-load the nodes that are connected to
+// the "configs" edge. The optional arguments are used to configure the query builder of the edge.
+func (cq *CheckQuery) WithConfigs(opts ...func(*CheckConfigQuery)) *CheckQuery {
 	query := (&CheckConfigClient{config: cq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	cq.withConfig = query
+	cq.withConfigs = query
 	return cq
 }
 
@@ -372,7 +372,7 @@ func (cq *CheckQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Check,
 		nodes       = []*Check{}
 		_spec       = cq.querySpec()
 		loadedTypes = [1]bool{
-			cq.withConfig != nil,
+			cq.withConfigs != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -393,17 +393,17 @@ func (cq *CheckQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Check,
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
-	if query := cq.withConfig; query != nil {
-		if err := cq.loadConfig(ctx, query, nodes,
-			func(n *Check) { n.Edges.Config = []*CheckConfig{} },
-			func(n *Check, e *CheckConfig) { n.Edges.Config = append(n.Edges.Config, e) }); err != nil {
+	if query := cq.withConfigs; query != nil {
+		if err := cq.loadConfigs(ctx, query, nodes,
+			func(n *Check) { n.Edges.Configs = []*CheckConfig{} },
+			func(n *Check, e *CheckConfig) { n.Edges.Configs = append(n.Edges.Configs, e) }); err != nil {
 			return nil, err
 		}
 	}
 	return nodes, nil
 }
 
-func (cq *CheckQuery) loadConfig(ctx context.Context, query *CheckConfigQuery, nodes []*Check, init func(*Check), assign func(*Check, *CheckConfig)) error {
+func (cq *CheckQuery) loadConfigs(ctx context.Context, query *CheckConfigQuery, nodes []*Check, init func(*Check), assign func(*Check, *CheckConfig)) error {
 	fks := make([]driver.Value, 0, len(nodes))
 	nodeids := make(map[uuid.UUID]*Check)
 	for i := range nodes {
@@ -415,7 +415,7 @@ func (cq *CheckQuery) loadConfig(ctx context.Context, query *CheckConfigQuery, n
 	}
 	query.withFKs = true
 	query.Where(predicate.CheckConfig(func(s *sql.Selector) {
-		s.Where(sql.InValues(s.C(check.ConfigColumn), fks...))
+		s.Where(sql.InValues(s.C(check.ConfigsColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

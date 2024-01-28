@@ -33,6 +33,12 @@ func (cc *CheckCreate) SetSource(s string) *CheckCreate {
 	return cc
 }
 
+// SetDefaultConfig sets the "default_config" field.
+func (cc *CheckCreate) SetDefaultConfig(m map[string]interface{}) *CheckCreate {
+	cc.mutation.SetDefaultConfig(m)
+	return cc
+}
+
 // SetID sets the "id" field.
 func (cc *CheckCreate) SetID(u uuid.UUID) *CheckCreate {
 	cc.mutation.SetID(u)
@@ -47,14 +53,14 @@ func (cc *CheckCreate) SetNillableID(u *uuid.UUID) *CheckCreate {
 	return cc
 }
 
-// AddConfigIDs adds the "config" edge to the CheckConfig entity by IDs.
+// AddConfigIDs adds the "configs" edge to the CheckConfig entity by IDs.
 func (cc *CheckCreate) AddConfigIDs(ids ...uuid.UUID) *CheckCreate {
 	cc.mutation.AddConfigIDs(ids...)
 	return cc
 }
 
-// AddConfig adds the "config" edges to the CheckConfig entity.
-func (cc *CheckCreate) AddConfig(c ...*CheckConfig) *CheckCreate {
+// AddConfigs adds the "configs" edges to the CheckConfig entity.
+func (cc *CheckCreate) AddConfigs(c ...*CheckConfig) *CheckCreate {
 	ids := make([]uuid.UUID, len(c))
 	for i := range c {
 		ids[i] = c[i].ID
@@ -121,6 +127,9 @@ func (cc *CheckCreate) check() error {
 			return &ValidationError{Name: "source", err: fmt.Errorf(`ent: validator failed for field "Check.source": %w`, err)}
 		}
 	}
+	if _, ok := cc.mutation.DefaultConfig(); !ok {
+		return &ValidationError{Name: "default_config", err: errors.New(`ent: missing required field "Check.default_config"`)}
+	}
 	return nil
 }
 
@@ -164,12 +173,16 @@ func (cc *CheckCreate) createSpec() (*Check, *sqlgraph.CreateSpec) {
 		_spec.SetField(check.FieldSource, field.TypeString, value)
 		_node.Source = value
 	}
-	if nodes := cc.mutation.ConfigIDs(); len(nodes) > 0 {
+	if value, ok := cc.mutation.DefaultConfig(); ok {
+		_spec.SetField(check.FieldDefaultConfig, field.TypeJSON, value)
+		_node.DefaultConfig = value
+	}
+	if nodes := cc.mutation.ConfigsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
-			Table:   check.ConfigTable,
-			Columns: []string{check.ConfigColumn},
+			Table:   check.ConfigsTable,
+			Columns: []string{check.ConfigsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(checkconfig.FieldID, field.TypeUUID),

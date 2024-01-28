@@ -21,17 +21,17 @@ const (
 	FieldPassword = "password"
 	// FieldRole holds the string denoting the role field in the database.
 	FieldRole = "role"
-	// EdgeConfig holds the string denoting the config edge name in mutations.
-	EdgeConfig = "config"
+	// EdgeConfigs holds the string denoting the configs edge name in mutations.
+	EdgeConfigs = "configs"
 	// Table holds the table name of the user in the database.
 	Table = "users"
-	// ConfigTable is the table that holds the config relation/edge.
-	ConfigTable = "check_configs"
-	// ConfigInverseTable is the table name for the CheckConfig entity.
+	// ConfigsTable is the table that holds the configs relation/edge.
+	ConfigsTable = "check_configs"
+	// ConfigsInverseTable is the table name for the CheckConfig entity.
 	// It exists in this package in order to avoid circular dependency with the "checkconfig" package.
-	ConfigInverseTable = "check_configs"
-	// ConfigColumn is the table column denoting the config relation/edge.
-	ConfigColumn = "check_config_user"
+	ConfigsInverseTable = "check_configs"
+	// ConfigsColumn is the table column denoting the configs relation/edge.
+	ConfigsColumn = "check_config_user"
 )
 
 // Columns holds all SQL columns for user fields.
@@ -110,23 +110,23 @@ func ByRole(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldRole, opts...).ToFunc()
 }
 
-// ByConfigCount orders the results by config count.
-func ByConfigCount(opts ...sql.OrderTermOption) OrderOption {
+// ByConfigsCount orders the results by configs count.
+func ByConfigsCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborsCount(s, newConfigStep(), opts...)
+		sqlgraph.OrderByNeighborsCount(s, newConfigsStep(), opts...)
 	}
 }
 
-// ByConfig orders the results by config terms.
-func ByConfig(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+// ByConfigs orders the results by configs terms.
+func ByConfigs(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newConfigStep(), append([]sql.OrderTerm{term}, terms...)...)
+		sqlgraph.OrderByNeighborTerms(s, newConfigsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
-func newConfigStep() *sqlgraph.Step {
+func newConfigsStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(ConfigInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.O2M, true, ConfigTable, ConfigColumn),
+		sqlgraph.To(ConfigsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, true, ConfigsTable, ConfigsColumn),
 	)
 }

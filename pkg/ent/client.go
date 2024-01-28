@@ -362,15 +362,15 @@ func (c *CheckClient) GetX(ctx context.Context, id uuid.UUID) *Check {
 	return obj
 }
 
-// QueryConfig queries the config edge of a Check.
-func (c *CheckClient) QueryConfig(ch *Check) *CheckConfigQuery {
+// QueryConfigs queries the configs edge of a Check.
+func (c *CheckClient) QueryConfigs(ch *Check) *CheckConfigQuery {
 	query := (&CheckConfigClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := ch.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(check.Table, check.FieldID, id),
 			sqlgraph.To(checkconfig.Table, checkconfig.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, true, check.ConfigTable, check.ConfigColumn),
+			sqlgraph.Edge(sqlgraph.O2M, true, check.ConfigsTable, check.ConfigsColumn),
 		)
 		fromV = sqlgraph.Neighbors(ch.driver.Dialect(), step)
 		return fromV, nil
@@ -1208,15 +1208,15 @@ func (c *UserClient) GetX(ctx context.Context, id uuid.UUID) *User {
 	return obj
 }
 
-// QueryConfig queries the config edge of a User.
-func (c *UserClient) QueryConfig(u *User) *CheckConfigQuery {
+// QueryConfigs queries the configs edge of a User.
+func (c *UserClient) QueryConfigs(u *User) *CheckConfigQuery {
 	query := (&CheckConfigClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := u.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(user.Table, user.FieldID, id),
 			sqlgraph.To(checkconfig.Table, checkconfig.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, true, user.ConfigTable, user.ConfigColumn),
+			sqlgraph.Edge(sqlgraph.O2M, true, user.ConfigsTable, user.ConfigsColumn),
 		)
 		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
 		return fromV, nil

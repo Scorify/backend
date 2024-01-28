@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -22,6 +23,8 @@ type Check struct {
 	Name string `json:"name"`
 	// The source of the check
 	Source string `json:"source"`
+	// The default configuration of a check
+	DefaultConfig map[string]interface{} `json:"default_config"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the CheckQuery when eager-loading is set.
 	Edges        CheckEdges `json:"edges"`
@@ -31,19 +34,19 @@ type Check struct {
 // CheckEdges holds the relations/edges for other nodes in the graph.
 type CheckEdges struct {
 	// The configuration of a check
-	Config []*CheckConfig `json:"config"`
+	Configs []*CheckConfig `json:"config"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [1]bool
 }
 
-// ConfigOrErr returns the Config value or an error if the edge
+// ConfigsOrErr returns the Configs value or an error if the edge
 // was not loaded in eager-loading.
-func (e CheckEdges) ConfigOrErr() ([]*CheckConfig, error) {
+func (e CheckEdges) ConfigsOrErr() ([]*CheckConfig, error) {
 	if e.loadedTypes[0] {
-		return e.Config, nil
+		return e.Configs, nil
 	}
-	return nil, &NotLoadedError{edge: "config"}
+	return nil, &NotLoadedError{edge: "configs"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -51,6 +54,8 @@ func (*Check) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case check.FieldDefaultConfig:
+			values[i] = new([]byte)
 		case check.FieldName, check.FieldSource:
 			values[i] = new(sql.NullString)
 		case check.FieldID:
@@ -88,6 +93,14 @@ func (c *Check) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				c.Source = value.String
 			}
+		case check.FieldDefaultConfig:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field default_config", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &c.DefaultConfig); err != nil {
+					return fmt.Errorf("unmarshal field default_config: %w", err)
+				}
+			}
 		default:
 			c.selectValues.Set(columns[i], values[i])
 		}
@@ -101,9 +114,9 @@ func (c *Check) Value(name string) (ent.Value, error) {
 	return c.selectValues.Get(name)
 }
 
-// QueryConfig queries the "config" edge of the Check entity.
-func (c *Check) QueryConfig() *CheckConfigQuery {
-	return NewCheckClient(c.config).QueryConfig(c)
+// QueryConfigs queries the "configs" edge of the Check entity.
+func (c *Check) QueryConfigs() *CheckConfigQuery {
+	return NewCheckClient(c.config).QueryConfigs(c)
 }
 
 // Update returns a builder for updating this Check.
@@ -134,6 +147,9 @@ func (c *Check) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("source=")
 	builder.WriteString(c.Source)
+	builder.WriteString(", ")
+	builder.WriteString("default_config=")
+	builder.WriteString(fmt.Sprintf("%v", c.DefaultConfig))
 	builder.WriteByte(')')
 	return builder.String()
 }

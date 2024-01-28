@@ -57,14 +57,14 @@ func (uu *UserUpdate) SetNillableRole(u *user.Role) *UserUpdate {
 	return uu
 }
 
-// AddConfigIDs adds the "config" edge to the CheckConfig entity by IDs.
+// AddConfigIDs adds the "configs" edge to the CheckConfig entity by IDs.
 func (uu *UserUpdate) AddConfigIDs(ids ...uuid.UUID) *UserUpdate {
 	uu.mutation.AddConfigIDs(ids...)
 	return uu
 }
 
-// AddConfig adds the "config" edges to the CheckConfig entity.
-func (uu *UserUpdate) AddConfig(c ...*CheckConfig) *UserUpdate {
+// AddConfigs adds the "configs" edges to the CheckConfig entity.
+func (uu *UserUpdate) AddConfigs(c ...*CheckConfig) *UserUpdate {
 	ids := make([]uuid.UUID, len(c))
 	for i := range c {
 		ids[i] = c[i].ID
@@ -77,20 +77,20 @@ func (uu *UserUpdate) Mutation() *UserMutation {
 	return uu.mutation
 }
 
-// ClearConfig clears all "config" edges to the CheckConfig entity.
-func (uu *UserUpdate) ClearConfig() *UserUpdate {
-	uu.mutation.ClearConfig()
+// ClearConfigs clears all "configs" edges to the CheckConfig entity.
+func (uu *UserUpdate) ClearConfigs() *UserUpdate {
+	uu.mutation.ClearConfigs()
 	return uu
 }
 
-// RemoveConfigIDs removes the "config" edge to CheckConfig entities by IDs.
+// RemoveConfigIDs removes the "configs" edge to CheckConfig entities by IDs.
 func (uu *UserUpdate) RemoveConfigIDs(ids ...uuid.UUID) *UserUpdate {
 	uu.mutation.RemoveConfigIDs(ids...)
 	return uu
 }
 
-// RemoveConfig removes "config" edges to CheckConfig entities.
-func (uu *UserUpdate) RemoveConfig(c ...*CheckConfig) *UserUpdate {
+// RemoveConfigs removes "configs" edges to CheckConfig entities.
+func (uu *UserUpdate) RemoveConfigs(c ...*CheckConfig) *UserUpdate {
 	ids := make([]uuid.UUID, len(c))
 	for i := range c {
 		ids[i] = c[i].ID
@@ -158,12 +158,12 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := uu.mutation.Role(); ok {
 		_spec.SetField(user.FieldRole, field.TypeEnum, value)
 	}
-	if uu.mutation.ConfigCleared() {
+	if uu.mutation.ConfigsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
-			Table:   user.ConfigTable,
-			Columns: []string{user.ConfigColumn},
+			Table:   user.ConfigsTable,
+			Columns: []string{user.ConfigsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(checkconfig.FieldID, field.TypeUUID),
@@ -171,12 +171,12 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := uu.mutation.RemovedConfigIDs(); len(nodes) > 0 && !uu.mutation.ConfigCleared() {
+	if nodes := uu.mutation.RemovedConfigsIDs(); len(nodes) > 0 && !uu.mutation.ConfigsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
-			Table:   user.ConfigTable,
-			Columns: []string{user.ConfigColumn},
+			Table:   user.ConfigsTable,
+			Columns: []string{user.ConfigsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(checkconfig.FieldID, field.TypeUUID),
@@ -187,12 +187,12 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := uu.mutation.ConfigIDs(); len(nodes) > 0 {
+	if nodes := uu.mutation.ConfigsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
-			Table:   user.ConfigTable,
-			Columns: []string{user.ConfigColumn},
+			Table:   user.ConfigsTable,
+			Columns: []string{user.ConfigsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(checkconfig.FieldID, field.TypeUUID),
@@ -251,14 +251,14 @@ func (uuo *UserUpdateOne) SetNillableRole(u *user.Role) *UserUpdateOne {
 	return uuo
 }
 
-// AddConfigIDs adds the "config" edge to the CheckConfig entity by IDs.
+// AddConfigIDs adds the "configs" edge to the CheckConfig entity by IDs.
 func (uuo *UserUpdateOne) AddConfigIDs(ids ...uuid.UUID) *UserUpdateOne {
 	uuo.mutation.AddConfigIDs(ids...)
 	return uuo
 }
 
-// AddConfig adds the "config" edges to the CheckConfig entity.
-func (uuo *UserUpdateOne) AddConfig(c ...*CheckConfig) *UserUpdateOne {
+// AddConfigs adds the "configs" edges to the CheckConfig entity.
+func (uuo *UserUpdateOne) AddConfigs(c ...*CheckConfig) *UserUpdateOne {
 	ids := make([]uuid.UUID, len(c))
 	for i := range c {
 		ids[i] = c[i].ID
@@ -271,20 +271,20 @@ func (uuo *UserUpdateOne) Mutation() *UserMutation {
 	return uuo.mutation
 }
 
-// ClearConfig clears all "config" edges to the CheckConfig entity.
-func (uuo *UserUpdateOne) ClearConfig() *UserUpdateOne {
-	uuo.mutation.ClearConfig()
+// ClearConfigs clears all "configs" edges to the CheckConfig entity.
+func (uuo *UserUpdateOne) ClearConfigs() *UserUpdateOne {
+	uuo.mutation.ClearConfigs()
 	return uuo
 }
 
-// RemoveConfigIDs removes the "config" edge to CheckConfig entities by IDs.
+// RemoveConfigIDs removes the "configs" edge to CheckConfig entities by IDs.
 func (uuo *UserUpdateOne) RemoveConfigIDs(ids ...uuid.UUID) *UserUpdateOne {
 	uuo.mutation.RemoveConfigIDs(ids...)
 	return uuo
 }
 
-// RemoveConfig removes "config" edges to CheckConfig entities.
-func (uuo *UserUpdateOne) RemoveConfig(c ...*CheckConfig) *UserUpdateOne {
+// RemoveConfigs removes "configs" edges to CheckConfig entities.
+func (uuo *UserUpdateOne) RemoveConfigs(c ...*CheckConfig) *UserUpdateOne {
 	ids := make([]uuid.UUID, len(c))
 	for i := range c {
 		ids[i] = c[i].ID
@@ -382,12 +382,12 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 	if value, ok := uuo.mutation.Role(); ok {
 		_spec.SetField(user.FieldRole, field.TypeEnum, value)
 	}
-	if uuo.mutation.ConfigCleared() {
+	if uuo.mutation.ConfigsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
-			Table:   user.ConfigTable,
-			Columns: []string{user.ConfigColumn},
+			Table:   user.ConfigsTable,
+			Columns: []string{user.ConfigsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(checkconfig.FieldID, field.TypeUUID),
@@ -395,12 +395,12 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := uuo.mutation.RemovedConfigIDs(); len(nodes) > 0 && !uuo.mutation.ConfigCleared() {
+	if nodes := uuo.mutation.RemovedConfigsIDs(); len(nodes) > 0 && !uuo.mutation.ConfigsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
-			Table:   user.ConfigTable,
-			Columns: []string{user.ConfigColumn},
+			Table:   user.ConfigsTable,
+			Columns: []string{user.ConfigsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(checkconfig.FieldID, field.TypeUUID),
@@ -411,12 +411,12 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := uuo.mutation.ConfigIDs(); len(nodes) > 0 {
+	if nodes := uuo.mutation.ConfigsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
-			Table:   user.ConfigTable,
-			Columns: []string{user.ConfigColumn},
+			Table:   user.ConfigsTable,
+			Columns: []string{user.ConfigsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(checkconfig.FieldID, field.TypeUUID),

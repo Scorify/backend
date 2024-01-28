@@ -214,21 +214,21 @@ func RoleNotIn(vs ...Role) predicate.User {
 	return predicate.User(sql.FieldNotIn(FieldRole, vs...))
 }
 
-// HasConfig applies the HasEdge predicate on the "config" edge.
-func HasConfig() predicate.User {
+// HasConfigs applies the HasEdge predicate on the "configs" edge.
+func HasConfigs() predicate.User {
 	return predicate.User(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, true, ConfigTable, ConfigColumn),
+			sqlgraph.Edge(sqlgraph.O2M, true, ConfigsTable, ConfigsColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
 }
 
-// HasConfigWith applies the HasEdge predicate on the "config" edge with a given conditions (other predicates).
-func HasConfigWith(preds ...predicate.CheckConfig) predicate.User {
+// HasConfigsWith applies the HasEdge predicate on the "configs" edge with a given conditions (other predicates).
+func HasConfigsWith(preds ...predicate.CheckConfig) predicate.User {
 	return predicate.User(func(s *sql.Selector) {
-		step := newConfigStep()
+		step := newConfigsStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)
