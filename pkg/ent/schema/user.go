@@ -26,7 +26,6 @@ func (User) Fields() []ent.Field {
 			StructTag(`json:"username"`).
 			Comment("The username of the user").
 			Unique().
-			Immutable().
 			NotEmpty(),
 		field.String("password").
 			Comment("The password hash of user password").
