@@ -508,7 +508,7 @@ func (r *queryResolver) Me(ctx context.Context) (*ent.User, error) {
 
 // Users is the resolver for the users field.
 func (r *queryResolver) Users(ctx context.Context) ([]*ent.User, error) {
-	panic(fmt.Errorf("not implemented: Users - users"))
+	return r.Ent.User.Query().All(ctx)
 }
 
 // Sources is the resolver for the sources field.
