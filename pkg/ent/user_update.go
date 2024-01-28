@@ -71,6 +71,33 @@ func (uu *UserUpdate) SetNillableRole(u *user.Role) *UserUpdate {
 	return uu
 }
 
+// SetNumber sets the "number" field.
+func (uu *UserUpdate) SetNumber(i int) *UserUpdate {
+	uu.mutation.ResetNumber()
+	uu.mutation.SetNumber(i)
+	return uu
+}
+
+// SetNillableNumber sets the "number" field if the given value is not nil.
+func (uu *UserUpdate) SetNillableNumber(i *int) *UserUpdate {
+	if i != nil {
+		uu.SetNumber(*i)
+	}
+	return uu
+}
+
+// AddNumber adds i to the "number" field.
+func (uu *UserUpdate) AddNumber(i int) *UserUpdate {
+	uu.mutation.AddNumber(i)
+	return uu
+}
+
+// ClearNumber clears the value of the "number" field.
+func (uu *UserUpdate) ClearNumber() *UserUpdate {
+	uu.mutation.ClearNumber()
+	return uu
+}
+
 // AddConfigIDs adds the "configs" edge to the CheckConfig entity by IDs.
 func (uu *UserUpdate) AddConfigIDs(ids ...uuid.UUID) *UserUpdate {
 	uu.mutation.AddConfigIDs(ids...)
@@ -156,6 +183,11 @@ func (uu *UserUpdate) check() error {
 			return &ValidationError{Name: "role", err: fmt.Errorf(`ent: validator failed for field "User.role": %w`, err)}
 		}
 	}
+	if v, ok := uu.mutation.Number(); ok {
+		if err := user.NumberValidator(v); err != nil {
+			return &ValidationError{Name: "number", err: fmt.Errorf(`ent: validator failed for field "User.number": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -179,6 +211,12 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := uu.mutation.Role(); ok {
 		_spec.SetField(user.FieldRole, field.TypeEnum, value)
+	}
+	if value, ok := uu.mutation.Number(); ok {
+		_spec.SetField(user.FieldNumber, field.TypeInt, value)
+	}
+	if value, ok := uu.mutation.AddedNumber(); ok {
+		_spec.AddField(user.FieldNumber, field.TypeInt, value)
 	}
 	if uu.mutation.NumberCleared() {
 		_spec.ClearField(user.FieldNumber, field.TypeInt)
@@ -290,6 +328,33 @@ func (uuo *UserUpdateOne) SetNillableRole(u *user.Role) *UserUpdateOne {
 	return uuo
 }
 
+// SetNumber sets the "number" field.
+func (uuo *UserUpdateOne) SetNumber(i int) *UserUpdateOne {
+	uuo.mutation.ResetNumber()
+	uuo.mutation.SetNumber(i)
+	return uuo
+}
+
+// SetNillableNumber sets the "number" field if the given value is not nil.
+func (uuo *UserUpdateOne) SetNillableNumber(i *int) *UserUpdateOne {
+	if i != nil {
+		uuo.SetNumber(*i)
+	}
+	return uuo
+}
+
+// AddNumber adds i to the "number" field.
+func (uuo *UserUpdateOne) AddNumber(i int) *UserUpdateOne {
+	uuo.mutation.AddNumber(i)
+	return uuo
+}
+
+// ClearNumber clears the value of the "number" field.
+func (uuo *UserUpdateOne) ClearNumber() *UserUpdateOne {
+	uuo.mutation.ClearNumber()
+	return uuo
+}
+
 // AddConfigIDs adds the "configs" edge to the CheckConfig entity by IDs.
 func (uuo *UserUpdateOne) AddConfigIDs(ids ...uuid.UUID) *UserUpdateOne {
 	uuo.mutation.AddConfigIDs(ids...)
@@ -388,6 +453,11 @@ func (uuo *UserUpdateOne) check() error {
 			return &ValidationError{Name: "role", err: fmt.Errorf(`ent: validator failed for field "User.role": %w`, err)}
 		}
 	}
+	if v, ok := uuo.mutation.Number(); ok {
+		if err := user.NumberValidator(v); err != nil {
+			return &ValidationError{Name: "number", err: fmt.Errorf(`ent: validator failed for field "User.number": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -428,6 +498,12 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 	}
 	if value, ok := uuo.mutation.Role(); ok {
 		_spec.SetField(user.FieldRole, field.TypeEnum, value)
+	}
+	if value, ok := uuo.mutation.Number(); ok {
+		_spec.SetField(user.FieldNumber, field.TypeInt, value)
+	}
+	if value, ok := uuo.mutation.AddedNumber(); ok {
+		_spec.AddField(user.FieldNumber, field.TypeInt, value)
 	}
 	if uuo.mutation.NumberCleared() {
 		_spec.ClearField(user.FieldNumber, field.TypeInt)

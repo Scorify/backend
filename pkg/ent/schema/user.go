@@ -39,7 +39,6 @@ func (User) Fields() []ent.Field {
 		field.Int("number").
 			StructTag(`json:"number"`).
 			Comment("The number of the user").
-			Immutable().
 			Optional().
 			Unique().
 			Positive(),
