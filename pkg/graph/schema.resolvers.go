@@ -372,17 +372,93 @@ func (r *mutationResolver) DeleteCheck(ctx context.Context, id string) (bool, er
 
 // CreateUser is the resolver for the createUser field.
 func (r *mutationResolver) CreateUser(ctx context.Context, username string, password string, role user.Role, number *int) (*ent.User, error) {
-	panic(fmt.Errorf("not implemented: CreateUser - createUser"))
+	entUser, err := auth.Parse(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("invalid user")
+	}
+
+	if entUser.Role != user.RoleAdmin {
+		return nil, fmt.Errorf("invalid permissions")
+	}
+
+	hashedPassword, err := helpers.HashPassword(password)
+	if err != nil {
+		return nil, err
+	}
+
+	entCreateUser := r.Ent.User.Create().
+		SetUsername(username).
+		SetPassword(hashedPassword).
+		SetRole(role)
+
+	if number != nil {
+		entCreateUser.SetNumber(*number)
+	}
+
+	return entCreateUser.Save(ctx)
 }
 
 // UpdateUser is the resolver for the updateUser field.
 func (r *mutationResolver) UpdateUser(ctx context.Context, id string, username *string, password *string, role *user.Role, number *int) (*ent.User, error) {
-	panic(fmt.Errorf("not implemented: UpdateUser - updateUser"))
+	entUser, err := auth.Parse(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("invalid user")
+	}
+
+	if entUser.Role != user.RoleAdmin {
+		return nil, fmt.Errorf("invalid permissions")
+	}
+
+	uuid, err := uuid.Parse(id)
+	if err != nil {
+		return nil, fmt.Errorf("encounter error while parsing id: %v", err)
+	}
+
+	userUpdate := r.Ent.User.UpdateOneID(uuid)
+
+	if username != nil {
+		userUpdate.SetUsername(*username)
+	}
+
+	if password != nil {
+		hashedPassword, err := helpers.HashPassword(*password)
+		if err != nil {
+			return nil, err
+		}
+
+		userUpdate.SetPassword(hashedPassword)
+	}
+
+	if role != nil {
+		userUpdate.SetRole(*role)
+	}
+
+	if number != nil {
+		userUpdate.SetNumber(*number)
+	}
+
+	return userUpdate.Save(ctx)
 }
 
 // DeleteUser is the resolver for the deleteUser field.
 func (r *mutationResolver) DeleteUser(ctx context.Context, id string) (bool, error) {
-	panic(fmt.Errorf("not implemented: DeleteUser - deleteUser"))
+	entUser, err := auth.Parse(ctx)
+	if err != nil {
+		return false, fmt.Errorf("invalid user")
+	}
+
+	if entUser.Role != user.RoleAdmin {
+		return false, fmt.Errorf("invalid permissions")
+	}
+
+	uuid, err := uuid.Parse(id)
+	if err != nil {
+		return false, fmt.Errorf("encounter error while parsing id: %v", err)
+	}
+
+	err = r.Ent.User.DeleteOneID(uuid).Exec(ctx)
+
+	return err == nil, err
 }
 
 // EditConfig is the resolver for the editConfig field.
