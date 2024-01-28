@@ -235,7 +235,7 @@ func (r *mutationResolver) CreateCheck(ctx context.Context, name string, source 
 }
 
 // UpdateCheck is the resolver for the updateCheck field.
-func (r *mutationResolver) UpdateCheck(ctx context.Context, id string, name *string, source *string, config *string) (*ent.Check, error) {
+func (r *mutationResolver) UpdateCheck(ctx context.Context, id string, name *string, config *string) (*ent.Check, error) {
 	entUser, err := auth.Parse(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("invalid user")
@@ -264,26 +264,11 @@ func (r *mutationResolver) UpdateCheck(ctx context.Context, id string, name *str
 		checkUpdate.SetName(*name)
 	}
 
-	if source != nil {
-		_, ok := checks.Checks[*source]
-		if !ok {
-			return nil, fmt.Errorf("source \"%s\" does not exist", *source)
-		}
-
-		checkUpdate.SetSource(*source)
-	}
-
 	if config != nil {
-		var confSource string
-		if source != nil {
-			confSource = *source
-		} else {
-			confSource = entCheck.Source
-		}
 
-		configSchema, ok := checks.Checks[confSource]
+		configSchema, ok := checks.Checks[entCheck.Source]
 		if !ok {
-			return nil, fmt.Errorf("source \"%s\" does not exist", confSource)
+			return nil, fmt.Errorf("source \"%s\" does not exist", entCheck.Source)
 		}
 
 		var schemaMap map[string]interface{}
@@ -383,6 +368,21 @@ func (r *mutationResolver) DeleteCheck(ctx context.Context, id string) (bool, er
 	err = r.Ent.Check.DeleteOneID(uuid).Exec(ctx)
 
 	return err == nil, err
+}
+
+// CreateUser is the resolver for the createUser field.
+func (r *mutationResolver) CreateUser(ctx context.Context, username string, password string, role user.Role, number *int) (*ent.User, error) {
+	panic(fmt.Errorf("not implemented: CreateUser - createUser"))
+}
+
+// UpdateUser is the resolver for the updateUser field.
+func (r *mutationResolver) UpdateUser(ctx context.Context, id string, username *string, password *string, role *user.Role, number *int) (*ent.User, error) {
+	panic(fmt.Errorf("not implemented: UpdateUser - updateUser"))
+}
+
+// DeleteUser is the resolver for the deleteUser field.
+func (r *mutationResolver) DeleteUser(ctx context.Context, id string) (bool, error) {
+	panic(fmt.Errorf("not implemented: DeleteUser - deleteUser"))
 }
 
 // EditConfig is the resolver for the editConfig field.
