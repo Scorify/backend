@@ -41,6 +41,7 @@ type Config {
 
 type Query {
   me: User!
+  users: [User!]!
 
   sources: [Source!]!
   source(name: String!): Source!
