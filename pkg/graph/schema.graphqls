@@ -67,13 +67,7 @@ type Mutation {
     role: Role!
     number: Int
   ): User!
-  updateUser(
-    id: ID!
-    username: String
-    password: String
-    role: Role
-    number: Int
-  ): User!
+  updateUser(id: ID!, username: String, password: String, number: Int): User!
   deleteUser(id: ID!): Boolean!
 
   editConfig(id: ID!, config: String!): Config!

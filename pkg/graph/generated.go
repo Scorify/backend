@@ -85,7 +85,7 @@ type ComplexityRoot struct {
 		EditConfig     func(childComplexity int, id string, config string) int
 		Login          func(childComplexity int, username string, password string) int
 		UpdateCheck    func(childComplexity int, id string, name *string, config *string) int
-		UpdateUser     func(childComplexity int, id string, username *string, password *string, role *user.Role, number *int) int
+		UpdateUser     func(childComplexity int, id string, username *string, password *string, number *int) int
 	}
 
 	Query struct {
@@ -131,7 +131,7 @@ type MutationResolver interface {
 	UpdateCheck(ctx context.Context, id string, name *string, config *string) (*ent.Check, error)
 	DeleteCheck(ctx context.Context, id string) (bool, error)
 	CreateUser(ctx context.Context, username string, password string, role user.Role, number *int) (*ent.User, error)
-	UpdateUser(ctx context.Context, id string, username *string, password *string, role *user.Role, number *int) (*ent.User, error)
+	UpdateUser(ctx context.Context, id string, username *string, password *string, number *int) (*ent.User, error)
 	DeleteUser(ctx context.Context, id string) (bool, error)
 	EditConfig(ctx context.Context, id string, config string) (*ent.CheckConfig, error)
 }
@@ -379,7 +379,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UpdateUser(childComplexity, args["id"].(string), args["username"].(*string), args["password"].(*string), args["role"].(*user.Role), args["number"].(*int)), true
+		return e.complexity.Mutation.UpdateUser(childComplexity, args["id"].(string), args["username"].(*string), args["password"].(*string), args["number"].(*int)), true
 
 	case "Query.check":
 		if e.complexity.Query.Check == nil {
@@ -857,24 +857,15 @@ func (ec *executionContext) field_Mutation_updateUser_args(ctx context.Context, 
 		}
 	}
 	args["password"] = arg2
-	var arg3 *user.Role
-	if tmp, ok := rawArgs["role"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("role"))
-		arg3, err = ec.unmarshalORole2ᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚋuserᚐRole(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["role"] = arg3
-	var arg4 *int
+	var arg3 *int
 	if tmp, ok := rawArgs["number"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("number"))
-		arg4, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		arg3, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["number"] = arg4
+	args["number"] = arg3
 	return args, nil
 }
 
@@ -2061,7 +2052,7 @@ func (ec *executionContext) _Mutation_updateUser(ctx context.Context, field grap
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().UpdateUser(rctx, fc.Args["id"].(string), fc.Args["username"].(*string), fc.Args["password"].(*string), fc.Args["role"].(*user.Role), fc.Args["number"].(*int))
+		return ec.resolvers.Mutation().UpdateUser(rctx, fc.Args["id"].(string), fc.Args["username"].(*string), fc.Args["password"].(*string), fc.Args["number"].(*int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6677,23 +6668,6 @@ func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.Sele
 		return graphql.Null
 	}
 	res := graphql.MarshalInt(*v)
-	return res
-}
-
-func (ec *executionContext) unmarshalORole2ᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚋuserᚐRole(ctx context.Context, v interface{}) (*user.Role, error) {
-	if v == nil {
-		return nil, nil
-	}
-	tmp, err := graphql.UnmarshalString(v)
-	res := user.Role(tmp)
-	return &res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalORole2ᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚋuserᚐRole(ctx context.Context, sel ast.SelectionSet, v *user.Role) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	res := graphql.MarshalString(string(*v))
 	return res
 }
 

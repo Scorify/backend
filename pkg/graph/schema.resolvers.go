@@ -399,7 +399,7 @@ func (r *mutationResolver) CreateUser(ctx context.Context, username string, pass
 }
 
 // UpdateUser is the resolver for the updateUser field.
-func (r *mutationResolver) UpdateUser(ctx context.Context, id string, username *string, password *string, role *user.Role, number *int) (*ent.User, error) {
+func (r *mutationResolver) UpdateUser(ctx context.Context, id string, username *string, password *string, number *int) (*ent.User, error) {
 	entUser, err := auth.Parse(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("invalid user")
@@ -427,10 +427,6 @@ func (r *mutationResolver) UpdateUser(ctx context.Context, id string, username *
 		}
 
 		userUpdate.SetPassword(hashedPassword)
-	}
-
-	if role != nil {
-		userUpdate.SetRole(*role)
 	}
 
 	if number != nil {
