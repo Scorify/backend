@@ -456,6 +456,10 @@ func (r *mutationResolver) DeleteUser(ctx context.Context, id string) (bool, err
 		return false, fmt.Errorf("encounter error while parsing id: %v", err)
 	}
 
+	if entUser.ID == uuid {
+		return false, fmt.Errorf("cannot delete yourself")
+	}
+
 	err = r.Ent.User.DeleteOneID(uuid).Exec(ctx)
 
 	return err == nil, err
