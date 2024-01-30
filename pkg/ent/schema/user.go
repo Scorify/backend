@@ -35,7 +35,8 @@ func (User) Fields() []ent.Field {
 			StructTag(`json:"role"`).
 			Comment("The role of the user").
 			Values("admin", "user").
-			Default("user"),
+			Default("user").
+			Immutable(),
 		field.Int("number").
 			StructTag(`json:"number"`).
 			Comment("The number of the user").

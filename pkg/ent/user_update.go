@@ -57,20 +57,6 @@ func (uu *UserUpdate) SetNillablePassword(s *string) *UserUpdate {
 	return uu
 }
 
-// SetRole sets the "role" field.
-func (uu *UserUpdate) SetRole(u user.Role) *UserUpdate {
-	uu.mutation.SetRole(u)
-	return uu
-}
-
-// SetNillableRole sets the "role" field if the given value is not nil.
-func (uu *UserUpdate) SetNillableRole(u *user.Role) *UserUpdate {
-	if u != nil {
-		uu.SetRole(*u)
-	}
-	return uu
-}
-
 // SetNumber sets the "number" field.
 func (uu *UserUpdate) SetNumber(i int) *UserUpdate {
 	uu.mutation.ResetNumber()
@@ -178,11 +164,6 @@ func (uu *UserUpdate) check() error {
 			return &ValidationError{Name: "password", err: fmt.Errorf(`ent: validator failed for field "User.password": %w`, err)}
 		}
 	}
-	if v, ok := uu.mutation.Role(); ok {
-		if err := user.RoleValidator(v); err != nil {
-			return &ValidationError{Name: "role", err: fmt.Errorf(`ent: validator failed for field "User.role": %w`, err)}
-		}
-	}
 	if v, ok := uu.mutation.Number(); ok {
 		if err := user.NumberValidator(v); err != nil {
 			return &ValidationError{Name: "number", err: fmt.Errorf(`ent: validator failed for field "User.number": %w`, err)}
@@ -208,9 +189,6 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := uu.mutation.Password(); ok {
 		_spec.SetField(user.FieldPassword, field.TypeString, value)
-	}
-	if value, ok := uu.mutation.Role(); ok {
-		_spec.SetField(user.FieldRole, field.TypeEnum, value)
 	}
 	if value, ok := uu.mutation.Number(); ok {
 		_spec.SetField(user.FieldNumber, field.TypeInt, value)
@@ -310,20 +288,6 @@ func (uuo *UserUpdateOne) SetPassword(s string) *UserUpdateOne {
 func (uuo *UserUpdateOne) SetNillablePassword(s *string) *UserUpdateOne {
 	if s != nil {
 		uuo.SetPassword(*s)
-	}
-	return uuo
-}
-
-// SetRole sets the "role" field.
-func (uuo *UserUpdateOne) SetRole(u user.Role) *UserUpdateOne {
-	uuo.mutation.SetRole(u)
-	return uuo
-}
-
-// SetNillableRole sets the "role" field if the given value is not nil.
-func (uuo *UserUpdateOne) SetNillableRole(u *user.Role) *UserUpdateOne {
-	if u != nil {
-		uuo.SetRole(*u)
 	}
 	return uuo
 }
@@ -448,11 +412,6 @@ func (uuo *UserUpdateOne) check() error {
 			return &ValidationError{Name: "password", err: fmt.Errorf(`ent: validator failed for field "User.password": %w`, err)}
 		}
 	}
-	if v, ok := uuo.mutation.Role(); ok {
-		if err := user.RoleValidator(v); err != nil {
-			return &ValidationError{Name: "role", err: fmt.Errorf(`ent: validator failed for field "User.role": %w`, err)}
-		}
-	}
 	if v, ok := uuo.mutation.Number(); ok {
 		if err := user.NumberValidator(v); err != nil {
 			return &ValidationError{Name: "number", err: fmt.Errorf(`ent: validator failed for field "User.number": %w`, err)}
@@ -495,9 +454,6 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 	}
 	if value, ok := uuo.mutation.Password(); ok {
 		_spec.SetField(user.FieldPassword, field.TypeString, value)
-	}
-	if value, ok := uuo.mutation.Role(); ok {
-		_spec.SetField(user.FieldRole, field.TypeEnum, value)
 	}
 	if value, ok := uuo.mutation.Number(); ok {
 		_spec.SetField(user.FieldNumber, field.TypeInt, value)
