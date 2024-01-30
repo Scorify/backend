@@ -1,6 +1,6 @@
 enum Role {
-  ADMIN
-  USER
+  admin
+  user
 }
 
 type User {
