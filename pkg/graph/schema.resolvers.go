@@ -235,7 +235,7 @@ func (r *mutationResolver) CreateCheck(ctx context.Context, name string, source 
 }
 
 // UpdateCheck is the resolver for the updateCheck field.
-func (r *mutationResolver) UpdateCheck(ctx context.Context, id string, name *string, source *string, config *string) (*ent.Check, error) {
+func (r *mutationResolver) UpdateCheck(ctx context.Context, id string, name *string, config *string) (*ent.Check, error) {
 	entUser, err := auth.Parse(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("invalid user")
@@ -264,26 +264,11 @@ func (r *mutationResolver) UpdateCheck(ctx context.Context, id string, name *str
 		checkUpdate.SetName(*name)
 	}
 
-	if source != nil {
-		_, ok := checks.Checks[*source]
-		if !ok {
-			return nil, fmt.Errorf("source \"%s\" does not exist", *source)
-		}
-
-		checkUpdate.SetSource(*source)
-	}
-
 	if config != nil {
-		var confSource string
-		if source != nil {
-			confSource = *source
-		} else {
-			confSource = entCheck.Source
-		}
 
-		configSchema, ok := checks.Checks[confSource]
+		configSchema, ok := checks.Checks[entCheck.Source]
 		if !ok {
-			return nil, fmt.Errorf("source \"%s\" does not exist", confSource)
+			return nil, fmt.Errorf("source \"%s\" does not exist", entCheck.Source)
 		}
 
 		var schemaMap map[string]interface{}
@@ -385,6 +370,97 @@ func (r *mutationResolver) DeleteCheck(ctx context.Context, id string) (bool, er
 	return err == nil, err
 }
 
+// CreateUser is the resolver for the createUser field.
+func (r *mutationResolver) CreateUser(ctx context.Context, username string, password string, role user.Role, number *int) (*ent.User, error) {
+	entUser, err := auth.Parse(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("invalid user")
+	}
+
+	if entUser.Role != user.RoleAdmin {
+		return nil, fmt.Errorf("invalid permissions")
+	}
+
+	hashedPassword, err := helpers.HashPassword(password)
+	if err != nil {
+		return nil, err
+	}
+
+	entCreateUser := r.Ent.User.Create().
+		SetUsername(username).
+		SetPassword(hashedPassword).
+		SetRole(role)
+
+	if number != nil {
+		entCreateUser.SetNumber(*number)
+	}
+
+	return entCreateUser.Save(ctx)
+}
+
+// UpdateUser is the resolver for the updateUser field.
+func (r *mutationResolver) UpdateUser(ctx context.Context, id string, username *string, password *string, number *int) (*ent.User, error) {
+	entUser, err := auth.Parse(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("invalid user")
+	}
+
+	if entUser.Role != user.RoleAdmin {
+		return nil, fmt.Errorf("invalid permissions")
+	}
+
+	uuid, err := uuid.Parse(id)
+	if err != nil {
+		return nil, fmt.Errorf("encounter error while parsing id: %v", err)
+	}
+
+	userUpdate := r.Ent.User.UpdateOneID(uuid)
+
+	if username != nil {
+		userUpdate.SetUsername(*username)
+	}
+
+	if password != nil {
+		hashedPassword, err := helpers.HashPassword(*password)
+		if err != nil {
+			return nil, err
+		}
+
+		userUpdate.SetPassword(hashedPassword)
+	}
+
+	if number != nil {
+		userUpdate.SetNumber(*number)
+	}
+
+	return userUpdate.Save(ctx)
+}
+
+// DeleteUser is the resolver for the deleteUser field.
+func (r *mutationResolver) DeleteUser(ctx context.Context, id string) (bool, error) {
+	entUser, err := auth.Parse(ctx)
+	if err != nil {
+		return false, fmt.Errorf("invalid user")
+	}
+
+	if entUser.Role != user.RoleAdmin {
+		return false, fmt.Errorf("invalid permissions")
+	}
+
+	uuid, err := uuid.Parse(id)
+	if err != nil {
+		return false, fmt.Errorf("encounter error while parsing id: %v", err)
+	}
+
+	if entUser.ID == uuid {
+		return false, fmt.Errorf("cannot delete yourself")
+	}
+
+	err = r.Ent.User.DeleteOneID(uuid).Exec(ctx)
+
+	return err == nil, err
+}
+
 // EditConfig is the resolver for the editConfig field.
 func (r *mutationResolver) EditConfig(ctx context.Context, id string, config string) (*ent.CheckConfig, error) {
 	entUser, err := auth.Parse(ctx)
@@ -428,6 +504,11 @@ func (r *mutationResolver) EditConfig(ctx context.Context, id string, config str
 // Me is the resolver for the me field.
 func (r *queryResolver) Me(ctx context.Context) (*ent.User, error) {
 	return auth.Parse(ctx)
+}
+
+// Users is the resolver for the users field.
+func (r *queryResolver) Users(ctx context.Context) ([]*ent.User, error) {
+	return r.Ent.User.Query().All(ctx)
 }
 
 // Sources is the resolver for the sources field.

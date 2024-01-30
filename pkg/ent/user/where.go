@@ -64,6 +64,11 @@ func Password(v string) predicate.User {
 	return predicate.User(sql.FieldEQ(FieldPassword, v))
 }
 
+// Number applies equality check predicate on the "number" field. It's identical to NumberEQ.
+func Number(v int) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldNumber, v))
+}
+
 // UsernameEQ applies the EQ predicate on the "username" field.
 func UsernameEQ(v string) predicate.User {
 	return predicate.User(sql.FieldEQ(FieldUsername, v))
@@ -212,6 +217,56 @@ func RoleIn(vs ...Role) predicate.User {
 // RoleNotIn applies the NotIn predicate on the "role" field.
 func RoleNotIn(vs ...Role) predicate.User {
 	return predicate.User(sql.FieldNotIn(FieldRole, vs...))
+}
+
+// NumberEQ applies the EQ predicate on the "number" field.
+func NumberEQ(v int) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldNumber, v))
+}
+
+// NumberNEQ applies the NEQ predicate on the "number" field.
+func NumberNEQ(v int) predicate.User {
+	return predicate.User(sql.FieldNEQ(FieldNumber, v))
+}
+
+// NumberIn applies the In predicate on the "number" field.
+func NumberIn(vs ...int) predicate.User {
+	return predicate.User(sql.FieldIn(FieldNumber, vs...))
+}
+
+// NumberNotIn applies the NotIn predicate on the "number" field.
+func NumberNotIn(vs ...int) predicate.User {
+	return predicate.User(sql.FieldNotIn(FieldNumber, vs...))
+}
+
+// NumberGT applies the GT predicate on the "number" field.
+func NumberGT(v int) predicate.User {
+	return predicate.User(sql.FieldGT(FieldNumber, v))
+}
+
+// NumberGTE applies the GTE predicate on the "number" field.
+func NumberGTE(v int) predicate.User {
+	return predicate.User(sql.FieldGTE(FieldNumber, v))
+}
+
+// NumberLT applies the LT predicate on the "number" field.
+func NumberLT(v int) predicate.User {
+	return predicate.User(sql.FieldLT(FieldNumber, v))
+}
+
+// NumberLTE applies the LTE predicate on the "number" field.
+func NumberLTE(v int) predicate.User {
+	return predicate.User(sql.FieldLTE(FieldNumber, v))
+}
+
+// NumberIsNil applies the IsNil predicate on the "number" field.
+func NumberIsNil() predicate.User {
+	return predicate.User(sql.FieldIsNull(FieldNumber))
+}
+
+// NumberNotNil applies the NotNil predicate on the "number" field.
+func NumberNotNil() predicate.User {
+	return predicate.User(sql.FieldNotNull(FieldNumber))
 }
 
 // HasConfigs applies the HasEdge predicate on the "configs" edge.

@@ -29,6 +29,20 @@ func (uu *UserUpdate) Where(ps ...predicate.User) *UserUpdate {
 	return uu
 }
 
+// SetUsername sets the "username" field.
+func (uu *UserUpdate) SetUsername(s string) *UserUpdate {
+	uu.mutation.SetUsername(s)
+	return uu
+}
+
+// SetNillableUsername sets the "username" field if the given value is not nil.
+func (uu *UserUpdate) SetNillableUsername(s *string) *UserUpdate {
+	if s != nil {
+		uu.SetUsername(*s)
+	}
+	return uu
+}
+
 // SetPassword sets the "password" field.
 func (uu *UserUpdate) SetPassword(s string) *UserUpdate {
 	uu.mutation.SetPassword(s)
@@ -43,17 +57,30 @@ func (uu *UserUpdate) SetNillablePassword(s *string) *UserUpdate {
 	return uu
 }
 
-// SetRole sets the "role" field.
-func (uu *UserUpdate) SetRole(u user.Role) *UserUpdate {
-	uu.mutation.SetRole(u)
+// SetNumber sets the "number" field.
+func (uu *UserUpdate) SetNumber(i int) *UserUpdate {
+	uu.mutation.ResetNumber()
+	uu.mutation.SetNumber(i)
 	return uu
 }
 
-// SetNillableRole sets the "role" field if the given value is not nil.
-func (uu *UserUpdate) SetNillableRole(u *user.Role) *UserUpdate {
-	if u != nil {
-		uu.SetRole(*u)
+// SetNillableNumber sets the "number" field if the given value is not nil.
+func (uu *UserUpdate) SetNillableNumber(i *int) *UserUpdate {
+	if i != nil {
+		uu.SetNumber(*i)
 	}
+	return uu
+}
+
+// AddNumber adds i to the "number" field.
+func (uu *UserUpdate) AddNumber(i int) *UserUpdate {
+	uu.mutation.AddNumber(i)
+	return uu
+}
+
+// ClearNumber clears the value of the "number" field.
+func (uu *UserUpdate) ClearNumber() *UserUpdate {
+	uu.mutation.ClearNumber()
 	return uu
 }
 
@@ -127,14 +154,19 @@ func (uu *UserUpdate) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (uu *UserUpdate) check() error {
+	if v, ok := uu.mutation.Username(); ok {
+		if err := user.UsernameValidator(v); err != nil {
+			return &ValidationError{Name: "username", err: fmt.Errorf(`ent: validator failed for field "User.username": %w`, err)}
+		}
+	}
 	if v, ok := uu.mutation.Password(); ok {
 		if err := user.PasswordValidator(v); err != nil {
 			return &ValidationError{Name: "password", err: fmt.Errorf(`ent: validator failed for field "User.password": %w`, err)}
 		}
 	}
-	if v, ok := uu.mutation.Role(); ok {
-		if err := user.RoleValidator(v); err != nil {
-			return &ValidationError{Name: "role", err: fmt.Errorf(`ent: validator failed for field "User.role": %w`, err)}
+	if v, ok := uu.mutation.Number(); ok {
+		if err := user.NumberValidator(v); err != nil {
+			return &ValidationError{Name: "number", err: fmt.Errorf(`ent: validator failed for field "User.number": %w`, err)}
 		}
 	}
 	return nil
@@ -152,11 +184,20 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			}
 		}
 	}
+	if value, ok := uu.mutation.Username(); ok {
+		_spec.SetField(user.FieldUsername, field.TypeString, value)
+	}
 	if value, ok := uu.mutation.Password(); ok {
 		_spec.SetField(user.FieldPassword, field.TypeString, value)
 	}
-	if value, ok := uu.mutation.Role(); ok {
-		_spec.SetField(user.FieldRole, field.TypeEnum, value)
+	if value, ok := uu.mutation.Number(); ok {
+		_spec.SetField(user.FieldNumber, field.TypeInt, value)
+	}
+	if value, ok := uu.mutation.AddedNumber(); ok {
+		_spec.AddField(user.FieldNumber, field.TypeInt, value)
+	}
+	if uu.mutation.NumberCleared() {
+		_spec.ClearField(user.FieldNumber, field.TypeInt)
 	}
 	if uu.mutation.ConfigsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -223,6 +264,20 @@ type UserUpdateOne struct {
 	mutation *UserMutation
 }
 
+// SetUsername sets the "username" field.
+func (uuo *UserUpdateOne) SetUsername(s string) *UserUpdateOne {
+	uuo.mutation.SetUsername(s)
+	return uuo
+}
+
+// SetNillableUsername sets the "username" field if the given value is not nil.
+func (uuo *UserUpdateOne) SetNillableUsername(s *string) *UserUpdateOne {
+	if s != nil {
+		uuo.SetUsername(*s)
+	}
+	return uuo
+}
+
 // SetPassword sets the "password" field.
 func (uuo *UserUpdateOne) SetPassword(s string) *UserUpdateOne {
 	uuo.mutation.SetPassword(s)
@@ -237,17 +292,30 @@ func (uuo *UserUpdateOne) SetNillablePassword(s *string) *UserUpdateOne {
 	return uuo
 }
 
-// SetRole sets the "role" field.
-func (uuo *UserUpdateOne) SetRole(u user.Role) *UserUpdateOne {
-	uuo.mutation.SetRole(u)
+// SetNumber sets the "number" field.
+func (uuo *UserUpdateOne) SetNumber(i int) *UserUpdateOne {
+	uuo.mutation.ResetNumber()
+	uuo.mutation.SetNumber(i)
 	return uuo
 }
 
-// SetNillableRole sets the "role" field if the given value is not nil.
-func (uuo *UserUpdateOne) SetNillableRole(u *user.Role) *UserUpdateOne {
-	if u != nil {
-		uuo.SetRole(*u)
+// SetNillableNumber sets the "number" field if the given value is not nil.
+func (uuo *UserUpdateOne) SetNillableNumber(i *int) *UserUpdateOne {
+	if i != nil {
+		uuo.SetNumber(*i)
 	}
+	return uuo
+}
+
+// AddNumber adds i to the "number" field.
+func (uuo *UserUpdateOne) AddNumber(i int) *UserUpdateOne {
+	uuo.mutation.AddNumber(i)
+	return uuo
+}
+
+// ClearNumber clears the value of the "number" field.
+func (uuo *UserUpdateOne) ClearNumber() *UserUpdateOne {
+	uuo.mutation.ClearNumber()
 	return uuo
 }
 
@@ -334,14 +402,19 @@ func (uuo *UserUpdateOne) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (uuo *UserUpdateOne) check() error {
+	if v, ok := uuo.mutation.Username(); ok {
+		if err := user.UsernameValidator(v); err != nil {
+			return &ValidationError{Name: "username", err: fmt.Errorf(`ent: validator failed for field "User.username": %w`, err)}
+		}
+	}
 	if v, ok := uuo.mutation.Password(); ok {
 		if err := user.PasswordValidator(v); err != nil {
 			return &ValidationError{Name: "password", err: fmt.Errorf(`ent: validator failed for field "User.password": %w`, err)}
 		}
 	}
-	if v, ok := uuo.mutation.Role(); ok {
-		if err := user.RoleValidator(v); err != nil {
-			return &ValidationError{Name: "role", err: fmt.Errorf(`ent: validator failed for field "User.role": %w`, err)}
+	if v, ok := uuo.mutation.Number(); ok {
+		if err := user.NumberValidator(v); err != nil {
+			return &ValidationError{Name: "number", err: fmt.Errorf(`ent: validator failed for field "User.number": %w`, err)}
 		}
 	}
 	return nil
@@ -376,11 +449,20 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			}
 		}
 	}
+	if value, ok := uuo.mutation.Username(); ok {
+		_spec.SetField(user.FieldUsername, field.TypeString, value)
+	}
 	if value, ok := uuo.mutation.Password(); ok {
 		_spec.SetField(user.FieldPassword, field.TypeString, value)
 	}
-	if value, ok := uuo.mutation.Role(); ok {
-		_spec.SetField(user.FieldRole, field.TypeEnum, value)
+	if value, ok := uuo.mutation.Number(); ok {
+		_spec.SetField(user.FieldNumber, field.TypeInt, value)
+	}
+	if value, ok := uuo.mutation.AddedNumber(); ok {
+		_spec.AddField(user.FieldNumber, field.TypeInt, value)
+	}
+	if uuo.mutation.NumberCleared() {
+		_spec.ClearField(user.FieldNumber, field.TypeInt)
 	}
 	if uuo.mutation.ConfigsCleared() {
 		edge := &sqlgraph.EdgeSpec{

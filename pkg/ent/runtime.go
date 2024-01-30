@@ -44,6 +44,10 @@ func init() {
 	userDescPassword := userFields[2].Descriptor()
 	// user.PasswordValidator is a validator for the "password" field. It is called by the builders before save.
 	user.PasswordValidator = userDescPassword.Validators[0].(func(string) error)
+	// userDescNumber is the schema descriptor for number field.
+	userDescNumber := userFields[4].Descriptor()
+	// user.NumberValidator is a validator for the "number" field. It is called by the builders before save.
+	user.NumberValidator = userDescNumber.Validators[0].(func(int) error)
 	// userDescID is the schema descriptor for id field.
 	userDescID := userFields[0].Descriptor()
 	// user.DefaultID holds the default value on creation for the id field.

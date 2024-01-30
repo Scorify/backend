@@ -47,6 +47,20 @@ func (uc *UserCreate) SetNillableRole(u *user.Role) *UserCreate {
 	return uc
 }
 
+// SetNumber sets the "number" field.
+func (uc *UserCreate) SetNumber(i int) *UserCreate {
+	uc.mutation.SetNumber(i)
+	return uc
+}
+
+// SetNillableNumber sets the "number" field if the given value is not nil.
+func (uc *UserCreate) SetNillableNumber(i *int) *UserCreate {
+	if i != nil {
+		uc.SetNumber(*i)
+	}
+	return uc
+}
+
 // SetID sets the "id" field.
 func (uc *UserCreate) SetID(u uuid.UUID) *UserCreate {
 	uc.mutation.SetID(u)
@@ -147,6 +161,11 @@ func (uc *UserCreate) check() error {
 			return &ValidationError{Name: "role", err: fmt.Errorf(`ent: validator failed for field "User.role": %w`, err)}
 		}
 	}
+	if v, ok := uc.mutation.Number(); ok {
+		if err := user.NumberValidator(v); err != nil {
+			return &ValidationError{Name: "number", err: fmt.Errorf(`ent: validator failed for field "User.number": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -193,6 +212,10 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 	if value, ok := uc.mutation.Role(); ok {
 		_spec.SetField(user.FieldRole, field.TypeEnum, value)
 		_node.Role = value
+	}
+	if value, ok := uc.mutation.Number(); ok {
+		_spec.SetField(user.FieldNumber, field.TypeInt, value)
+		_node.Number = value
 	}
 	if nodes := uc.mutation.ConfigsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

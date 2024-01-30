@@ -26,7 +26,6 @@ func (User) Fields() []ent.Field {
 			StructTag(`json:"username"`).
 			Comment("The username of the user").
 			Unique().
-			Immutable().
 			NotEmpty(),
 		field.String("password").
 			Comment("The password hash of user password").
@@ -36,7 +35,14 @@ func (User) Fields() []ent.Field {
 			StructTag(`json:"role"`).
 			Comment("The role of the user").
 			Values("admin", "user").
-			Default("user"),
+			Default("user").
+			Immutable(),
+		field.Int("number").
+			StructTag(`json:"number"`).
+			Comment("The number of the user").
+			Optional().
+			Unique().
+			Positive(),
 	}
 }
 
