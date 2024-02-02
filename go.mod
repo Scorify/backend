@@ -1,6 +1,6 @@
 module github.com/scorify/backend
 
-go 1.21.5
+go 1.21.6
 
 require (
 	entgo.io/ent v0.12.5
@@ -10,6 +10,8 @@ require (
 	github.com/golang-jwt/jwt/v5 v5.2.0
 	github.com/google/uuid v1.3.0
 	github.com/mattn/go-sqlite3 v1.14.16
+	github.com/scorify/check-template v1.0.0
+	github.com/scorify/generate v0.0.0-20240202044700-da7b32ed8b1d
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.8.0
 	github.com/vektah/gqlparser/v2 v2.5.10
@@ -61,5 +63,6 @@ require (
 	golang.org/x/text v0.13.0 // indirect
 	golang.org/x/tools v0.9.3 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect
+	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
