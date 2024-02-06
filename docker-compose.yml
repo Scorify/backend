@@ -1,0 +1,15 @@
+version: '3'
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: scorify-redis
+    restart: unless-stopped
+    volumes:
+      - scorify-redis:/data
+    ports:
+      - 6379:6379
+    env_file: .env
+
+volumes:
+  scorify-redis:
