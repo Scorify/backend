@@ -16,3 +16,6 @@ type Source struct {
 	Name   string `json:"name"`
 	Schema string `json:"schema"`
 }
+
+type Subscription struct {
+}

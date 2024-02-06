@@ -1,6 +1,9 @@
 package graph
 
-import "github.com/scorify/backend/pkg/ent"
+import (
+	"github.com/scorify/backend/pkg/cache"
+	"github.com/scorify/backend/pkg/ent"
+)
 
 // This file will not be regenerated automatically.
 //
@@ -9,5 +12,6 @@ import "github.com/scorify/backend/pkg/ent"
 //go:generate go run github.com/99designs/gqlgen generate
 
 type Resolver struct {
-	Ent *ent.Client
+	Ent   *ent.Client
+	Redis *cache.Cache
 }
