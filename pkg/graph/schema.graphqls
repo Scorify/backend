@@ -39,6 +39,10 @@ type Config {
   user: User!
 }
 
+type Subscription {
+  globalNotification: String!
+}
+
 type Query {
   me: User!
   users: [User!]!
