@@ -39,8 +39,21 @@ type Config {
   user: User!
 }
 
+enum NotificationType {
+  default
+  error
+  info
+  success
+  warning
+}
+
+type Notification {
+  message: String!
+  type: NotificationType!
+}
+
 type Subscription {
-  globalNotification: String!
+  globalNotification: Notification!
 }
 
 type Query {
