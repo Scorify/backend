@@ -502,6 +502,12 @@ func (r *mutationResolver) EditConfig(ctx context.Context, id string, config str
 	return r.Ent.CheckConfig.UpdateOneID(uuid).Save(ctx)
 }
 
+// SendGlobalNotification is the resolver for the sendGlobalNotification field.
+func (r *mutationResolver) SendGlobalNotification(ctx context.Context, message string, typeArg model.NotificationType) (bool, error) {
+	_, err := r.Redis.PublishNotification(ctx, message, typeArg)
+	return err == nil, err
+}
+
 // Me is the resolver for the me field.
 func (r *queryResolver) Me(ctx context.Context) (*ent.User, error) {
 	return auth.Parse(ctx)
