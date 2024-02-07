@@ -88,4 +88,6 @@ type Mutation {
   deleteUser(id: ID!): Boolean!
 
   editConfig(id: ID!, config: String!): Config!
+
+  sendGlobalNotification(message: String!, type: NotificationType!): Boolean!
 }
