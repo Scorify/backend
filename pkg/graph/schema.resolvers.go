@@ -20,6 +20,7 @@ import (
 	"github.com/scorify/backend/pkg/ent/user"
 	"github.com/scorify/backend/pkg/graph/model"
 	"github.com/scorify/backend/pkg/helpers"
+	"github.com/sirupsen/logrus"
 )
 
 // ID is the resolver for the id field.
@@ -609,6 +610,35 @@ func (r *queryResolver) Config(ctx context.Context, id string) (*ent.CheckConfig
 		).Only(ctx)
 }
 
+// GlobalNotification is the resolver for the globalNotification field.
+func (r *subscriptionResolver) GlobalNotification(ctx context.Context) (<-chan *model.Notification, error) {
+	notification_chan := make(chan *model.Notification, 1)
+
+	go func() {
+		sub := r.Redis.SubscribeNotification(ctx)
+
+		ch := sub.Channel()
+		for {
+			select {
+			case msg := <-ch:
+				notification := model.Notification{}
+				err := json.Unmarshal([]byte(msg.Payload), &notification)
+				if err != nil {
+					logrus.WithError(err).Error("failed to unmarshal notification")
+					continue
+				}
+
+				notification_chan <- &notification
+			case <-ctx.Done():
+				close(notification_chan)
+				return
+			}
+		}
+	}()
+
+	return notification_chan, nil
+}
+
 // ID is the resolver for the id field.
 func (r *userResolver) ID(ctx context.Context, obj *ent.User) (string, error) {
 	return obj.ID.String(), nil
@@ -626,6 +656,9 @@ func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
 // Query returns QueryResolver implementation.
 func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
+// Subscription returns SubscriptionResolver implementation.
+func (r *Resolver) Subscription() SubscriptionResolver { return &subscriptionResolver{r} }
+
 // User returns UserResolver implementation.
 func (r *Resolver) User() UserResolver { return &userResolver{r} }
 
@@ -633,4 +666,15 @@ type checkResolver struct{ *Resolver }
 type configResolver struct{ *Resolver }
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
+type subscriptionResolver struct{ *Resolver }
 type userResolver struct{ *Resolver }
+
+// !!! WARNING !!!
+// The code below was going to be deleted when updating resolvers. It has been copied here so you have
+// one last chance to move it out of harms way if you want. There are two reasons this happens:
+//   - When renaming or deleting a resolver the old code will be put in here. You can safely delete
+//     it when you're done.
+//   - You have helper methods in this file. Move them out to keep these resolver files clean.
+func (r *subscriptionResolver) Notification(ctx context.Context) (<-chan string, error) {
+	panic(fmt.Errorf("not implemented: Notification - notification"))
+}

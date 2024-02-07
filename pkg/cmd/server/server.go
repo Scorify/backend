@@ -2,12 +2,18 @@ package server
 
 import (
 	"fmt"
+	"net/http"
+	"time"
 
 	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/handler/extension"
+	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/gorilla/websocket"
 	"github.com/scorify/backend/pkg/auth"
+	"github.com/scorify/backend/pkg/cache"
 	"github.com/scorify/backend/pkg/config"
 	"github.com/scorify/backend/pkg/data"
 	"github.com/scorify/backend/pkg/graph"
@@ -25,18 +31,43 @@ var Cmd = &cobra.Command{
 	Run: run,
 }
 
-// serverRun runs the server
-func run(cmd *cobra.Command, args []string) {
-	srv := handler.NewDefaultServer(
+func graphqlHandler() gin.HandlerFunc {
+	h := handler.New(
 		graph.NewExecutableSchema(
 			graph.Config{
 				Resolvers: &graph.Resolver{
-					Ent: data.Client,
+					Ent:   data.Client,
+					Redis: cache.Client,
 				},
 			},
 		),
 	)
 
+	h.AddTransport(&transport.Websocket{
+		KeepAlivePingInterval: 10 * time.Second,
+		Upgrader: websocket.Upgrader{
+			CheckOrigin: func(r *http.Request) bool {
+				return true
+			},
+		},
+	})
+
+	h.AddTransport(transport.Options{})
+	h.AddTransport(transport.GET{})
+	h.AddTransport(transport.POST{})
+	h.AddTransport(transport.MultipartForm{})
+
+	if gin.IsDebugging() {
+		h.Use(extension.Introspection{})
+	}
+
+	return func(c *gin.Context) {
+		h.ServeHTTP(c.Writer, c.Request)
+	}
+}
+
+// serverRun runs the server
+func run(cmd *cobra.Command, args []string) {
 	gin.SetMode(gin.ReleaseMode)
 
 	router := gin.Default()
@@ -65,7 +96,8 @@ func run(cmd *cobra.Command, args []string) {
 	}))
 
 	router.GET("/", gin.WrapH(playground.Handler("GraphQL playground", "/query")))
-	router.POST("/query", gin.WrapH(srv))
+	router.POST("/query", graphqlHandler())
+	router.GET("/query", graphqlHandler())
 
 	logrus.Printf("Starting server on http://%s:%d", config.Domain, config.Port)
 
