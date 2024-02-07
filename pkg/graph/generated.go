@@ -79,15 +79,16 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		ChangePassword func(childComplexity int, oldPassword string, newPassword string) int
-		CreateCheck    func(childComplexity int, name string, source string, config string) int
-		CreateUser     func(childComplexity int, username string, password string, role user.Role, number *int) int
-		DeleteCheck    func(childComplexity int, id string) int
-		DeleteUser     func(childComplexity int, id string) int
-		EditConfig     func(childComplexity int, id string, config string) int
-		Login          func(childComplexity int, username string, password string) int
-		UpdateCheck    func(childComplexity int, id string, name *string, config *string) int
-		UpdateUser     func(childComplexity int, id string, username *string, password *string, number *int) int
+		ChangePassword         func(childComplexity int, oldPassword string, newPassword string) int
+		CreateCheck            func(childComplexity int, name string, source string, config string) int
+		CreateUser             func(childComplexity int, username string, password string, role user.Role, number *int) int
+		DeleteCheck            func(childComplexity int, id string) int
+		DeleteUser             func(childComplexity int, id string) int
+		EditConfig             func(childComplexity int, id string, config string) int
+		Login                  func(childComplexity int, username string, password string) int
+		SendGlobalNotification func(childComplexity int, message string, typeArg model.NotificationType) int
+		UpdateCheck            func(childComplexity int, id string, name *string, config *string) int
+		UpdateUser             func(childComplexity int, id string, username *string, password *string, number *int) int
 	}
 
 	Notification struct {
@@ -145,6 +146,7 @@ type MutationResolver interface {
 	UpdateUser(ctx context.Context, id string, username *string, password *string, number *int) (*ent.User, error)
 	DeleteUser(ctx context.Context, id string) (bool, error)
 	EditConfig(ctx context.Context, id string, config string) (*ent.CheckConfig, error)
+	SendGlobalNotification(ctx context.Context, message string, typeArg model.NotificationType) (bool, error)
 }
 type QueryResolver interface {
 	Me(ctx context.Context) (*ent.User, error)
@@ -370,6 +372,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.Login(childComplexity, args["username"].(string), args["password"].(string)), true
+
+	case "Mutation.sendGlobalNotification":
+		if e.complexity.Mutation.SendGlobalNotification == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_sendGlobalNotification_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.SendGlobalNotification(childComplexity, args["message"].(string), args["type"].(model.NotificationType)), true
 
 	case "Mutation.updateCheck":
 		if e.complexity.Mutation.UpdateCheck == nil {
@@ -843,6 +857,30 @@ func (ec *executionContext) field_Mutation_login_args(ctx context.Context, rawAr
 		}
 	}
 	args["password"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_sendGlobalNotification_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["message"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("message"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["message"] = arg0
+	var arg1 model.NotificationType
+	if tmp, ok := rawArgs["type"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("type"))
+		arg1, err = ec.unmarshalNNotificationType2githubᚗcomᚋscorifyᚋbackendᚋpkgᚋgraphᚋmodelᚐNotificationType(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["type"] = arg1
 	return args, nil
 }
 
@@ -2269,6 +2307,61 @@ func (ec *executionContext) fieldContext_Mutation_editConfig(ctx context.Context
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_editConfig_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_sendGlobalNotification(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_sendGlobalNotification(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().SendGlobalNotification(rctx, fc.Args["message"].(string), fc.Args["type"].(model.NotificationType))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_sendGlobalNotification(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_sendGlobalNotification_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -5527,6 +5620,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "editConfig":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_editConfig(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "sendGlobalNotification":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_sendGlobalNotification(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
