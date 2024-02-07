@@ -20,6 +20,7 @@ import (
 	"github.com/scorify/backend/pkg/ent/user"
 	"github.com/scorify/backend/pkg/graph/model"
 	"github.com/scorify/backend/pkg/helpers"
+	"github.com/sirupsen/logrus"
 )
 
 // ID is the resolver for the id field.
@@ -610,21 +611,24 @@ func (r *queryResolver) Config(ctx context.Context, id string) (*ent.CheckConfig
 }
 
 // GlobalNotification is the resolver for the globalNotification field.
-func (r *subscriptionResolver) GlobalNotification(ctx context.Context) (<-chan string, error) {
-	notification_chan := make(chan string, 1)
+func (r *subscriptionResolver) GlobalNotification(ctx context.Context) (<-chan *model.Notification, error) {
+	notification_chan := make(chan *model.Notification, 1)
 
 	go func() {
 		sub := r.Redis.SubscribeNotification(ctx)
-		_, err := sub.Receive(ctx)
-		if err != nil {
-			return
-		}
 
 		ch := sub.Channel()
 		for {
 			select {
 			case msg := <-ch:
-				notification_chan <- msg.Payload
+				notification := model.Notification{}
+				err := json.Unmarshal([]byte(msg.Payload), &notification)
+				if err != nil {
+					logrus.WithError(err).Error("failed to unmarshal notification")
+					continue
+				}
+
+				notification_chan <- &notification
 			case <-ctx.Done():
 				close(notification_chan)
 				return
