@@ -544,7 +544,16 @@ func (r *mutationResolver) EditConfig(ctx context.Context, id string, config str
 
 // SendGlobalNotification is the resolver for the sendGlobalNotification field.
 func (r *mutationResolver) SendGlobalNotification(ctx context.Context, message string, typeArg model.NotificationType) (bool, error) {
-	_, err := r.Redis.PublishNotification(ctx, message, typeArg)
+	entUser, err := auth.Parse(ctx)
+	if err != nil {
+		return false, fmt.Errorf("invalid user")
+	}
+
+	if entUser.Role != user.RoleAdmin {
+		return false, fmt.Errorf("invalid permissions")
+	}
+
+	_, err = r.Redis.PublishNotification(ctx, message, typeArg)
 	return err == nil, err
 }
 
@@ -555,6 +564,15 @@ func (r *queryResolver) Me(ctx context.Context) (*ent.User, error) {
 
 // Users is the resolver for the users field.
 func (r *queryResolver) Users(ctx context.Context) ([]*ent.User, error) {
+	entUser, err := auth.Parse(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("invalid user")
+	}
+
+	if entUser.Role != user.RoleAdmin {
+		return nil, fmt.Errorf("invalid permissions")
+	}
+
 	return r.Ent.User.Query().All(ctx)
 }
 
@@ -596,6 +614,15 @@ func (r *queryResolver) Source(ctx context.Context, name string) (*model.Source,
 
 // Checks is the resolver for the checks field.
 func (r *queryResolver) Checks(ctx context.Context) ([]*ent.Check, error) {
+	entUser, err := auth.Parse(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("invalid user")
+	}
+
+	if entUser.Role != user.RoleAdmin {
+		return nil, fmt.Errorf("invalid permissions")
+	}
+
 	return r.Ent.Check.Query().All(ctx)
 }
 
