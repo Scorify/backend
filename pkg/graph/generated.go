@@ -79,6 +79,7 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
+		AdminLogin             func(childComplexity int, id string) int
 		ChangePassword         func(childComplexity int, oldPassword string, newPassword string) int
 		CreateCheck            func(childComplexity int, name string, source string, config string) int
 		CreateUser             func(childComplexity int, username string, password string, role user.Role, number *int) int
@@ -138,6 +139,7 @@ type ConfigResolver interface {
 }
 type MutationResolver interface {
 	Login(ctx context.Context, username string, password string) (*model.LoginOutput, error)
+	AdminLogin(ctx context.Context, id string) (*model.LoginOutput, error)
 	ChangePassword(ctx context.Context, oldPassword string, newPassword string) (bool, error)
 	CreateCheck(ctx context.Context, name string, source string, config string) (*ent.Check, error)
 	UpdateCheck(ctx context.Context, id string, name *string, config *string) (*ent.Check, error)
@@ -288,6 +290,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.LoginOutput.Token(childComplexity), true
+
+	case "Mutation.adminLogin":
+		if e.complexity.Mutation.AdminLogin == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_adminLogin_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.AdminLogin(childComplexity, args["id"].(string)), true
 
 	case "Mutation.changePassword":
 		if e.complexity.Mutation.ChangePassword == nil {
@@ -682,6 +696,21 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 // endregion ************************** generated!.gotpl **************************
 
 // region    ***************************** args.gotpl *****************************
+
+func (ec *executionContext) field_Mutation_adminLogin_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+}
 
 func (ec *executionContext) field_Mutation_changePassword_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
@@ -1817,6 +1846,77 @@ func (ec *executionContext) fieldContext_Mutation_login(ctx context.Context, fie
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_login_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_adminLogin(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_adminLogin(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().AdminLogin(rctx, fc.Args["id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.LoginOutput)
+	fc.Result = res
+	return ec.marshalNLoginOutput2ᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋgraphᚋmodelᚐLoginOutput(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_adminLogin(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "name":
+				return ec.fieldContext_LoginOutput_name(ctx, field)
+			case "token":
+				return ec.fieldContext_LoginOutput_token(ctx, field)
+			case "expires":
+				return ec.fieldContext_LoginOutput_expires(ctx, field)
+			case "path":
+				return ec.fieldContext_LoginOutput_path(ctx, field)
+			case "domain":
+				return ec.fieldContext_LoginOutput_domain(ctx, field)
+			case "secure":
+				return ec.fieldContext_LoginOutput_secure(ctx, field)
+			case "httpOnly":
+				return ec.fieldContext_LoginOutput_httpOnly(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LoginOutput", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_adminLogin_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -5564,6 +5664,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "login":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_login(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "adminLogin":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_adminLogin(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++

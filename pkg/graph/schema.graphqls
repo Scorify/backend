@@ -72,6 +72,7 @@ type Query {
 
 type Mutation {
   login(username: String!, password: String!): LoginOutput!
+  adminLogin(id: ID!): LoginOutput!
   changePassword(oldPassword: String!, newPassword: String!): Boolean!
 
   createCheck(name: String!, source: String!, config: String!): Check!

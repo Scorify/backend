@@ -101,6 +101,46 @@ func (r *mutationResolver) Login(ctx context.Context, username string, password 
 	}, nil
 }
 
+// AdminLogin is the resolver for the adminLogin field.
+func (r *mutationResolver) AdminLogin(ctx context.Context, id string) (*model.LoginOutput, error) {
+	entUser, err := auth.Parse(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("invalid user")
+	}
+
+	if entUser.Role != user.RoleAdmin {
+		return nil, fmt.Errorf("invalid permissions")
+	}
+
+	uuid, err := uuid.Parse(id)
+	if err != nil {
+		return nil, fmt.Errorf("encounter error while parsing id: %v", err)
+	}
+
+	entUser, err = r.Ent.User.Query().
+		Where(
+			user.IDEQ(uuid),
+		).Only(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("invalid user")
+	}
+
+	token, expiration, err := auth.GenerateJWT(entUser.Username, string(entUser.Role))
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.LoginOutput{
+		Name:     "auth",
+		Token:    token,
+		Expires:  expiration,
+		Path:     "/",
+		Domain:   config.Domain,
+		Secure:   false,
+		HTTPOnly: false,
+	}, nil
+}
+
 // ChangePassword is the resolver for the changePassword field.
 func (r *mutationResolver) ChangePassword(ctx context.Context, oldPassword string, newPassword string) (bool, error) {
 	entUser, err := auth.Parse(ctx)
@@ -504,7 +544,16 @@ func (r *mutationResolver) EditConfig(ctx context.Context, id string, config str
 
 // SendGlobalNotification is the resolver for the sendGlobalNotification field.
 func (r *mutationResolver) SendGlobalNotification(ctx context.Context, message string, typeArg model.NotificationType) (bool, error) {
-	_, err := r.Redis.PublishNotification(ctx, message, typeArg)
+	entUser, err := auth.Parse(ctx)
+	if err != nil {
+		return false, fmt.Errorf("invalid user")
+	}
+
+	if entUser.Role != user.RoleAdmin {
+		return false, fmt.Errorf("invalid permissions")
+	}
+
+	_, err = r.Redis.PublishNotification(ctx, message, typeArg)
 	return err == nil, err
 }
 
@@ -515,6 +564,15 @@ func (r *queryResolver) Me(ctx context.Context) (*ent.User, error) {
 
 // Users is the resolver for the users field.
 func (r *queryResolver) Users(ctx context.Context) ([]*ent.User, error) {
+	entUser, err := auth.Parse(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("invalid user")
+	}
+
+	if entUser.Role != user.RoleAdmin {
+		return nil, fmt.Errorf("invalid permissions")
+	}
+
 	return r.Ent.User.Query().All(ctx)
 }
 
@@ -556,6 +614,15 @@ func (r *queryResolver) Source(ctx context.Context, name string) (*model.Source,
 
 // Checks is the resolver for the checks field.
 func (r *queryResolver) Checks(ctx context.Context) ([]*ent.Check, error) {
+	entUser, err := auth.Parse(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("invalid user")
+	}
+
+	if entUser.Role != user.RoleAdmin {
+		return nil, fmt.Errorf("invalid permissions")
+	}
+
 	return r.Ent.Check.Query().All(ctx)
 }
 
@@ -674,13 +741,3 @@ type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
 type subscriptionResolver struct{ *Resolver }
 type userResolver struct{ *Resolver }
-
-// !!! WARNING !!!
-// The code below was going to be deleted when updating resolvers. It has been copied here so you have
-// one last chance to move it out of harms way if you want. There are two reasons this happens:
-//   - When renaming or deleting a resolver the old code will be put in here. You can safely delete
-//     it when you're done.
-//   - You have helper methods in this file. Move them out to keep these resolver files clean.
-func (r *subscriptionResolver) Notification(ctx context.Context) (<-chan string, error) {
-	panic(fmt.Errorf("not implemented: Notification - notification"))
-}
