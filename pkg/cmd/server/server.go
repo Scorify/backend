@@ -17,6 +17,7 @@ import (
 	"github.com/scorify/backend/pkg/config"
 	"github.com/scorify/backend/pkg/data"
 	"github.com/scorify/backend/pkg/graph"
+	"github.com/scorify/backend/pkg/graph/directives"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -32,14 +33,18 @@ var Cmd = &cobra.Command{
 }
 
 func graphqlHandler() gin.HandlerFunc {
+	conf := graph.Config{
+		Resolvers: &graph.Resolver{
+			Ent:   data.Client,
+			Redis: cache.Client,
+		},
+	}
+
+	conf.Directives.IsAuthenticated = directives.IsAuthenticated
+
 	h := handler.New(
 		graph.NewExecutableSchema(
-			graph.Config{
-				Resolvers: &graph.Resolver{
-					Ent:   data.Client,
-					Redis: cache.Client,
-				},
-			},
+			conf,
 		),
 	)
 
