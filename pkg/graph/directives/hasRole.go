@@ -3,6 +3,7 @@ package directives
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/scorify/backend/pkg/auth"
@@ -21,5 +22,15 @@ func HasRole(ctx context.Context, obj interface{}, next graphql.Resolver, roles 
 		}
 	}
 
-	return nil, fmt.Errorf("user does any of the required roles: %v", roles)
+	return nil, fmt.Errorf(
+		"invalid permissions; \"%s\" does not have any of the following roles: [\"%s\"]",
+		entUser.Username,
+		strings.Join(func() []string {
+			_roles := make([]string, len(roles))
+			for i, role := range roles {
+				_roles[i] = string(*role)
+			}
+			return _roles
+		}(), "\", \""),
+	)
 }
