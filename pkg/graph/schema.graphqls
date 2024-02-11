@@ -56,7 +56,7 @@ type Notification {
 }
 
 type Subscription {
-  globalNotification: Notification! @hasRole(roles: [admin])
+  globalNotification: Notification!
 }
 
 type Query {
