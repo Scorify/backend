@@ -41,6 +41,7 @@ func graphqlHandler() gin.HandlerFunc {
 	}
 
 	conf.Directives.IsAuthenticated = directives.IsAuthenticated
+	conf.Directives.HasRole = directives.HasRole
 
 	h := handler.New(
 		graph.NewExecutableSchema(
