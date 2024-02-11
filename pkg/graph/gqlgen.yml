@@ -95,3 +95,7 @@ models:
     model:
       - github.com/scorify/backend/pkg/ent/user.Role
 
+  CheckConfiguration:
+    model:
+      - github.com/scorify/backend/pkg/structs.CheckConfiguration
+

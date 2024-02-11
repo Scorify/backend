@@ -1,3 +1,5 @@
+scalar JSON
+
 directive @isAuthenticated on FIELD_DEFINITION
 directive @hasRole(roles: [Role]) on FIELD_DEFINITION
 
@@ -28,16 +30,21 @@ type Source {
   schema: String!
 }
 
+type CheckConfiguration {
+  config: JSON!
+  editable_fields: [String!]!
+}
+
 type Check {
   id: ID!
   name: String!
   source: Source!
-  config: String! @hasRole(roles: [admin])
+  config: CheckConfiguration! @hasRole(roles: [admin])
 }
 
 type Config {
   id: ID!
-  config: String!
+  config: CheckConfiguration!
   check: Check!
   user: User!
 }
