@@ -49,7 +49,9 @@ func (r *checkResolver) Config(ctx context.Context, obj *ent.Check) (*structs.Ch
 
 // Config is the resolver for the config field.
 func (r *checkConfigurationResolver) Config(ctx context.Context, obj *structs.CheckConfiguration) (string, error) {
-	panic(fmt.Errorf("not implemented: Config - config"))
+	out, err := json.Marshal(obj.Config)
+
+	return string(out), err
 }
 
 // ID is the resolver for the id field.
@@ -258,7 +260,7 @@ func (r *mutationResolver) CreateCheck(ctx context.Context, name string, source 
 }
 
 // UpdateCheck is the resolver for the updateCheck field.
-func (r *mutationResolver) UpdateCheck(ctx context.Context, id string, name *string, config *string) (*ent.Check, error) {
+func (r *mutationResolver) UpdateCheck(ctx context.Context, id string, name *string, config *string, editableFields []string) (*ent.Check, error) {
 	uuid, err := uuid.Parse(id)
 	if err != nil {
 		return nil, fmt.Errorf("encounter error while parsing id: %v", err)
@@ -278,71 +280,73 @@ func (r *mutationResolver) UpdateCheck(ctx context.Context, id string, name *str
 		checkUpdate.SetName(*name)
 	}
 
-	if config != nil {
+	if config != nil || editableFields != nil {
+		defaultConfig := entCheck.DefaultConfig
 
-		configSchema, ok := checks.Checks[entCheck.Source]
-		if !ok {
-			return nil, fmt.Errorf("source \"%s\" does not exist", entCheck.Source)
-		}
-
-		var schemaMap map[string]interface{}
-		err = json.Unmarshal([]byte(configSchema.Schema), &schemaMap)
-		if err != nil {
-			return nil, fmt.Errorf("failed to unmarshal schema: %v", err)
-		}
-
-		var configMap map[string]interface{}
-		err = json.Unmarshal([]byte(*config), &configMap)
-		if err != nil {
-			return nil, fmt.Errorf("failed to unmarshal config: %v", err)
-		}
-
-		defaultConfig := structs.CheckConfiguration{
-			Config:         make(map[string]interface{}),
-			EditableFields: []string{},
-		}
-
-		for key, value := range schemaMap {
-			switch value {
-			case "string":
-				configValue, ok := configMap[key]
-				if !ok {
-					return nil, fmt.Errorf("invalid config, missing key \"%s\"", key)
-				}
-
-				configString, ok := configValue.(string)
-				if !ok {
-					return nil, fmt.Errorf("invalid config, key \"%s\" is not a string", key)
-				}
-
-				defaultConfig.Config[key] = configString
-			case "int":
-				configValue, ok := configMap[key]
-				if !ok {
-					return nil, fmt.Errorf("invalid config, missing key \"%s\"", key)
-				}
-
-				configFloat, ok := configValue.(float64)
-				if !ok {
-					return nil, fmt.Errorf("invalid config, key \"%s\" is not an int", key)
-				}
-
-				defaultConfig.Config[key] = int(configFloat)
-			case "bool":
-				configValue, ok := configMap[key]
-				if !ok {
-					return nil, fmt.Errorf("invalid config, missing key \"%s\"", key)
-				}
-
-				configBool, ok := configValue.(bool)
-				if !ok {
-					return nil, fmt.Errorf("invalid config, key \"%s\" is not a boolean", key)
-				}
-
-				defaultConfig.Config[key] = configBool
-			default:
-				return nil, fmt.Errorf("invalid schema, unknown type \"%s\" for key \"%s\"", value, key)
+		if config != nil {
+			configSchema, ok := checks.Checks[entCheck.Source]
+			if !ok {
+				return nil, fmt.Errorf("source \"%s\" does not exist", entCheck.Source)
 			}
+
+			var schemaMap map[string]interface{}
+			err = json.Unmarshal([]byte(configSchema.Schema), &schemaMap)
+			if err != nil {
+				return nil, fmt.Errorf("failed to unmarshal schema: %v", err)
+			}
+
+			var configMap map[string]interface{}
+			err = json.Unmarshal([]byte(*config), &configMap)
+			if err != nil {
+				return nil, fmt.Errorf("failed to unmarshal config: %v", err)
+			}
+
+			for key, value := range schemaMap {
+				switch value {
+				case "string":
+					configValue, ok := configMap[key]
+					if !ok {
+						return nil, fmt.Errorf("invalid config, missing key \"%s\"", key)
+					}
+
+					configString, ok := configValue.(string)
+					if !ok {
+						return nil, fmt.Errorf("invalid config, key \"%s\" is not a string", key)
+					}
+
+					defaultConfig.Config[key] = configString
+				case "int":
+					configValue, ok := configMap[key]
+					if !ok {
+						return nil, fmt.Errorf("invalid config, missing key \"%s\"", key)
+					}
+
+					configFloat, ok := configValue.(float64)
+					if !ok {
+						return nil, fmt.Errorf("invalid config, key \"%s\" is not an int", key)
+					}
+
+					defaultConfig.Config[key] = int(configFloat)
+				case "bool":
+					configValue, ok := configMap[key]
+					if !ok {
+						return nil, fmt.Errorf("invalid config, missing key \"%s\"", key)
+					}
+
+					configBool, ok := configValue.(bool)
+					if !ok {
+						return nil, fmt.Errorf("invalid config, key \"%s\" is not a boolean", key)
+					}
+
+					defaultConfig.Config[key] = configBool
+				default:
+					return nil, fmt.Errorf("invalid schema, unknown type \"%s\" for key \"%s\"", value, key)
+				}
+			}
+		}
+
+		if editableFields != nil {
+			defaultConfig.EditableFields = editableFields
 		}
 
 		checkUpdate.SetDefaultConfig(defaultConfig)
@@ -536,15 +540,6 @@ func (r *queryResolver) Source(ctx context.Context, name string) (*model.Source,
 
 // Checks is the resolver for the checks field.
 func (r *queryResolver) Checks(ctx context.Context) ([]*ent.Check, error) {
-	entUser, err := auth.Parse(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("invalid user")
-	}
-
-	if entUser.Role != user.RoleAdmin {
-		return nil, fmt.Errorf("invalid permissions")
-	}
-
 	return r.Ent.Check.Query().All(ctx)
 }
 
@@ -669,15 +664,3 @@ type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
 type subscriptionResolver struct{ *Resolver }
 type userResolver struct{ *Resolver }
-
-// !!! WARNING !!!
-// The code below was going to be deleted when updating resolvers. It has been copied here so you have
-// one last chance to move it out of harms way if you want. There are two reasons this happens:
-//   - When renaming or deleting a resolver the old code will be put in here. You can safely delete
-//     it when you're done.
-//   - You have helper methods in this file. Move them out to keep these resolver files clean.
-func (r *configResolver) Config(ctx context.Context, obj *ent.CheckConfig) (string, error) {
-	out, err := json.Marshal(obj.Config)
-
-	return string(out), err
-}

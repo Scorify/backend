@@ -97,7 +97,7 @@ type ComplexityRoot struct {
 		EditConfig             func(childComplexity int, id string, config string) int
 		Login                  func(childComplexity int, username string, password string) int
 		SendGlobalNotification func(childComplexity int, message string, typeArg model.NotificationType) int
-		UpdateCheck            func(childComplexity int, id string, name *string, config *string) int
+		UpdateCheck            func(childComplexity int, id string, name *string, config *string, editableFields []string) int
 		UpdateUser             func(childComplexity int, id string, username *string, password *string, number *int) int
 	}
 
@@ -154,7 +154,7 @@ type MutationResolver interface {
 	AdminLogin(ctx context.Context, id string) (*model.LoginOutput, error)
 	ChangePassword(ctx context.Context, oldPassword string, newPassword string) (bool, error)
 	CreateCheck(ctx context.Context, name string, source string, config string) (*ent.Check, error)
-	UpdateCheck(ctx context.Context, id string, name *string, config *string) (*ent.Check, error)
+	UpdateCheck(ctx context.Context, id string, name *string, config *string, editableFields []string) (*ent.Check, error)
 	DeleteCheck(ctx context.Context, id string) (bool, error)
 	CreateUser(ctx context.Context, username string, password string, role user.Role, number *int) (*ent.User, error)
 	UpdateUser(ctx context.Context, id string, username *string, password *string, number *int) (*ent.User, error)
@@ -435,7 +435,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UpdateCheck(childComplexity, args["id"].(string), args["name"].(*string), args["config"].(*string)), true
+		return e.complexity.Mutation.UpdateCheck(childComplexity, args["id"].(string), args["name"].(*string), args["config"].(*string), args["editable_fields"].([]string)), true
 
 	case "Mutation.updateUser":
 		if e.complexity.Mutation.UpdateUser == nil {
@@ -978,12 +978,21 @@ func (ec *executionContext) field_Mutation_updateCheck_args(ctx context.Context,
 	var arg2 *string
 	if tmp, ok := rawArgs["config"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("config"))
-		arg2, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		arg2, err = ec.unmarshalOJSON2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
 	args["config"] = arg2
+	var arg3 []string
+	if tmp, ok := rawArgs["editable_fields"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("editable_fields"))
+		arg3, err = ec.unmarshalOString2ᚕstringᚄ(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["editable_fields"] = arg3
 	return args, nil
 }
 
@@ -2291,7 +2300,7 @@ func (ec *executionContext) _Mutation_updateCheck(ctx context.Context, field gra
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().UpdateCheck(rctx, fc.Args["id"].(string), fc.Args["name"].(*string), fc.Args["config"].(*string))
+			return ec.resolvers.Mutation().UpdateCheck(rctx, fc.Args["id"].(string), fc.Args["name"].(*string), fc.Args["config"].(*string), fc.Args["editable_fields"].([]string))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			roles, err := ec.unmarshalORole2ᚕᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚋuserᚐRole(ctx, []interface{}{"admin"})
@@ -3209,8 +3218,32 @@ func (ec *executionContext) _Query_checks(ctx context.Context, field graphql.Col
 		}
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Checks(rctx)
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Query().Checks(rctx)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			roles, err := ec.unmarshalORole2ᚕᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚋuserᚐRole(ctx, []interface{}{"admin"})
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.HasRole == nil {
+				return nil, errors.New("directive hasRole is not implemented")
+			}
+			return ec.directives.HasRole(ctx, nil, directive0, roles)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.([]*ent.Check); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*github.com/scorify/backend/pkg/ent.Check`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -7736,6 +7769,22 @@ func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.Sele
 	return res
 }
 
+func (ec *executionContext) unmarshalOJSON2ᚖstring(ctx context.Context, v interface{}) (*string, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := graphql.UnmarshalString(v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOJSON2ᚖstring(ctx context.Context, sel ast.SelectionSet, v *string) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	res := graphql.MarshalString(*v)
+	return res
+}
+
 func (ec *executionContext) unmarshalORole2ᚕᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚋuserᚐRole(ctx context.Context, v interface{}) ([]*user.Role, error) {
 	if v == nil {
 		return nil, nil
@@ -7812,6 +7861,44 @@ func (ec *executionContext) marshalORole2ᚖgithubᚗcomᚋscorifyᚋbackendᚋp
 	}
 	res := graphql.MarshalString(string(*v))
 	return res
+}
+
+func (ec *executionContext) unmarshalOString2ᚕstringᚄ(ctx context.Context, v interface{}) ([]string, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]string, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNString2string(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOString2ᚕstringᚄ(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNString2string(ctx, sel, v[i])
+	}
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) unmarshalOString2ᚖstring(ctx context.Context, v interface{}) (*string, error) {
