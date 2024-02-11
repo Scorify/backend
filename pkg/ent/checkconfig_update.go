@@ -15,6 +15,7 @@ import (
 	"github.com/scorify/backend/pkg/ent/checkconfig"
 	"github.com/scorify/backend/pkg/ent/predicate"
 	"github.com/scorify/backend/pkg/ent/user"
+	"github.com/scorify/backend/pkg/structs"
 )
 
 // CheckConfigUpdate is the builder for updating CheckConfig entities.
@@ -31,8 +32,16 @@ func (ccu *CheckConfigUpdate) Where(ps ...predicate.CheckConfig) *CheckConfigUpd
 }
 
 // SetConfig sets the "config" field.
-func (ccu *CheckConfigUpdate) SetConfig(m map[string]interface{}) *CheckConfigUpdate {
-	ccu.mutation.SetConfig(m)
+func (ccu *CheckConfigUpdate) SetConfig(sc structs.CheckConfiguration) *CheckConfigUpdate {
+	ccu.mutation.SetConfig(sc)
+	return ccu
+}
+
+// SetNillableConfig sets the "config" field if the given value is not nil.
+func (ccu *CheckConfigUpdate) SetNillableConfig(sc *structs.CheckConfiguration) *CheckConfigUpdate {
+	if sc != nil {
+		ccu.SetConfig(*sc)
+	}
 	return ccu
 }
 
@@ -207,8 +216,16 @@ type CheckConfigUpdateOne struct {
 }
 
 // SetConfig sets the "config" field.
-func (ccuo *CheckConfigUpdateOne) SetConfig(m map[string]interface{}) *CheckConfigUpdateOne {
-	ccuo.mutation.SetConfig(m)
+func (ccuo *CheckConfigUpdateOne) SetConfig(sc structs.CheckConfiguration) *CheckConfigUpdateOne {
+	ccuo.mutation.SetConfig(sc)
+	return ccuo
+}
+
+// SetNillableConfig sets the "config" field if the given value is not nil.
+func (ccuo *CheckConfigUpdateOne) SetNillableConfig(sc *structs.CheckConfiguration) *CheckConfigUpdateOne {
+	if sc != nil {
+		ccuo.SetConfig(*sc)
+	}
 	return ccuo
 }
 

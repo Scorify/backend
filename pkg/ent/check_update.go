@@ -14,6 +14,7 @@ import (
 	"github.com/scorify/backend/pkg/ent/check"
 	"github.com/scorify/backend/pkg/ent/checkconfig"
 	"github.com/scorify/backend/pkg/ent/predicate"
+	"github.com/scorify/backend/pkg/structs"
 )
 
 // CheckUpdate is the builder for updating Check entities.
@@ -58,8 +59,16 @@ func (cu *CheckUpdate) SetNillableSource(s *string) *CheckUpdate {
 }
 
 // SetDefaultConfig sets the "default_config" field.
-func (cu *CheckUpdate) SetDefaultConfig(m map[string]interface{}) *CheckUpdate {
-	cu.mutation.SetDefaultConfig(m)
+func (cu *CheckUpdate) SetDefaultConfig(sc structs.CheckConfiguration) *CheckUpdate {
+	cu.mutation.SetDefaultConfig(sc)
+	return cu
+}
+
+// SetNillableDefaultConfig sets the "default_config" field if the given value is not nil.
+func (cu *CheckUpdate) SetNillableDefaultConfig(sc *structs.CheckConfiguration) *CheckUpdate {
+	if sc != nil {
+		cu.SetDefaultConfig(*sc)
+	}
 	return cu
 }
 
@@ -261,8 +270,16 @@ func (cuo *CheckUpdateOne) SetNillableSource(s *string) *CheckUpdateOne {
 }
 
 // SetDefaultConfig sets the "default_config" field.
-func (cuo *CheckUpdateOne) SetDefaultConfig(m map[string]interface{}) *CheckUpdateOne {
-	cuo.mutation.SetDefaultConfig(m)
+func (cuo *CheckUpdateOne) SetDefaultConfig(sc structs.CheckConfiguration) *CheckUpdateOne {
+	cuo.mutation.SetDefaultConfig(sc)
+	return cuo
+}
+
+// SetNillableDefaultConfig sets the "default_config" field if the given value is not nil.
+func (cuo *CheckUpdateOne) SetNillableDefaultConfig(sc *structs.CheckConfiguration) *CheckUpdateOne {
+	if sc != nil {
+		cuo.SetDefaultConfig(*sc)
+	}
 	return cuo
 }
 

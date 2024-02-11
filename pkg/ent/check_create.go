@@ -12,6 +12,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/scorify/backend/pkg/ent/check"
 	"github.com/scorify/backend/pkg/ent/checkconfig"
+	"github.com/scorify/backend/pkg/structs"
 )
 
 // CheckCreate is the builder for creating a Check entity.
@@ -34,8 +35,8 @@ func (cc *CheckCreate) SetSource(s string) *CheckCreate {
 }
 
 // SetDefaultConfig sets the "default_config" field.
-func (cc *CheckCreate) SetDefaultConfig(m map[string]interface{}) *CheckCreate {
-	cc.mutation.SetDefaultConfig(m)
+func (cc *CheckCreate) SetDefaultConfig(sc structs.CheckConfiguration) *CheckCreate {
+	cc.mutation.SetDefaultConfig(sc)
 	return cc
 }
 

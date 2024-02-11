@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
 	"github.com/scorify/backend/pkg/ent/check"
+	"github.com/scorify/backend/pkg/structs"
 )
 
 // Check is the model entity for the Check schema.
@@ -24,7 +25,7 @@ type Check struct {
 	// The source of the check
 	Source string `json:"source"`
 	// The default configuration of a check
-	DefaultConfig map[string]interface{} `json:"default_config"`
+	DefaultConfig structs.CheckConfiguration `json:"default_config"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the CheckQuery when eager-loading is set.
 	Edges        CheckEdges `json:"edges"`
