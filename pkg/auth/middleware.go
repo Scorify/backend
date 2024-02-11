@@ -29,7 +29,6 @@ func JWTMiddleware(ctx *gin.Context) {
 			ctx.Next()
 			return
 		}
-		fmt.Println(err)
 		ctx.Next()
 		return
 	}

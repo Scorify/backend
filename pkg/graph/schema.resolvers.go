@@ -103,21 +103,12 @@ func (r *mutationResolver) Login(ctx context.Context, username string, password 
 
 // AdminLogin is the resolver for the adminLogin field.
 func (r *mutationResolver) AdminLogin(ctx context.Context, id string) (*model.LoginOutput, error) {
-	entUser, err := auth.Parse(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("invalid user")
-	}
-
-	if entUser.Role != user.RoleAdmin {
-		return nil, fmt.Errorf("invalid permissions")
-	}
-
 	uuid, err := uuid.Parse(id)
 	if err != nil {
 		return nil, fmt.Errorf("encounter error while parsing id: %v", err)
 	}
 
-	entUser, err = r.Ent.User.Query().
+	entUser, err := r.Ent.User.Query().
 		Where(
 			user.IDEQ(uuid),
 		).Only(ctx)
@@ -166,22 +157,13 @@ func (r *mutationResolver) ChangePassword(ctx context.Context, oldPassword strin
 
 // CreateCheck is the resolver for the createCheck field.
 func (r *mutationResolver) CreateCheck(ctx context.Context, name string, source string, config string) (*ent.Check, error) {
-	entUser, err := auth.Parse(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("invalid user")
-	}
-
-	if entUser.Role != user.RoleAdmin {
-		return nil, fmt.Errorf("invalid permissions")
-	}
-
 	configSchema, ok := checks.Checks[source]
 	if !ok {
 		return nil, fmt.Errorf("source \"%s\" does not exist", source)
 	}
 
 	var schemaMap map[string]interface{}
-	err = json.Unmarshal([]byte(configSchema.Schema), &schemaMap)
+	err := json.Unmarshal([]byte(configSchema.Schema), &schemaMap)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal schema: %v", err)
 	}
@@ -277,15 +259,6 @@ func (r *mutationResolver) CreateCheck(ctx context.Context, name string, source 
 
 // UpdateCheck is the resolver for the updateCheck field.
 func (r *mutationResolver) UpdateCheck(ctx context.Context, id string, name *string, config *string) (*ent.Check, error) {
-	entUser, err := auth.Parse(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("invalid user")
-	}
-
-	if entUser.Role != user.RoleAdmin {
-		return nil, fmt.Errorf("invalid permissions")
-	}
-
 	uuid, err := uuid.Parse(id)
 	if err != nil {
 		return nil, fmt.Errorf("encounter error while parsing id: %v", err)
@@ -392,15 +365,6 @@ func (r *mutationResolver) UpdateCheck(ctx context.Context, id string, name *str
 
 // DeleteCheck is the resolver for the deleteCheck field.
 func (r *mutationResolver) DeleteCheck(ctx context.Context, id string) (bool, error) {
-	entUser, err := auth.Parse(ctx)
-	if err != nil {
-		return false, fmt.Errorf("invalid user")
-	}
-
-	if entUser.Role != user.RoleAdmin {
-		return false, fmt.Errorf("invalid permissions")
-	}
-
 	uuid, err := uuid.Parse(id)
 	if err != nil {
 		return false, fmt.Errorf("encounter error while parsing id: %v", err)
@@ -413,15 +377,6 @@ func (r *mutationResolver) DeleteCheck(ctx context.Context, id string) (bool, er
 
 // CreateUser is the resolver for the createUser field.
 func (r *mutationResolver) CreateUser(ctx context.Context, username string, password string, role user.Role, number *int) (*ent.User, error) {
-	entUser, err := auth.Parse(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("invalid user")
-	}
-
-	if entUser.Role != user.RoleAdmin {
-		return nil, fmt.Errorf("invalid permissions")
-	}
-
 	hashedPassword, err := helpers.HashPassword(password)
 	if err != nil {
 		return nil, err
@@ -441,15 +396,6 @@ func (r *mutationResolver) CreateUser(ctx context.Context, username string, pass
 
 // UpdateUser is the resolver for the updateUser field.
 func (r *mutationResolver) UpdateUser(ctx context.Context, id string, username *string, password *string, number *int) (*ent.User, error) {
-	entUser, err := auth.Parse(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("invalid user")
-	}
-
-	if entUser.Role != user.RoleAdmin {
-		return nil, fmt.Errorf("invalid permissions")
-	}
-
 	uuid, err := uuid.Parse(id)
 	if err != nil {
 		return nil, fmt.Errorf("encounter error while parsing id: %v", err)
@@ -479,18 +425,14 @@ func (r *mutationResolver) UpdateUser(ctx context.Context, id string, username *
 
 // DeleteUser is the resolver for the deleteUser field.
 func (r *mutationResolver) DeleteUser(ctx context.Context, id string) (bool, error) {
-	entUser, err := auth.Parse(ctx)
-	if err != nil {
-		return false, fmt.Errorf("invalid user")
-	}
-
-	if entUser.Role != user.RoleAdmin {
-		return false, fmt.Errorf("invalid permissions")
-	}
-
 	uuid, err := uuid.Parse(id)
 	if err != nil {
 		return false, fmt.Errorf("encounter error while parsing id: %v", err)
+	}
+
+	entUser, err := auth.Parse(ctx)
+	if err != nil {
+		return false, fmt.Errorf("invalid user")
 	}
 
 	if entUser.ID == uuid {
@@ -544,16 +486,7 @@ func (r *mutationResolver) EditConfig(ctx context.Context, id string, config str
 
 // SendGlobalNotification is the resolver for the sendGlobalNotification field.
 func (r *mutationResolver) SendGlobalNotification(ctx context.Context, message string, typeArg model.NotificationType) (bool, error) {
-	entUser, err := auth.Parse(ctx)
-	if err != nil {
-		return false, fmt.Errorf("invalid user")
-	}
-
-	if entUser.Role != user.RoleAdmin {
-		return false, fmt.Errorf("invalid permissions")
-	}
-
-	_, err = r.Redis.PublishNotification(ctx, message, typeArg)
+	_, err := r.Redis.PublishNotification(ctx, message, typeArg)
 	return err == nil, err
 }
 
@@ -564,29 +497,11 @@ func (r *queryResolver) Me(ctx context.Context) (*ent.User, error) {
 
 // Users is the resolver for the users field.
 func (r *queryResolver) Users(ctx context.Context) ([]*ent.User, error) {
-	entUser, err := auth.Parse(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("invalid user")
-	}
-
-	if entUser.Role != user.RoleAdmin {
-		return nil, fmt.Errorf("invalid permissions")
-	}
-
 	return r.Ent.User.Query().All(ctx)
 }
 
 // Sources is the resolver for the sources field.
 func (r *queryResolver) Sources(ctx context.Context) ([]*model.Source, error) {
-	entUser, err := auth.Parse(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("invalid user")
-	}
-
-	if entUser.Role != user.RoleAdmin {
-		return nil, fmt.Errorf("invalid permissions")
-	}
-
 	var checkSources []*model.Source
 
 	for name, schema := range checks.Checks {
