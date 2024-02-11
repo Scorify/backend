@@ -6,6 +6,7 @@ import (
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
+	"github.com/scorify/backend/pkg/structs"
 )
 
 // Check holds the schema definition for the Check entity.
@@ -31,7 +32,7 @@ func (Check) Fields() []ent.Field {
 			StructTag(`json:"source"`).
 			Comment("The source of the check").
 			NotEmpty(),
-		field.JSON("default_config", map[string]interface{}{}).
+		field.JSON("default_config", structs.CheckConfiguration{}).
 			StructTag(`json:"default_config"`).
 			Comment("The default configuration of a check"),
 	}
