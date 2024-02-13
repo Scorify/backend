@@ -20,6 +20,7 @@ import (
 	"github.com/scorify/backend/pkg/ent/user"
 	"github.com/scorify/backend/pkg/graph/model"
 	"github.com/scorify/backend/pkg/helpers"
+	"github.com/scorify/backend/pkg/structs"
 	"github.com/sirupsen/logrus"
 )
 
@@ -42,8 +43,13 @@ func (r *checkResolver) Source(ctx context.Context, obj *ent.Check) (*model.Sour
 }
 
 // Config is the resolver for the config field.
-func (r *checkResolver) Config(ctx context.Context, obj *ent.Check) (string, error) {
-	out, err := json.Marshal(obj.DefaultConfig)
+func (r *checkResolver) Config(ctx context.Context, obj *ent.Check) (*structs.CheckConfiguration, error) {
+	return &obj.DefaultConfig, nil
+}
+
+// Config is the resolver for the config field.
+func (r *checkConfigurationResolver) Config(ctx context.Context, obj *structs.CheckConfiguration) (string, error) {
+	out, err := json.Marshal(obj.Config)
 
 	return string(out), err
 }
@@ -51,13 +57,6 @@ func (r *checkResolver) Config(ctx context.Context, obj *ent.Check) (string, err
 // ID is the resolver for the id field.
 func (r *configResolver) ID(ctx context.Context, obj *ent.CheckConfig) (string, error) {
 	return obj.ID.String(), nil
-}
-
-// Config is the resolver for the config field.
-func (r *configResolver) Config(ctx context.Context, obj *ent.CheckConfig) (string, error) {
-	out, err := json.Marshal(obj.Config)
-
-	return string(out), err
 }
 
 // Check is the resolver for the check field.
@@ -156,7 +155,7 @@ func (r *mutationResolver) ChangePassword(ctx context.Context, oldPassword strin
 }
 
 // CreateCheck is the resolver for the createCheck field.
-func (r *mutationResolver) CreateCheck(ctx context.Context, name string, source string, config string) (*ent.Check, error) {
+func (r *mutationResolver) CreateCheck(ctx context.Context, name string, source string, config string, editableFields []string) (*ent.Check, error) {
 	configSchema, ok := checks.Checks[source]
 	if !ok {
 		return nil, fmt.Errorf("source \"%s\" does not exist", source)
@@ -174,7 +173,10 @@ func (r *mutationResolver) CreateCheck(ctx context.Context, name string, source 
 		return nil, fmt.Errorf("failed to unmarshal config: %v", err)
 	}
 
-	defaultConfig := map[string]interface{}{}
+	defaultConfig := structs.CheckConfiguration{
+		Config:         make(map[string]interface{}),
+		EditableFields: []string{},
+	}
 	for key, value := range schemaMap {
 		switch value {
 		case "string":
@@ -188,7 +190,7 @@ func (r *mutationResolver) CreateCheck(ctx context.Context, name string, source 
 				return nil, fmt.Errorf("invalid config, key \"%s\" is not a string", key)
 			}
 
-			defaultConfig[key] = configString
+			defaultConfig.Config[key] = configString
 		case "int":
 			configValue, ok := configMap[key]
 			if !ok {
@@ -200,7 +202,7 @@ func (r *mutationResolver) CreateCheck(ctx context.Context, name string, source 
 				return nil, fmt.Errorf("invalid config, key \"%s\" is not an int", key)
 			}
 
-			defaultConfig[key] = int(configFloat)
+			defaultConfig.Config[key] = int(configFloat)
 		case "bool":
 			configValue, ok := configMap[key]
 			if !ok {
@@ -212,7 +214,7 @@ func (r *mutationResolver) CreateCheck(ctx context.Context, name string, source 
 				return nil, fmt.Errorf("invalid config, key \"%s\" is not a boolean", key)
 			}
 
-			defaultConfig[key] = configBool
+			defaultConfig.Config[key] = configBool
 		default:
 			return nil, fmt.Errorf("invalid schema, unknown type \"%s\" for key \"%s\"", value, key)
 		}
@@ -221,6 +223,10 @@ func (r *mutationResolver) CreateCheck(ctx context.Context, name string, source 
 	_, ok = checks.Checks[source]
 	if !ok {
 		return nil, fmt.Errorf("source \"%s\" does not exist", source)
+	}
+
+	if editableFields != nil {
+		defaultConfig.EditableFields = editableFields
 	}
 
 	entCheck, err := r.Ent.Check.Create().
@@ -258,7 +264,7 @@ func (r *mutationResolver) CreateCheck(ctx context.Context, name string, source 
 }
 
 // UpdateCheck is the resolver for the updateCheck field.
-func (r *mutationResolver) UpdateCheck(ctx context.Context, id string, name *string, config *string) (*ent.Check, error) {
+func (r *mutationResolver) UpdateCheck(ctx context.Context, id string, name *string, config *string, editableFields []string) (*ent.Check, error) {
 	uuid, err := uuid.Parse(id)
 	if err != nil {
 		return nil, fmt.Errorf("encounter error while parsing id: %v", err)
@@ -278,67 +284,73 @@ func (r *mutationResolver) UpdateCheck(ctx context.Context, id string, name *str
 		checkUpdate.SetName(*name)
 	}
 
-	if config != nil {
+	if config != nil || editableFields != nil {
+		defaultConfig := entCheck.DefaultConfig
 
-		configSchema, ok := checks.Checks[entCheck.Source]
-		if !ok {
-			return nil, fmt.Errorf("source \"%s\" does not exist", entCheck.Source)
-		}
-
-		var schemaMap map[string]interface{}
-		err = json.Unmarshal([]byte(configSchema.Schema), &schemaMap)
-		if err != nil {
-			return nil, fmt.Errorf("failed to unmarshal schema: %v", err)
-		}
-
-		var configMap map[string]interface{}
-		err = json.Unmarshal([]byte(*config), &configMap)
-		if err != nil {
-			return nil, fmt.Errorf("failed to unmarshal config: %v", err)
-		}
-
-		defaultConfig := map[string]interface{}{}
-		for key, value := range schemaMap {
-			switch value {
-			case "string":
-				configValue, ok := configMap[key]
-				if !ok {
-					return nil, fmt.Errorf("invalid config, missing key \"%s\"", key)
-				}
-
-				configString, ok := configValue.(string)
-				if !ok {
-					return nil, fmt.Errorf("invalid config, key \"%s\" is not a string", key)
-				}
-
-				defaultConfig[key] = configString
-			case "int":
-				configValue, ok := configMap[key]
-				if !ok {
-					return nil, fmt.Errorf("invalid config, missing key \"%s\"", key)
-				}
-
-				configFloat, ok := configValue.(float64)
-				if !ok {
-					return nil, fmt.Errorf("invalid config, key \"%s\" is not an int", key)
-				}
-
-				defaultConfig[key] = int(configFloat)
-			case "bool":
-				configValue, ok := configMap[key]
-				if !ok {
-					return nil, fmt.Errorf("invalid config, missing key \"%s\"", key)
-				}
-
-				configBool, ok := configValue.(bool)
-				if !ok {
-					return nil, fmt.Errorf("invalid config, key \"%s\" is not a boolean", key)
-				}
-
-				defaultConfig[key] = configBool
-			default:
-				return nil, fmt.Errorf("invalid schema, unknown type \"%s\" for key \"%s\"", value, key)
+		if config != nil {
+			configSchema, ok := checks.Checks[entCheck.Source]
+			if !ok {
+				return nil, fmt.Errorf("source \"%s\" does not exist", entCheck.Source)
 			}
+
+			var schemaMap map[string]interface{}
+			err = json.Unmarshal([]byte(configSchema.Schema), &schemaMap)
+			if err != nil {
+				return nil, fmt.Errorf("failed to unmarshal schema: %v", err)
+			}
+
+			var configMap map[string]interface{}
+			err = json.Unmarshal([]byte(*config), &configMap)
+			if err != nil {
+				return nil, fmt.Errorf("failed to unmarshal config: %v", err)
+			}
+
+			for key, value := range schemaMap {
+				switch value {
+				case "string":
+					configValue, ok := configMap[key]
+					if !ok {
+						return nil, fmt.Errorf("invalid config, missing key \"%s\"", key)
+					}
+
+					configString, ok := configValue.(string)
+					if !ok {
+						return nil, fmt.Errorf("invalid config, key \"%s\" is not a string", key)
+					}
+
+					defaultConfig.Config[key] = configString
+				case "int":
+					configValue, ok := configMap[key]
+					if !ok {
+						return nil, fmt.Errorf("invalid config, missing key \"%s\"", key)
+					}
+
+					configFloat, ok := configValue.(float64)
+					if !ok {
+						return nil, fmt.Errorf("invalid config, key \"%s\" is not an int", key)
+					}
+
+					defaultConfig.Config[key] = int(configFloat)
+				case "bool":
+					configValue, ok := configMap[key]
+					if !ok {
+						return nil, fmt.Errorf("invalid config, missing key \"%s\"", key)
+					}
+
+					configBool, ok := configValue.(bool)
+					if !ok {
+						return nil, fmt.Errorf("invalid config, key \"%s\" is not a boolean", key)
+					}
+
+					defaultConfig.Config[key] = configBool
+				default:
+					return nil, fmt.Errorf("invalid schema, unknown type \"%s\" for key \"%s\"", value, key)
+				}
+			}
+		}
+
+		if editableFields != nil {
+			defaultConfig.EditableFields = editableFields
 		}
 
 		checkUpdate.SetDefaultConfig(defaultConfig)
@@ -469,7 +481,8 @@ func (r *mutationResolver) EditConfig(ctx context.Context, id string, config str
 		return nil, fmt.Errorf("no check config found")
 	}
 
-	var newConfig map[string]interface{}
+	newConfig := make(map[string]interface{})
+
 	err = json.Unmarshal([]byte(config), &newConfig)
 	if err != nil {
 		return nil, fmt.Errorf("invalid config")
@@ -478,10 +491,12 @@ func (r *mutationResolver) EditConfig(ctx context.Context, id string, config str
 	oldConfig := entCheckConfig.Config
 
 	for key, value := range newConfig {
-		oldConfig[key] = value
+		oldConfig.Config[key] = value
 	}
 
-	return r.Ent.CheckConfig.UpdateOneID(uuid).Save(ctx)
+	return r.Ent.CheckConfig.UpdateOneID(uuid).
+		SetConfig(oldConfig).
+		Save(ctx)
 }
 
 // SendGlobalNotification is the resolver for the sendGlobalNotification field.
@@ -529,15 +544,6 @@ func (r *queryResolver) Source(ctx context.Context, name string) (*model.Source,
 
 // Checks is the resolver for the checks field.
 func (r *queryResolver) Checks(ctx context.Context) ([]*ent.Check, error) {
-	entUser, err := auth.Parse(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("invalid user")
-	}
-
-	if entUser.Role != user.RoleAdmin {
-		return nil, fmt.Errorf("invalid permissions")
-	}
-
 	return r.Ent.Check.Query().All(ctx)
 }
 
@@ -635,6 +641,11 @@ func (r *userResolver) ID(ctx context.Context, obj *ent.User) (string, error) {
 // Check returns CheckResolver implementation.
 func (r *Resolver) Check() CheckResolver { return &checkResolver{r} }
 
+// CheckConfiguration returns CheckConfigurationResolver implementation.
+func (r *Resolver) CheckConfiguration() CheckConfigurationResolver {
+	return &checkConfigurationResolver{r}
+}
+
 // Config returns ConfigResolver implementation.
 func (r *Resolver) Config() ConfigResolver { return &configResolver{r} }
 
@@ -651,6 +662,7 @@ func (r *Resolver) Subscription() SubscriptionResolver { return &subscriptionRes
 func (r *Resolver) User() UserResolver { return &userResolver{r} }
 
 type checkResolver struct{ *Resolver }
+type checkConfigurationResolver struct{ *Resolver }
 type configResolver struct{ *Resolver }
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }

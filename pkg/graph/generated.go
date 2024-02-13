@@ -18,6 +18,7 @@ import (
 	"github.com/scorify/backend/pkg/ent"
 	"github.com/scorify/backend/pkg/ent/user"
 	"github.com/scorify/backend/pkg/graph/model"
+	"github.com/scorify/backend/pkg/structs"
 	gqlparser "github.com/vektah/gqlparser/v2"
 	"github.com/vektah/gqlparser/v2/ast"
 )
@@ -43,6 +44,7 @@ type Config struct {
 
 type ResolverRoot interface {
 	Check() CheckResolver
+	CheckConfiguration() CheckConfigurationResolver
 	Config() ConfigResolver
 	Mutation() MutationResolver
 	Query() QueryResolver
@@ -61,6 +63,11 @@ type ComplexityRoot struct {
 		ID     func(childComplexity int) int
 		Name   func(childComplexity int) int
 		Source func(childComplexity int) int
+	}
+
+	CheckConfiguration struct {
+		Config         func(childComplexity int) int
+		EditableFields func(childComplexity int) int
 	}
 
 	Config struct {
@@ -83,14 +90,14 @@ type ComplexityRoot struct {
 	Mutation struct {
 		AdminLogin             func(childComplexity int, id string) int
 		ChangePassword         func(childComplexity int, oldPassword string, newPassword string) int
-		CreateCheck            func(childComplexity int, name string, source string, config string) int
+		CreateCheck            func(childComplexity int, name string, source string, config string, editableFields []string) int
 		CreateUser             func(childComplexity int, username string, password string, role user.Role, number *int) int
 		DeleteCheck            func(childComplexity int, id string) int
 		DeleteUser             func(childComplexity int, id string) int
 		EditConfig             func(childComplexity int, id string, config string) int
 		Login                  func(childComplexity int, username string, password string) int
 		SendGlobalNotification func(childComplexity int, message string, typeArg model.NotificationType) int
-		UpdateCheck            func(childComplexity int, id string, name *string, config *string) int
+		UpdateCheck            func(childComplexity int, id string, name *string, config *string, editableFields []string) int
 		UpdateUser             func(childComplexity int, id string, username *string, password *string, number *int) int
 	}
 
@@ -131,11 +138,14 @@ type CheckResolver interface {
 	ID(ctx context.Context, obj *ent.Check) (string, error)
 
 	Source(ctx context.Context, obj *ent.Check) (*model.Source, error)
-	Config(ctx context.Context, obj *ent.Check) (string, error)
+	Config(ctx context.Context, obj *ent.Check) (*structs.CheckConfiguration, error)
+}
+type CheckConfigurationResolver interface {
+	Config(ctx context.Context, obj *structs.CheckConfiguration) (string, error)
 }
 type ConfigResolver interface {
 	ID(ctx context.Context, obj *ent.CheckConfig) (string, error)
-	Config(ctx context.Context, obj *ent.CheckConfig) (string, error)
+
 	Check(ctx context.Context, obj *ent.CheckConfig) (*ent.Check, error)
 	User(ctx context.Context, obj *ent.CheckConfig) (*ent.User, error)
 }
@@ -143,8 +153,8 @@ type MutationResolver interface {
 	Login(ctx context.Context, username string, password string) (*model.LoginOutput, error)
 	AdminLogin(ctx context.Context, id string) (*model.LoginOutput, error)
 	ChangePassword(ctx context.Context, oldPassword string, newPassword string) (bool, error)
-	CreateCheck(ctx context.Context, name string, source string, config string) (*ent.Check, error)
-	UpdateCheck(ctx context.Context, id string, name *string, config *string) (*ent.Check, error)
+	CreateCheck(ctx context.Context, name string, source string, config string, editableFields []string) (*ent.Check, error)
+	UpdateCheck(ctx context.Context, id string, name *string, config *string, editableFields []string) (*ent.Check, error)
 	DeleteCheck(ctx context.Context, id string) (bool, error)
 	CreateUser(ctx context.Context, username string, password string, role user.Role, number *int) (*ent.User, error)
 	UpdateUser(ctx context.Context, id string, username *string, password *string, number *int) (*ent.User, error)
@@ -215,6 +225,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Check.Source(childComplexity), true
+
+	case "CheckConfiguration.config":
+		if e.complexity.CheckConfiguration.Config == nil {
+			break
+		}
+
+		return e.complexity.CheckConfiguration.Config(childComplexity), true
+
+	case "CheckConfiguration.editable_fields":
+		if e.complexity.CheckConfiguration.EditableFields == nil {
+			break
+		}
+
+		return e.complexity.CheckConfiguration.EditableFields(childComplexity), true
 
 	case "Config.check":
 		if e.complexity.Config.Check == nil {
@@ -327,7 +351,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.CreateCheck(childComplexity, args["name"].(string), args["source"].(string), args["config"].(string)), true
+		return e.complexity.Mutation.CreateCheck(childComplexity, args["name"].(string), args["source"].(string), args["config"].(string), args["editable_fields"].([]string)), true
 
 	case "Mutation.createUser":
 		if e.complexity.Mutation.CreateUser == nil {
@@ -411,7 +435,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UpdateCheck(childComplexity, args["id"].(string), args["name"].(*string), args["config"].(*string)), true
+		return e.complexity.Mutation.UpdateCheck(childComplexity, args["id"].(string), args["name"].(*string), args["config"].(*string), args["editable_fields"].([]string)), true
 
 	case "Mutation.updateUser":
 		if e.complexity.Mutation.UpdateUser == nil {
@@ -783,6 +807,15 @@ func (ec *executionContext) field_Mutation_createCheck_args(ctx context.Context,
 		}
 	}
 	args["config"] = arg2
+	var arg3 []string
+	if tmp, ok := rawArgs["editable_fields"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("editable_fields"))
+		arg3, err = ec.unmarshalNString2ᚕstringᚄ(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["editable_fields"] = arg3
 	return args, nil
 }
 
@@ -954,12 +987,21 @@ func (ec *executionContext) field_Mutation_updateCheck_args(ctx context.Context,
 	var arg2 *string
 	if tmp, ok := rawArgs["config"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("config"))
-		arg2, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		arg2, err = ec.unmarshalOJSON2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
 	args["config"] = arg2
+	var arg3 []string
+	if tmp, ok := rawArgs["editable_fields"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("editable_fields"))
+		arg3, err = ec.unmarshalOString2ᚕstringᚄ(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["editable_fields"] = arg3
 	return args, nil
 }
 
@@ -1285,10 +1327,60 @@ func (ec *executionContext) _Check_config(ctx context.Context, field graphql.Col
 		if tmp == nil {
 			return nil, nil
 		}
-		if data, ok := tmp.(string); ok {
+		if data, ok := tmp.(*structs.CheckConfiguration); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be string`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/scorify/backend/pkg/structs.CheckConfiguration`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*structs.CheckConfiguration)
+	fc.Result = res
+	return ec.marshalNCheckConfiguration2ᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋstructsᚐCheckConfiguration(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Check_config(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Check",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "config":
+				return ec.fieldContext_CheckConfiguration_config(ctx, field)
+			case "editable_fields":
+				return ec.fieldContext_CheckConfiguration_editable_fields(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type CheckConfiguration", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CheckConfiguration_config(ctx context.Context, field graphql.CollectedField, obj *structs.CheckConfiguration) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CheckConfiguration_config(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.CheckConfiguration().Config(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1302,15 +1394,59 @@ func (ec *executionContext) _Check_config(ctx context.Context, field graphql.Col
 	}
 	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNJSON2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Check_config(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_CheckConfiguration_config(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "Check",
+		Object:     "CheckConfiguration",
 		Field:      field,
 		IsMethod:   true,
 		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type JSON does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CheckConfiguration_editable_fields(ctx context.Context, field graphql.CollectedField, obj *structs.CheckConfiguration) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CheckConfiguration_editable_fields(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EditableFields, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CheckConfiguration_editable_fields(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CheckConfiguration",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
 		},
@@ -1376,7 +1512,7 @@ func (ec *executionContext) _Config_config(ctx context.Context, field graphql.Co
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Config().Config(rctx, obj)
+		return obj.Config, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1388,19 +1524,25 @@ func (ec *executionContext) _Config_config(ctx context.Context, field graphql.Co
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(structs.CheckConfiguration)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNCheckConfiguration2githubᚗcomᚋscorifyᚋbackendᚋpkgᚋstructsᚐCheckConfiguration(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Config_config(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Config",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			switch field.Name {
+			case "config":
+				return ec.fieldContext_CheckConfiguration_config(ctx, field)
+			case "editable_fields":
+				return ec.fieldContext_CheckConfiguration_editable_fields(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type CheckConfiguration", field.Name)
 		},
 	}
 	return fc, nil
@@ -2078,7 +2220,7 @@ func (ec *executionContext) _Mutation_createCheck(ctx context.Context, field gra
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().CreateCheck(rctx, fc.Args["name"].(string), fc.Args["source"].(string), fc.Args["config"].(string))
+			return ec.resolvers.Mutation().CreateCheck(rctx, fc.Args["name"].(string), fc.Args["source"].(string), fc.Args["config"].(string), fc.Args["editable_fields"].([]string))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			roles, err := ec.unmarshalORole2ᚕᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚋuserᚐRole(ctx, []interface{}{"admin"})
@@ -2167,7 +2309,7 @@ func (ec *executionContext) _Mutation_updateCheck(ctx context.Context, field gra
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().UpdateCheck(rctx, fc.Args["id"].(string), fc.Args["name"].(*string), fc.Args["config"].(*string))
+			return ec.resolvers.Mutation().UpdateCheck(rctx, fc.Args["id"].(string), fc.Args["name"].(*string), fc.Args["config"].(*string), fc.Args["editable_fields"].([]string))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			roles, err := ec.unmarshalORole2ᚕᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚋuserᚐRole(ctx, []interface{}{"admin"})
@@ -3085,8 +3227,32 @@ func (ec *executionContext) _Query_checks(ctx context.Context, field graphql.Col
 		}
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Checks(rctx)
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Query().Checks(rctx)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			roles, err := ec.unmarshalORole2ᚕᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚋuserᚐRole(ctx, []interface{}{"admin"})
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.HasRole == nil {
+				return nil, errors.New("directive hasRole is not implemented")
+			}
+			return ec.directives.HasRole(ctx, nil, directive0, roles)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.([]*ent.Check); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*github.com/scorify/backend/pkg/ent.Check`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3580,32 +3746,8 @@ func (ec *executionContext) _Subscription_globalNotification(ctx context.Context
 		}
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		directive0 := func(rctx context.Context) (interface{}, error) {
-			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Subscription().GlobalNotification(rctx)
-		}
-		directive1 := func(ctx context.Context) (interface{}, error) {
-			roles, err := ec.unmarshalORole2ᚕᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚋuserᚐRole(ctx, []interface{}{"admin"})
-			if err != nil {
-				return nil, err
-			}
-			if ec.directives.HasRole == nil {
-				return nil, errors.New("directive hasRole is not implemented")
-			}
-			return ec.directives.HasRole(ctx, nil, directive0, roles)
-		}
-
-		tmp, err := directive1(rctx)
-		if err != nil {
-			return nil, graphql.ErrorOnPath(ctx, err)
-		}
-		if tmp == nil {
-			return nil, nil
-		}
-		if data, ok := tmp.(<-chan *model.Notification); ok {
-			return data, nil
-		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be <-chan *github.com/scorify/backend/pkg/graph/model.Notification`, tmp)
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Subscription().GlobalNotification(rctx)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5756,6 +5898,81 @@ func (ec *executionContext) _Check(ctx context.Context, sel ast.SelectionSet, ob
 	return out
 }
 
+var checkConfigurationImplementors = []string{"CheckConfiguration"}
+
+func (ec *executionContext) _CheckConfiguration(ctx context.Context, sel ast.SelectionSet, obj *structs.CheckConfiguration) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, checkConfigurationImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("CheckConfiguration")
+		case "config":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._CheckConfiguration_config(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "editable_fields":
+			out.Values[i] = ec._CheckConfiguration_editable_fields(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var configImplementors = []string{"Config"}
 
 func (ec *executionContext) _Config(ctx context.Context, sel ast.SelectionSet, obj *ent.CheckConfig) graphql.Marshaler {
@@ -5804,41 +6021,10 @@ func (ec *executionContext) _Config(ctx context.Context, sel ast.SelectionSet, o
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "config":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Config_config(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
+			out.Values[i] = ec._Config_config(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
 			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "check":
 			field := field
 
@@ -6937,6 +7123,20 @@ func (ec *executionContext) marshalNCheck2ᚖgithubᚗcomᚋscorifyᚋbackendᚋ
 	return ec._Check(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNCheckConfiguration2githubᚗcomᚋscorifyᚋbackendᚋpkgᚋstructsᚐCheckConfiguration(ctx context.Context, sel ast.SelectionSet, v structs.CheckConfiguration) graphql.Marshaler {
+	return ec._CheckConfiguration(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNCheckConfiguration2ᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋstructsᚐCheckConfiguration(ctx context.Context, sel ast.SelectionSet, v *structs.CheckConfiguration) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._CheckConfiguration(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNConfig2githubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚐCheckConfig(ctx context.Context, sel ast.SelectionSet, v ent.CheckConfig) graphql.Marshaler {
 	return ec._Config(ctx, sel, &v)
 }
@@ -7017,6 +7217,21 @@ func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v interface{}
 
 func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.SelectionSet, v int) graphql.Marshaler {
 	res := graphql.MarshalInt(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return res
+}
+
+func (ec *executionContext) unmarshalNJSON2string(ctx context.Context, v interface{}) (string, error) {
+	res, err := graphql.UnmarshalString(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNJSON2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
+	res := graphql.MarshalString(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
@@ -7150,6 +7365,38 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) unmarshalNString2ᚕstringᚄ(ctx context.Context, v interface{}) ([]string, error) {
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]string, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNString2string(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNString2ᚕstringᚄ(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNString2string(ctx, sel, v[i])
+	}
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) marshalNUser2githubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚐUser(ctx context.Context, sel ast.SelectionSet, v ent.User) graphql.Marshaler {
@@ -7531,6 +7778,22 @@ func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.Sele
 	return res
 }
 
+func (ec *executionContext) unmarshalOJSON2ᚖstring(ctx context.Context, v interface{}) (*string, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := graphql.UnmarshalString(v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOJSON2ᚖstring(ctx context.Context, sel ast.SelectionSet, v *string) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	res := graphql.MarshalString(*v)
+	return res
+}
+
 func (ec *executionContext) unmarshalORole2ᚕᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚋuserᚐRole(ctx context.Context, v interface{}) ([]*user.Role, error) {
 	if v == nil {
 		return nil, nil
@@ -7607,6 +7870,44 @@ func (ec *executionContext) marshalORole2ᚖgithubᚗcomᚋscorifyᚋbackendᚋp
 	}
 	res := graphql.MarshalString(string(*v))
 	return res
+}
+
+func (ec *executionContext) unmarshalOString2ᚕstringᚄ(ctx context.Context, v interface{}) ([]string, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]string, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNString2string(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOString2ᚕstringᚄ(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNString2string(ctx, sel, v[i])
+	}
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) unmarshalOString2ᚖstring(ctx context.Context, v interface{}) (*string, error) {

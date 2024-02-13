@@ -15,6 +15,7 @@ import (
 	"github.com/scorify/backend/pkg/ent/checkconfig"
 	"github.com/scorify/backend/pkg/ent/predicate"
 	"github.com/scorify/backend/pkg/ent/user"
+	"github.com/scorify/backend/pkg/structs"
 )
 
 const (
@@ -43,7 +44,7 @@ type CheckMutation struct {
 	id             *uuid.UUID
 	name           *string
 	source         *string
-	default_config *map[string]interface{}
+	default_config *structs.CheckConfiguration
 	clearedFields  map[string]struct{}
 	configs        map[uuid.UUID]struct{}
 	removedconfigs map[uuid.UUID]struct{}
@@ -230,12 +231,12 @@ func (m *CheckMutation) ResetSource() {
 }
 
 // SetDefaultConfig sets the "default_config" field.
-func (m *CheckMutation) SetDefaultConfig(value map[string]interface{}) {
-	m.default_config = &value
+func (m *CheckMutation) SetDefaultConfig(sc structs.CheckConfiguration) {
+	m.default_config = &sc
 }
 
 // DefaultConfig returns the value of the "default_config" field in the mutation.
-func (m *CheckMutation) DefaultConfig() (r map[string]interface{}, exists bool) {
+func (m *CheckMutation) DefaultConfig() (r structs.CheckConfiguration, exists bool) {
 	v := m.default_config
 	if v == nil {
 		return
@@ -246,7 +247,7 @@ func (m *CheckMutation) DefaultConfig() (r map[string]interface{}, exists bool) 
 // OldDefaultConfig returns the old "default_config" field's value of the Check entity.
 // If the Check object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *CheckMutation) OldDefaultConfig(ctx context.Context) (v map[string]interface{}, err error) {
+func (m *CheckMutation) OldDefaultConfig(ctx context.Context) (v structs.CheckConfiguration, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldDefaultConfig is only allowed on UpdateOne operations")
 	}
@@ -416,7 +417,7 @@ func (m *CheckMutation) SetField(name string, value ent.Value) error {
 		m.SetSource(v)
 		return nil
 	case check.FieldDefaultConfig:
-		v, ok := value.(map[string]interface{})
+		v, ok := value.(structs.CheckConfiguration)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -574,7 +575,7 @@ type CheckConfigMutation struct {
 	op            Op
 	typ           string
 	id            *uuid.UUID
-	_config       *map[string]interface{}
+	_config       *structs.CheckConfiguration
 	clearedFields map[string]struct{}
 	check         *uuid.UUID
 	clearedcheck  bool
@@ -690,12 +691,12 @@ func (m *CheckConfigMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
 }
 
 // SetConfig sets the "config" field.
-func (m *CheckConfigMutation) SetConfig(value map[string]interface{}) {
-	m._config = &value
+func (m *CheckConfigMutation) SetConfig(sc structs.CheckConfiguration) {
+	m._config = &sc
 }
 
 // Config returns the value of the "config" field in the mutation.
-func (m *CheckConfigMutation) Config() (r map[string]interface{}, exists bool) {
+func (m *CheckConfigMutation) Config() (r structs.CheckConfiguration, exists bool) {
 	v := m._config
 	if v == nil {
 		return
@@ -706,7 +707,7 @@ func (m *CheckConfigMutation) Config() (r map[string]interface{}, exists bool) {
 // OldConfig returns the old "config" field's value of the CheckConfig entity.
 // If the CheckConfig object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *CheckConfigMutation) OldConfig(ctx context.Context) (v map[string]interface{}, err error) {
+func (m *CheckConfigMutation) OldConfig(ctx context.Context) (v structs.CheckConfiguration, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldConfig is only allowed on UpdateOne operations")
 	}
@@ -872,7 +873,7 @@ func (m *CheckConfigMutation) OldField(ctx context.Context, name string) (ent.Va
 func (m *CheckConfigMutation) SetField(name string, value ent.Value) error {
 	switch name {
 	case checkconfig.FieldConfig:
-		v, ok := value.(map[string]interface{})
+		v, ok := value.(structs.CheckConfiguration)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}

@@ -1,3 +1,5 @@
+scalar JSON
+
 directive @isAuthenticated on FIELD_DEFINITION
 directive @hasRole(roles: [Role]) on FIELD_DEFINITION
 
@@ -28,16 +30,21 @@ type Source {
   schema: String!
 }
 
+type CheckConfiguration {
+  config: JSON!
+  editable_fields: [String!]!
+}
+
 type Check {
   id: ID!
   name: String!
   source: Source!
-  config: String! @hasRole(roles: [admin])
+  config: CheckConfiguration! @hasRole(roles: [admin])
 }
 
 type Config {
   id: ID!
-  config: String!
+  config: CheckConfiguration!
   check: Check!
   user: User!
 }
@@ -66,7 +73,7 @@ type Query {
   sources: [Source!]!
   source(name: String!): Source!
 
-  checks: [Check!]!
+  checks: [Check!]! @hasRole(roles: [admin])
   check(id: ID, name: String): Check!
 
   configs: [Config!]! @isAuthenticated
@@ -79,10 +86,18 @@ type Mutation {
   changePassword(oldPassword: String!, newPassword: String!): Boolean!
     @isAuthenticated
 
-  createCheck(name: String!, source: String!, config: String!): Check!
-    @hasRole(roles: [admin])
-  updateCheck(id: ID!, name: String, config: String): Check!
-    @hasRole(roles: [admin])
+  createCheck(
+    name: String!
+    source: String!
+    config: String!
+    editable_fields: [String!]!
+  ): Check! @hasRole(roles: [admin])
+  updateCheck(
+    id: ID!
+    name: String
+    config: JSON
+    editable_fields: [String!]
+  ): Check! @hasRole(roles: [admin])
   deleteCheck(id: ID!): Boolean! @hasRole(roles: [admin])
 
   createUser(

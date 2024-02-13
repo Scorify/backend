@@ -13,6 +13,7 @@ import (
 	"github.com/scorify/backend/pkg/ent/check"
 	"github.com/scorify/backend/pkg/ent/checkconfig"
 	"github.com/scorify/backend/pkg/ent/user"
+	"github.com/scorify/backend/pkg/structs"
 )
 
 // CheckConfigCreate is the builder for creating a CheckConfig entity.
@@ -23,8 +24,8 @@ type CheckConfigCreate struct {
 }
 
 // SetConfig sets the "config" field.
-func (ccc *CheckConfigCreate) SetConfig(m map[string]interface{}) *CheckConfigCreate {
-	ccc.mutation.SetConfig(m)
+func (ccc *CheckConfigCreate) SetConfig(sc structs.CheckConfiguration) *CheckConfigCreate {
+	ccc.mutation.SetConfig(sc)
 	return ccc
 }
 

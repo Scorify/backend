@@ -335,7 +335,7 @@ func (ccq *CheckConfigQuery) WithUser(opts ...func(*UserQuery)) *CheckConfigQuer
 // Example:
 //
 //	var v []struct {
-//		Config map[string]interface {} `json:"config"`
+//		Config structs.CheckConfiguration `json:"config"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
@@ -358,7 +358,7 @@ func (ccq *CheckConfigQuery) GroupBy(field string, fields ...string) *CheckConfi
 // Example:
 //
 //	var v []struct {
-//		Config map[string]interface {} `json:"config"`
+//		Config structs.CheckConfiguration `json:"config"`
 //	}
 //
 //	client.CheckConfig.Query().
