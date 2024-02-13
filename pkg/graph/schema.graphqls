@@ -86,8 +86,12 @@ type Mutation {
   changePassword(oldPassword: String!, newPassword: String!): Boolean!
     @isAuthenticated
 
-  createCheck(name: String!, source: String!, config: String!): Check!
-    @hasRole(roles: [admin])
+  createCheck(
+    name: String!
+    source: String!
+    config: String!
+    editable_fields: [String!]!
+  ): Check! @hasRole(roles: [admin])
   updateCheck(
     id: ID!
     name: String
