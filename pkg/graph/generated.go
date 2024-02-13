@@ -90,7 +90,7 @@ type ComplexityRoot struct {
 	Mutation struct {
 		AdminLogin             func(childComplexity int, id string) int
 		ChangePassword         func(childComplexity int, oldPassword string, newPassword string) int
-		CreateCheck            func(childComplexity int, name string, source string, config string) int
+		CreateCheck            func(childComplexity int, name string, source string, config string, editableFields []string) int
 		CreateUser             func(childComplexity int, username string, password string, role user.Role, number *int) int
 		DeleteCheck            func(childComplexity int, id string) int
 		DeleteUser             func(childComplexity int, id string) int
@@ -153,7 +153,7 @@ type MutationResolver interface {
 	Login(ctx context.Context, username string, password string) (*model.LoginOutput, error)
 	AdminLogin(ctx context.Context, id string) (*model.LoginOutput, error)
 	ChangePassword(ctx context.Context, oldPassword string, newPassword string) (bool, error)
-	CreateCheck(ctx context.Context, name string, source string, config string) (*ent.Check, error)
+	CreateCheck(ctx context.Context, name string, source string, config string, editableFields []string) (*ent.Check, error)
 	UpdateCheck(ctx context.Context, id string, name *string, config *string, editableFields []string) (*ent.Check, error)
 	DeleteCheck(ctx context.Context, id string) (bool, error)
 	CreateUser(ctx context.Context, username string, password string, role user.Role, number *int) (*ent.User, error)
@@ -351,7 +351,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.CreateCheck(childComplexity, args["name"].(string), args["source"].(string), args["config"].(string)), true
+		return e.complexity.Mutation.CreateCheck(childComplexity, args["name"].(string), args["source"].(string), args["config"].(string), args["editable_fields"].([]string)), true
 
 	case "Mutation.createUser":
 		if e.complexity.Mutation.CreateUser == nil {
@@ -807,6 +807,15 @@ func (ec *executionContext) field_Mutation_createCheck_args(ctx context.Context,
 		}
 	}
 	args["config"] = arg2
+	var arg3 []string
+	if tmp, ok := rawArgs["editable_fields"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("editable_fields"))
+		arg3, err = ec.unmarshalNString2ᚕstringᚄ(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["editable_fields"] = arg3
 	return args, nil
 }
 
@@ -2211,7 +2220,7 @@ func (ec *executionContext) _Mutation_createCheck(ctx context.Context, field gra
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().CreateCheck(rctx, fc.Args["name"].(string), fc.Args["source"].(string), fc.Args["config"].(string))
+			return ec.resolvers.Mutation().CreateCheck(rctx, fc.Args["name"].(string), fc.Args["source"].(string), fc.Args["config"].(string), fc.Args["editable_fields"].([]string))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			roles, err := ec.unmarshalORole2ᚕᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚋuserᚐRole(ctx, []interface{}{"admin"})

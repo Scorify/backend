@@ -155,7 +155,7 @@ func (r *mutationResolver) ChangePassword(ctx context.Context, oldPassword strin
 }
 
 // CreateCheck is the resolver for the createCheck field.
-func (r *mutationResolver) CreateCheck(ctx context.Context, name string, source string, config string) (*ent.Check, error) {
+func (r *mutationResolver) CreateCheck(ctx context.Context, name string, source string, config string, editableFields []string) (*ent.Check, error) {
 	configSchema, ok := checks.Checks[source]
 	if !ok {
 		return nil, fmt.Errorf("source \"%s\" does not exist", source)
@@ -223,6 +223,10 @@ func (r *mutationResolver) CreateCheck(ctx context.Context, name string, source 
 	_, ok = checks.Checks[source]
 	if !ok {
 		return nil, fmt.Errorf("source \"%s\" does not exist", source)
+	}
+
+	if editableFields != nil {
+		defaultConfig.EditableFields = editableFields
 	}
 
 	entCheck, err := r.Ent.Check.Create().
