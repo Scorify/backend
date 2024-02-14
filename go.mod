@@ -13,11 +13,11 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/mattn/go-sqlite3 v1.14.16
 	github.com/redis/go-redis/v9 v9.4.0
-	github.com/scorify/check-template v1.0.0
+	github.com/scorify/check-template v0.0.0
 	github.com/scorify/generate v0.0.0-20240202044700-da7b32ed8b1d
-	github.com/scorify/ping v1.0.0
-	github.com/scorify/ssh v1.0.0
-	github.com/scorify/web v1.0.0
+	github.com/scorify/http v0.0.1
+	github.com/scorify/ping v0.0.0
+	github.com/scorify/ssh v0.0.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.8.0
 	github.com/vektah/gqlparser/v2 v2.5.10

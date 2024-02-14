@@ -84,7 +84,7 @@ func (r *mutationResolver) Login(ctx context.Context, username string, password 
 		return nil, fmt.Errorf("invalid username or password")
 	}
 
-	token, expiration, err := auth.GenerateJWT(username, string(entUser.Role))
+	token, expiration, err := auth.GenerateJWT(username, entUser.ID, string(entUser.Role))
 	if err != nil {
 		return nil, err
 	}
@@ -115,7 +115,7 @@ func (r *mutationResolver) AdminLogin(ctx context.Context, id string) (*model.Lo
 		return nil, fmt.Errorf("invalid user")
 	}
 
-	token, expiration, err := auth.GenerateJWT(entUser.Username, string(entUser.Role))
+	token, expiration, err := auth.GenerateJWT(entUser.Username, entUser.ID, string(entUser.Role))
 	if err != nil {
 		return nil, err
 	}
