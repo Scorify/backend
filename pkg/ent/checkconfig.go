@@ -13,7 +13,6 @@ import (
 	"github.com/scorify/backend/pkg/ent/check"
 	"github.com/scorify/backend/pkg/ent/checkconfig"
 	"github.com/scorify/backend/pkg/ent/user"
-	"github.com/scorify/backend/pkg/structs"
 )
 
 // CheckConfig is the model entity for the CheckConfig schema.
@@ -23,7 +22,7 @@ type CheckConfig struct {
 	// The uuid of a check configuration
 	ID uuid.UUID `json:"id"`
 	// The configuration of a check
-	Config structs.CheckConfiguration `json:"config"`
+	Config map[string]interface{} `json:"config"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the CheckConfigQuery when eager-loading is set.
 	Edges              CheckConfigEdges `json:"edges"`
