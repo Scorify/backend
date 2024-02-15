@@ -44,7 +44,7 @@ type Check {
 
 type Config {
   id: ID!
-  config: CheckConfiguration!
+  config: JSON!
   check: Check!
   user: User!
 }
@@ -89,7 +89,7 @@ type Mutation {
   createCheck(
     name: String!
     source: String!
-    config: String!
+    config: JSON!
     editable_fields: [String!]!
   ): Check! @hasRole(roles: [admin])
   updateCheck(
@@ -110,7 +110,7 @@ type Mutation {
     @hasRole(roles: [admin])
   deleteUser(id: ID!): Boolean! @hasRole(roles: [admin])
 
-  editConfig(id: ID!, config: String!): Config! @isAuthenticated
+  editConfig(id: ID!, config: JSON!): Config! @isAuthenticated
 
   sendGlobalNotification(message: String!, type: NotificationType!): Boolean!
     @hasRole(roles: [admin])
