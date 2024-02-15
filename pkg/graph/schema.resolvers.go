@@ -59,6 +59,13 @@ func (r *configResolver) ID(ctx context.Context, obj *ent.CheckConfig) (string, 
 	return obj.ID.String(), nil
 }
 
+// Config is the resolver for the config field.
+func (r *configResolver) Config(ctx context.Context, obj *ent.CheckConfig) (string, error) {
+	out, err := json.Marshal(obj.Config)
+
+	return string(out), err
+}
+
 // Check is the resolver for the check field.
 func (r *configResolver) Check(ctx context.Context, obj *ent.CheckConfig) (*ent.Check, error) {
 	return obj.QueryCheck().Only(ctx)
@@ -252,7 +259,7 @@ func (r *mutationResolver) CreateCheck(ctx context.Context, name string, source 
 		entCheckConfigs = append(entCheckConfigs, r.Ent.CheckConfig.Create().
 			SetCheck(entCheck).
 			SetUser(entUser).
-			SetConfig(defaultConfig))
+			SetConfig(defaultConfig.Config))
 	}
 
 	_, err = r.Ent.CheckConfig.CreateBulk(entCheckConfigs...).Save(ctx)
@@ -366,7 +373,7 @@ func (r *mutationResolver) UpdateCheck(ctx context.Context, id string, name *str
 					check.IDEQ(uuid),
 				),
 			).
-			SetConfig(defaultConfig).
+			SetConfig(defaultConfig.Config).
 			Save(ctx)
 
 		return checkUpdateResult, err
@@ -491,7 +498,7 @@ func (r *mutationResolver) EditConfig(ctx context.Context, id string, config str
 	oldConfig := entCheckConfig.Config
 
 	for key, value := range newConfig {
-		oldConfig.Config[key] = value
+		oldConfig[key] = value
 	}
 
 	return r.Ent.CheckConfig.UpdateOneID(uuid).

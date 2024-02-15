@@ -145,7 +145,7 @@ type CheckConfigurationResolver interface {
 }
 type ConfigResolver interface {
 	ID(ctx context.Context, obj *ent.CheckConfig) (string, error)
-
+	Config(ctx context.Context, obj *ent.CheckConfig) (string, error)
 	Check(ctx context.Context, obj *ent.CheckConfig) (*ent.Check, error)
 	User(ctx context.Context, obj *ent.CheckConfig) (*ent.User, error)
 }
@@ -801,7 +801,7 @@ func (ec *executionContext) field_Mutation_createCheck_args(ctx context.Context,
 	var arg2 string
 	if tmp, ok := rawArgs["config"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("config"))
-		arg2, err = ec.unmarshalNString2string(ctx, tmp)
+		arg2, err = ec.unmarshalNJSON2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -906,7 +906,7 @@ func (ec *executionContext) field_Mutation_editConfig_args(ctx context.Context, 
 	var arg1 string
 	if tmp, ok := rawArgs["config"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("config"))
-		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		arg1, err = ec.unmarshalNJSON2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -1512,7 +1512,7 @@ func (ec *executionContext) _Config_config(ctx context.Context, field graphql.Co
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Config, nil
+		return ec.resolvers.Config().Config(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1524,25 +1524,19 @@ func (ec *executionContext) _Config_config(ctx context.Context, field graphql.Co
 		}
 		return graphql.Null
 	}
-	res := resTmp.(structs.CheckConfiguration)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNCheckConfiguration2githubᚗcomᚋscorifyᚋbackendᚋpkgᚋstructsᚐCheckConfiguration(ctx, field.Selections, res)
+	return ec.marshalNJSON2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Config_config(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Config",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "config":
-				return ec.fieldContext_CheckConfiguration_config(ctx, field)
-			case "editable_fields":
-				return ec.fieldContext_CheckConfiguration_editable_fields(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type CheckConfiguration", field.Name)
+			return nil, errors.New("field of type JSON does not have child fields")
 		},
 	}
 	return fc, nil
@@ -6021,10 +6015,41 @@ func (ec *executionContext) _Config(ctx context.Context, sel ast.SelectionSet, o
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "config":
-			out.Values[i] = ec._Config_config(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Config_config(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
 			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "check":
 			field := field
 
