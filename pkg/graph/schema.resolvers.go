@@ -377,14 +377,39 @@ func (r *mutationResolver) UpdateCheck(ctx context.Context, id string, name *str
 			return nil, fmt.Errorf("failed to update check: %v", err)
 		}
 
-		_, err = r.Ent.CheckConfig.Update().
+		// generate map of fields and value that were changes
+		patchFields := make(map[string]interface{})
+		for key, value := range defaultConfig.Config {
+			if value != entCheck.DefaultConfig.Config[key] {
+				patchFields[key] = value
+			}
+		}
+
+		// get all configs to update
+		entConfigs, err := r.Ent.CheckConfig.Query().
 			Where(
 				checkconfig.HasCheckWith(
 					check.IDEQ(uuid),
 				),
 			).
-			SetConfig(defaultConfig.Config).
-			Save(ctx)
+			All(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		// update specific fields that were changed
+		for _, entConfig := range entConfigs {
+			tempConfig := entConfig.Config
+			for key, value := range patchFields {
+				tempConfig[key] = value
+			}
+			_, err = entConfig.Update().
+				SetConfig(tempConfig).
+				Save(ctx)
+			if err != nil {
+				return nil, err
+			}
+		}
 
 		return checkUpdateResult, err
 	}
