@@ -173,13 +173,19 @@ func (r *mutationResolver) ChangePassword(ctx context.Context, oldPassword strin
 
 // CreateCheck is the resolver for the createCheck field.
 func (r *mutationResolver) CreateCheck(ctx context.Context, name string, source string, config string, editableFields []string) (*ent.Check, error) {
+	tx, err := r.Ent.Tx(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to start transaction: %v", err)
+	}
+	defer tx.Rollback()
+
 	configSchema, ok := checks.Checks[source]
 	if !ok {
 		return nil, fmt.Errorf("source \"%s\" does not exist", source)
 	}
 
 	var schemaMap map[string]interface{}
-	err := json.Unmarshal([]byte(configSchema.Schema), &schemaMap)
+	err = json.Unmarshal([]byte(configSchema.Schema), &schemaMap)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal schema: %v", err)
 	}
@@ -246,7 +252,7 @@ func (r *mutationResolver) CreateCheck(ctx context.Context, name string, source 
 		defaultConfig.EditableFields = editableFields
 	}
 
-	entCheck, err := r.Ent.Check.Create().
+	entCheck, err := tx.Check.Create().
 		SetName(name).
 		SetSource(source).
 		SetDefaultConfig(defaultConfig).
@@ -255,7 +261,7 @@ func (r *mutationResolver) CreateCheck(ctx context.Context, name string, source 
 		return nil, fmt.Errorf("failed to create check: %v", err)
 	}
 
-	entUsers, err := r.Ent.User.Query().
+	entUsers, err := tx.User.Query().
 		Where(
 			user.RoleEQ(user.RoleUser),
 		).All(ctx)
@@ -266,17 +272,21 @@ func (r *mutationResolver) CreateCheck(ctx context.Context, name string, source 
 	entCheckConfigs := []*ent.CheckConfigCreate{}
 
 	for _, entUser := range entUsers {
-		entCheckConfigs = append(entCheckConfigs, r.Ent.CheckConfig.Create().
+		entCheckConfigs = append(entCheckConfigs, tx.CheckConfig.Create().
 			SetCheck(entCheck).
 			SetUser(entUser).
 			SetConfig(defaultConfig.Config))
 	}
 
-	_, err = r.Ent.CheckConfig.CreateBulk(entCheckConfigs...).Save(ctx)
+	_, err = tx.CheckConfig.CreateBulk(entCheckConfigs...).Save(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create check configs: %v", err)
 	}
 
+	err = tx.Commit()
+	if err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %v", err)
+	}
 	return entCheck, nil
 }
 
