@@ -282,12 +282,18 @@ func (r *mutationResolver) CreateCheck(ctx context.Context, name string, source 
 
 // UpdateCheck is the resolver for the updateCheck field.
 func (r *mutationResolver) UpdateCheck(ctx context.Context, id string, name *string, config *string, editableFields []string) (*ent.Check, error) {
+	tx, err := r.Ent.Tx(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to start transaction: %v", err)
+	}
+	defer tx.Rollback()
+
 	uuid, err := uuid.Parse(id)
 	if err != nil {
 		return nil, fmt.Errorf("encounter error while parsing id: %v", err)
 	}
 
-	entCheck, err := r.Ent.Check.Query().
+	entCheck, err := tx.Check.Query().
 		Where(
 			check.IDEQ(uuid),
 		).Only(ctx)
@@ -295,7 +301,7 @@ func (r *mutationResolver) UpdateCheck(ctx context.Context, id string, name *str
 		return nil, fmt.Errorf("error encounted while getting check: %v", err)
 	}
 
-	checkUpdate := r.Ent.Check.UpdateOneID(uuid)
+	checkUpdate := tx.Check.UpdateOneID(uuid)
 
 	if name != nil {
 		checkUpdate.SetName(*name)
@@ -392,7 +398,7 @@ func (r *mutationResolver) UpdateCheck(ctx context.Context, id string, name *str
 		}
 
 		// get all configs to update
-		entConfigs, err := r.Ent.CheckConfig.Query().
+		entConfigs, err := tx.CheckConfig.Query().
 			Where(
 				checkconfig.HasCheckWith(
 					check.IDEQ(uuid),
@@ -418,7 +424,17 @@ func (r *mutationResolver) UpdateCheck(ctx context.Context, id string, name *str
 			}
 		}
 
+		err = tx.Commit()
+		if err != nil {
+			return nil, fmt.Errorf("failed to commit transaction: %v", err)
+		}
+
 		return checkUpdateResult, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %v", err)
 	}
 
 	return checkUpdate.Save(ctx)
