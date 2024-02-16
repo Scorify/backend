@@ -575,7 +575,7 @@ type CheckConfigMutation struct {
 	op            Op
 	typ           string
 	id            *uuid.UUID
-	_config       *structs.CheckConfiguration
+	_config       *map[string]interface{}
 	clearedFields map[string]struct{}
 	check         *uuid.UUID
 	clearedcheck  bool
@@ -691,12 +691,12 @@ func (m *CheckConfigMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
 }
 
 // SetConfig sets the "config" field.
-func (m *CheckConfigMutation) SetConfig(sc structs.CheckConfiguration) {
-	m._config = &sc
+func (m *CheckConfigMutation) SetConfig(value map[string]interface{}) {
+	m._config = &value
 }
 
 // Config returns the value of the "config" field in the mutation.
-func (m *CheckConfigMutation) Config() (r structs.CheckConfiguration, exists bool) {
+func (m *CheckConfigMutation) Config() (r map[string]interface{}, exists bool) {
 	v := m._config
 	if v == nil {
 		return
@@ -707,7 +707,7 @@ func (m *CheckConfigMutation) Config() (r structs.CheckConfiguration, exists boo
 // OldConfig returns the old "config" field's value of the CheckConfig entity.
 // If the CheckConfig object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *CheckConfigMutation) OldConfig(ctx context.Context) (v structs.CheckConfiguration, err error) {
+func (m *CheckConfigMutation) OldConfig(ctx context.Context) (v map[string]interface{}, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldConfig is only allowed on UpdateOne operations")
 	}
@@ -873,7 +873,7 @@ func (m *CheckConfigMutation) OldField(ctx context.Context, name string) (ent.Va
 func (m *CheckConfigMutation) SetField(name string, value ent.Value) error {
 	switch name {
 	case checkconfig.FieldConfig:
-		v, ok := value.(structs.CheckConfiguration)
+		v, ok := value.(map[string]interface{})
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}

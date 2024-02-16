@@ -5,7 +5,6 @@ import (
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
-	"github.com/scorify/backend/pkg/structs"
 )
 
 // CheckConfig holds the schema definition for the CheckConfig entity.
@@ -22,7 +21,7 @@ func (CheckConfig) Fields() []ent.Field {
 			Unique().
 			Immutable().
 			Default(uuid.New),
-		field.JSON("config", structs.CheckConfiguration{}).
+		field.JSON("config", map[string]interface{}{}).
 			StructTag(`json:"config"`).
 			Comment("The configuration of a check"),
 	}

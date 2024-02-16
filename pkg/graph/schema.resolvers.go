@@ -59,6 +59,23 @@ func (r *configResolver) ID(ctx context.Context, obj *ent.CheckConfig) (string, 
 	return obj.ID.String(), nil
 }
 
+// Config is the resolver for the config field.
+func (r *configResolver) Config(ctx context.Context, obj *ent.CheckConfig) (string, error) {
+	entCheck, err := obj.QueryCheck().Only(ctx)
+	if err != nil {
+		return "", fmt.Errorf("failed to get check: %v", err)
+	}
+
+	outConfig := make(map[string]interface{})
+	for _, key := range entCheck.DefaultConfig.EditableFields {
+		outConfig[key] = obj.Config[key]
+	}
+
+	out, err := json.Marshal(outConfig)
+
+	return string(out), err
+}
+
 // Check is the resolver for the check field.
 func (r *configResolver) Check(ctx context.Context, obj *ent.CheckConfig) (*ent.Check, error) {
 	return obj.QueryCheck().Only(ctx)
@@ -112,7 +129,7 @@ func (r *mutationResolver) AdminLogin(ctx context.Context, id string) (*model.Lo
 			user.IDEQ(uuid),
 		).Only(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("invalid user")
+		return nil, fmt.Errorf("user id does not exist: %s", id)
 	}
 
 	token, expiration, err := auth.GenerateJWT(entUser.Username, entUser.ID, string(entUser.Role))
@@ -156,13 +173,19 @@ func (r *mutationResolver) ChangePassword(ctx context.Context, oldPassword strin
 
 // CreateCheck is the resolver for the createCheck field.
 func (r *mutationResolver) CreateCheck(ctx context.Context, name string, source string, config string, editableFields []string) (*ent.Check, error) {
+	tx, err := r.Ent.Tx(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to start transaction: %v", err)
+	}
+	defer tx.Rollback()
+
 	configSchema, ok := checks.Checks[source]
 	if !ok {
 		return nil, fmt.Errorf("source \"%s\" does not exist", source)
 	}
 
 	var schemaMap map[string]interface{}
-	err := json.Unmarshal([]byte(configSchema.Schema), &schemaMap)
+	err = json.Unmarshal([]byte(configSchema.Schema), &schemaMap)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal schema: %v", err)
 	}
@@ -229,7 +252,7 @@ func (r *mutationResolver) CreateCheck(ctx context.Context, name string, source 
 		defaultConfig.EditableFields = editableFields
 	}
 
-	entCheck, err := r.Ent.Check.Create().
+	entCheck, err := tx.Check.Create().
 		SetName(name).
 		SetSource(source).
 		SetDefaultConfig(defaultConfig).
@@ -238,7 +261,7 @@ func (r *mutationResolver) CreateCheck(ctx context.Context, name string, source 
 		return nil, fmt.Errorf("failed to create check: %v", err)
 	}
 
-	entUsers, err := r.Ent.User.Query().
+	entUsers, err := tx.User.Query().
 		Where(
 			user.RoleEQ(user.RoleUser),
 		).All(ctx)
@@ -249,28 +272,38 @@ func (r *mutationResolver) CreateCheck(ctx context.Context, name string, source 
 	entCheckConfigs := []*ent.CheckConfigCreate{}
 
 	for _, entUser := range entUsers {
-		entCheckConfigs = append(entCheckConfigs, r.Ent.CheckConfig.Create().
+		entCheckConfigs = append(entCheckConfigs, tx.CheckConfig.Create().
 			SetCheck(entCheck).
 			SetUser(entUser).
-			SetConfig(defaultConfig))
+			SetConfig(defaultConfig.Config))
 	}
 
-	_, err = r.Ent.CheckConfig.CreateBulk(entCheckConfigs...).Save(ctx)
+	_, err = tx.CheckConfig.CreateBulk(entCheckConfigs...).Save(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create check configs: %v", err)
 	}
 
+	err = tx.Commit()
+	if err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %v", err)
+	}
 	return entCheck, nil
 }
 
 // UpdateCheck is the resolver for the updateCheck field.
 func (r *mutationResolver) UpdateCheck(ctx context.Context, id string, name *string, config *string, editableFields []string) (*ent.Check, error) {
+	tx, err := r.Ent.Tx(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to start transaction: %v", err)
+	}
+	defer tx.Rollback()
+
 	uuid, err := uuid.Parse(id)
 	if err != nil {
 		return nil, fmt.Errorf("encounter error while parsing id: %v", err)
 	}
 
-	entCheck, err := r.Ent.Check.Query().
+	entCheck, err := tx.Check.Query().
 		Where(
 			check.IDEQ(uuid),
 		).Only(ctx)
@@ -278,14 +311,20 @@ func (r *mutationResolver) UpdateCheck(ctx context.Context, id string, name *str
 		return nil, fmt.Errorf("error encounted while getting check: %v", err)
 	}
 
-	checkUpdate := r.Ent.Check.UpdateOneID(uuid)
+	checkUpdate := tx.Check.UpdateOneID(uuid)
 
 	if name != nil {
 		checkUpdate.SetName(*name)
 	}
 
 	if config != nil || editableFields != nil {
-		defaultConfig := entCheck.DefaultConfig
+		defaultConfig := structs.CheckConfiguration{
+			Config:         make(map[string]interface{}),
+			EditableFields: entCheck.DefaultConfig.EditableFields,
+		}
+		for key, value := range entCheck.DefaultConfig.Config {
+			defaultConfig.Config[key] = value
+		}
 
 		if config != nil {
 			configSchema, ok := checks.Checks[entCheck.Source]
@@ -360,16 +399,52 @@ func (r *mutationResolver) UpdateCheck(ctx context.Context, id string, name *str
 			return nil, fmt.Errorf("failed to update check: %v", err)
 		}
 
-		_, err = r.Ent.CheckConfig.Update().
+		// generate map of fields and value that were changes
+		patchFields := make(map[string]interface{})
+		for key, value := range defaultConfig.Config {
+			if value != entCheck.DefaultConfig.Config[key] {
+				patchFields[key] = value
+			}
+		}
+
+		// get all configs to update
+		entConfigs, err := tx.CheckConfig.Query().
 			Where(
 				checkconfig.HasCheckWith(
 					check.IDEQ(uuid),
 				),
 			).
-			SetConfig(defaultConfig).
-			Save(ctx)
+			All(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		// update specific fields that were changed
+		for _, entConfig := range entConfigs {
+			tempConfig := entConfig.Config
+			for key, value := range patchFields {
+				tempConfig[key] = value
+			}
+
+			_, err = entConfig.Update().
+				SetConfig(tempConfig).
+				Save(ctx)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		err = tx.Commit()
+		if err != nil {
+			return nil, fmt.Errorf("failed to commit transaction: %v", err)
+		}
 
 		return checkUpdateResult, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %v", err)
 	}
 
 	return checkUpdate.Save(ctx)
@@ -389,12 +464,18 @@ func (r *mutationResolver) DeleteCheck(ctx context.Context, id string) (bool, er
 
 // CreateUser is the resolver for the createUser field.
 func (r *mutationResolver) CreateUser(ctx context.Context, username string, password string, role user.Role, number *int) (*ent.User, error) {
+	tx, err := r.Ent.Tx(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to start transaction: %v", err)
+	}
+	defer tx.Rollback()
+
 	hashedPassword, err := helpers.HashPassword(password)
 	if err != nil {
 		return nil, err
 	}
 
-	entCreateUser := r.Ent.User.Create().
+	entCreateUser := tx.User.Create().
 		SetUsername(username).
 		SetPassword(hashedPassword).
 		SetRole(role)
@@ -403,7 +484,32 @@ func (r *mutationResolver) CreateUser(ctx context.Context, username string, pass
 		entCreateUser.SetNumber(*number)
 	}
 
-	return entCreateUser.Save(ctx)
+	entUser, err := entCreateUser.Save(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	entChecks, err := tx.Check.Query().All(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, entCheck := range entChecks {
+		_, err := tx.CheckConfig.Create().
+			SetCheck(entCheck).
+			SetConfig(entCheck.DefaultConfig.Config).
+			SetUser(entUser).
+			Save(ctx)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %v", err)
+	}
+	return entUser, nil
 }
 
 // UpdateUser is the resolver for the updateUser field.
@@ -491,7 +597,7 @@ func (r *mutationResolver) EditConfig(ctx context.Context, id string, config str
 	oldConfig := entCheckConfig.Config
 
 	for key, value := range newConfig {
-		oldConfig.Config[key] = value
+		oldConfig[key] = value
 	}
 
 	return r.Ent.CheckConfig.UpdateOneID(uuid).
