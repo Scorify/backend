@@ -22,7 +22,7 @@ func JWTMiddleware(ctx *gin.Context) {
 
 	claims := &structs.Claims{}
 	jwtToken, err := jwt.ParseWithClaims(tokenString, claims, func(t *jwt.Token) (interface{}, error) {
-		return []byte(config.JWTKey), nil
+		return []byte(config.JWT.Secret), nil
 	})
 	if err != nil {
 		if err == jwt.ErrSignatureInvalid {

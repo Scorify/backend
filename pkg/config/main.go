@@ -2,28 +2,34 @@ package config
 
 import (
 	"os"
-	"time"
+	"strconv"
 
 	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"
 )
 
 var (
-	// Timeout is the time in hours for which the JWT token is valid.
-	Timeout time.Duration = 6 * time.Hour
-
-	// JWTKey is the key used to sign the JWT token.
-	JWTKey string = "secret"
-
 	// Domain is the domain of the cookie
-	Domain string = "localhost"
+	Domain string
 
 	// Port is the port of the server
-	Port int = 8080
+	Port int
+
+	// JWT is the configuration for the JWT token
+	JWT struct {
+		// Timeout is the timeout for the JWT token in hours
+		Timeout int
+
+		// Key is the secret key for the JWT token
+		Secret string
+	}
 
 	// Redis is the configuration for the redis server
 	Redis struct {
-		Url      string
+		// Url is the url of the redis server
+		Url string
+
+		// Password is the password of the redis server
 		Password string
 	}
 )
@@ -34,6 +40,33 @@ func init() {
 		logrus.WithError(err).Fatal("failed to load .env file")
 	}
 
+	Domain = os.Getenv("DOMAIN")
+	if Domain == "" {
+		logrus.Fatal("DOMAIN is not set")
+	}
+
+	Port, err = strconv.Atoi(os.Getenv("PORT"))
+	if err != nil {
+		logrus.WithError(err).Fatal("failed to parse PORT")
+	}
+
+	JWT.Timeout, err = strconv.Atoi(os.Getenv("JWT_TIMEOUT"))
+	if err != nil {
+		logrus.WithError(err).Fatal("failed to parse JWT_TIMEOUT")
+	}
+
+	JWT.Secret = os.Getenv("JWT_SECRET")
+	if JWT.Secret == "" {
+		logrus.Fatal("JWT_SECRET is not set")
+	}
+
 	Redis.Url = os.Getenv("REDIS_URL")
+	if Redis.Url == "" {
+		logrus.Fatal("REDIS_URL is not set")
+	}
+
 	Redis.Password = os.Getenv("REDIS_PASSWORD")
+	if Redis.Password == "" {
+		logrus.Fatal("REDIS_PASSWORD is not set")
+	}
 }
