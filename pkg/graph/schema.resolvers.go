@@ -129,7 +129,7 @@ func (r *mutationResolver) AdminLogin(ctx context.Context, id string) (*model.Lo
 			user.IDEQ(uuid),
 		).Only(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("invalid user")
+		return nil, fmt.Errorf("user id does not exist: %s", id)
 	}
 
 	token, expiration, err := auth.GenerateJWT(entUser.Username, entUser.ID, string(entUser.Role))
