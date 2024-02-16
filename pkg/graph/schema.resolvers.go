@@ -454,12 +454,18 @@ func (r *mutationResolver) DeleteCheck(ctx context.Context, id string) (bool, er
 
 // CreateUser is the resolver for the createUser field.
 func (r *mutationResolver) CreateUser(ctx context.Context, username string, password string, role user.Role, number *int) (*ent.User, error) {
+	tx, err := r.Ent.Tx(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to start transaction: %v", err)
+	}
+	defer tx.Rollback()
+
 	hashedPassword, err := helpers.HashPassword(password)
 	if err != nil {
 		return nil, err
 	}
 
-	entCreateUser := r.Ent.User.Create().
+	entCreateUser := tx.User.Create().
 		SetUsername(username).
 		SetPassword(hashedPassword).
 		SetRole(role)
@@ -473,13 +479,13 @@ func (r *mutationResolver) CreateUser(ctx context.Context, username string, pass
 		return nil, err
 	}
 
-	entChecks, err := r.Ent.Check.Query().All(ctx)
+	entChecks, err := tx.Check.Query().All(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, entCheck := range entChecks {
-		_, err := r.Ent.CheckConfig.Create().
+		_, err := tx.CheckConfig.Create().
 			SetCheck(entCheck).
 			SetConfig(entCheck.DefaultConfig.Config).
 			SetUser(entUser).
@@ -489,6 +495,10 @@ func (r *mutationResolver) CreateUser(ctx context.Context, username string, pass
 		}
 	}
 
+	err = tx.Commit()
+	if err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %v", err)
+	}
 	return entUser, nil
 }
 
