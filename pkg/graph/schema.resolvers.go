@@ -61,7 +61,17 @@ func (r *configResolver) ID(ctx context.Context, obj *ent.CheckConfig) (string, 
 
 // Config is the resolver for the config field.
 func (r *configResolver) Config(ctx context.Context, obj *ent.CheckConfig) (string, error) {
-	out, err := json.Marshal(obj.Config)
+	entCheck, err := obj.QueryCheck().Only(ctx)
+	if err != nil {
+		return "", fmt.Errorf("failed to get check: %v", err)
+	}
+
+	outConfig := make(map[string]interface{})
+	for _, key := range entCheck.DefaultConfig.EditableFields {
+		outConfig[key] = obj.Config[key]
+	}
+
+	out, err := json.Marshal(outConfig)
 
 	return string(out), err
 }
