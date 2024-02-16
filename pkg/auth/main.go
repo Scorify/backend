@@ -10,7 +10,7 @@ import (
 )
 
 func GenerateJWT(username string, id uuid.UUID, role string) (string, int, error) {
-	expiration := time.Now().Add(config.Timeout)
+	expiration := time.Now().Add(time.Duration(config.JWT.Timeout) * time.Hour)
 
 	claims := &structs.Claims{
 		Username: username,
@@ -23,7 +23,7 @@ func GenerateJWT(username string, id uuid.UUID, role string) (string, int, error
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-	tokenStr, err := token.SignedString([]byte(config.JWTKey))
+	tokenStr, err := token.SignedString([]byte(config.JWT.Secret))
 
 	return tokenStr, int(expiration.Unix()), err
 }
@@ -31,7 +31,7 @@ func GenerateJWT(username string, id uuid.UUID, role string) (string, int, error
 func ParseJWT(tokenString string) (*jwt.Token, *structs.Claims, error) {
 	claims := &structs.Claims{}
 	token, err := jwt.ParseWithClaims(tokenString, claims, func(t *jwt.Token) (interface{}, error) {
-		return []byte(config.JWTKey), nil
+		return []byte(config.JWT.Secret), nil
 	})
 	return token, claims, err
 }
