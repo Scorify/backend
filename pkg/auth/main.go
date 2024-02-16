@@ -10,7 +10,7 @@ import (
 )
 
 func GenerateJWT(username string, id uuid.UUID, role string) (string, int, error) {
-	expiration := time.Now().Add(time.Duration(config.Timeout) * time.Hour)
+	expiration := time.Now().Add(config.Timeout)
 
 	claims := &structs.Claims{
 		Username: username,
