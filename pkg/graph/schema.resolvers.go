@@ -420,7 +420,28 @@ func (r *mutationResolver) CreateUser(ctx context.Context, username string, pass
 		entCreateUser.SetNumber(*number)
 	}
 
-	return entCreateUser.Save(ctx)
+	entUser, err := entCreateUser.Save(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	entChecks, err := r.Ent.Check.Query().All(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, entCheck := range entChecks {
+		_, err := r.Ent.CheckConfig.Create().
+			SetCheck(entCheck).
+			SetConfig(entCheck.DefaultConfig.Config).
+			SetUser(entUser).
+			Save(ctx)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return entUser, nil
 }
 
 // UpdateUser is the resolver for the updateUser field.
