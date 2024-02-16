@@ -302,7 +302,13 @@ func (r *mutationResolver) UpdateCheck(ctx context.Context, id string, name *str
 	}
 
 	if config != nil || editableFields != nil {
-		defaultConfig := entCheck.DefaultConfig
+		defaultConfig := structs.CheckConfiguration{
+			Config:         make(map[string]interface{}),
+			EditableFields: entCheck.DefaultConfig.EditableFields,
+		}
+		for key, value := range entCheck.DefaultConfig.Config {
+			defaultConfig.Config[key] = value
+		}
 
 		if config != nil {
 			configSchema, ok := checks.Checks[entCheck.Source]
@@ -403,6 +409,7 @@ func (r *mutationResolver) UpdateCheck(ctx context.Context, id string, name *str
 			for key, value := range patchFields {
 				tempConfig[key] = value
 			}
+
 			_, err = entConfig.Update().
 				SetConfig(tempConfig).
 				Save(ctx)
