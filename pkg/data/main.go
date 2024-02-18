@@ -2,8 +2,10 @@ package data
 
 import (
 	"context"
+	"fmt"
+	"os"
 
-	_ "github.com/mattn/go-sqlite3"
+	_ "github.com/lib/pq"
 	"github.com/scorify/backend/pkg/ent"
 	"github.com/scorify/backend/pkg/ent/user"
 	"github.com/scorify/backend/pkg/helpers"
@@ -16,9 +18,19 @@ var (
 )
 
 func init() {
-	c, err := ent.Open("sqlite3", "file:database.sqlite?_loc=auto&cache=shared&_fk=1")
+	c, err := ent.Open(
+		"postgres",
+		fmt.Sprintf(
+			"host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
+			os.Getenv("POSTGRES_HOST"),
+			os.Getenv("POSTGRES_PORT"),
+			os.Getenv("POSTGRES_USER"),
+			os.Getenv("POSTGRES_PASSWORD"),
+			os.Getenv("POSTGRES_DB"),
+		),
+	)
 	if err != nil {
-		logrus.WithError(err).Fatalf("failed opening connection to sqlite")
+		logrus.WithError(err).Fatal("failed opening connection to postgres")
 	}
 
 	Client = c
