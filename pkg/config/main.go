@@ -44,8 +44,11 @@ var (
 
 	// Redis is the configuration for the redis server
 	Redis struct {
-		// Url is the url of the redis server
-		Url string
+		// Host is the host of the redis server
+		Host string
+
+		// Port is the port of the redis server
+		Port int
 
 		// Password is the password of the redis server
 		Password string
@@ -103,9 +106,14 @@ func init() {
 		logrus.Fatal("POSTGRES_DB is not set")
 	}
 
-	Redis.Url = os.Getenv("REDIS_URL")
-	if Redis.Url == "" {
-		logrus.Fatal("REDIS_URL is not set")
+	Redis.Host = os.Getenv("REDIS_HOST")
+	if Redis.Host == "" {
+		logrus.Fatal("REDIS_HOST is not set")
+	}
+
+	Redis.Port, err = strconv.Atoi(os.Getenv("REDIS_PORT"))
+	if err != nil {
+		logrus.WithError(err).Fatal("failed to parse REDIS_PORT")
 	}
 
 	Redis.Password = os.Getenv("REDIS_PASSWORD")
