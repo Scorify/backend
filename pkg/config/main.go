@@ -24,10 +24,31 @@ var (
 		Secret string
 	}
 
+	// Postgres is the configuration for the postgres database
+	Postgres struct {
+		// Host is the host of the postgres database
+		Host string
+
+		// Port is the port of the postgres database
+		Port int
+
+		// User is the user of the postgres database
+		User string
+
+		// Password is the password of the postgres database
+		Password string
+
+		// DB is the name of the postgres database
+		DB string
+	}
+
 	// Redis is the configuration for the redis server
 	Redis struct {
-		// Url is the url of the redis server
-		Url string
+		// Host is the host of the redis server
+		Host string
+
+		// Port is the port of the redis server
+		Port int
 
 		// Password is the password of the redis server
 		Password string
@@ -60,9 +81,39 @@ func init() {
 		logrus.Fatal("JWT_SECRET is not set")
 	}
 
-	Redis.Url = os.Getenv("REDIS_URL")
-	if Redis.Url == "" {
-		logrus.Fatal("REDIS_URL is not set")
+	Postgres.Host = os.Getenv("POSTGRES_HOST")
+	if Postgres.Host == "" {
+		logrus.Fatal("POSTGRES_HOST is not set")
+	}
+
+	Postgres.Port, err = strconv.Atoi(os.Getenv("POSTGRES_PORT"))
+	if err != nil {
+		logrus.WithError(err).Fatal("failed to parse POSTGRES_PORT")
+	}
+
+	Postgres.User = os.Getenv("POSTGRES_USER")
+	if Postgres.User == "" {
+		logrus.Fatal("POSTGRES_USER is not set")
+	}
+
+	Postgres.Password = os.Getenv("POSTGRES_PASSWORD")
+	if Postgres.Password == "" {
+		logrus.Fatal("POSTGRES_PASSWORD is not set")
+	}
+
+	Postgres.DB = os.Getenv("POSTGRES_DB")
+	if Postgres.DB == "" {
+		logrus.Fatal("POSTGRES_DB is not set")
+	}
+
+	Redis.Host = os.Getenv("REDIS_HOST")
+	if Redis.Host == "" {
+		logrus.Fatal("REDIS_HOST is not set")
+	}
+
+	Redis.Port, err = strconv.Atoi(os.Getenv("REDIS_PORT"))
+	if err != nil {
+		logrus.WithError(err).Fatal("failed to parse REDIS_PORT")
 	}
 
 	Redis.Password = os.Getenv("REDIS_PASSWORD")
