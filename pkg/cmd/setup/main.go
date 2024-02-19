@@ -108,7 +108,7 @@ func run(cmd *cobra.Command, args []string) {
 	// JWT_TIMEOUT
 	jwtTimeout, err := promptInt(
 		reader,
-		60,
+		6,
 		"Enter the timeout of the JWT (session length) in hours [6]: ",
 	)
 	if err != nil {
