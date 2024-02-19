@@ -3,9 +3,9 @@ package data
 import (
 	"context"
 	"fmt"
-	"os"
 
 	_ "github.com/lib/pq"
+	"github.com/scorify/backend/pkg/config"
 	"github.com/scorify/backend/pkg/ent"
 	"github.com/scorify/backend/pkg/ent/user"
 	"github.com/scorify/backend/pkg/helpers"
@@ -17,16 +17,16 @@ var (
 	Ctx    context.Context = context.Background()
 )
 
-func init() {
+func Init() {
 	c, err := ent.Open(
 		"postgres",
 		fmt.Sprintf(
-			"host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
-			os.Getenv("POSTGRES_HOST"),
-			os.Getenv("POSTGRES_PORT"),
-			os.Getenv("POSTGRES_USER"),
-			os.Getenv("POSTGRES_PASSWORD"),
-			os.Getenv("POSTGRES_DB"),
+			"host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
+			config.Postgres.Host,
+			config.Postgres.Port,
+			config.Postgres.User,
+			config.Postgres.Password,
+			config.Postgres.DB,
 		),
 	)
 	if err != nil {

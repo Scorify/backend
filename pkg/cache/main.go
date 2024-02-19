@@ -15,7 +15,7 @@ var (
 	Client *Cache
 )
 
-func init() {
+func Init() {
 	Client = &Cache{
 		Client: redis.NewClient(&redis.Options{
 			Addr:     fmt.Sprintf("%s:%d", config.Redis.Host, config.Redis.Port),
