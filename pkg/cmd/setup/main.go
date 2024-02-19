@@ -2,9 +2,10 @@ package setup
 
 import (
 	"bufio"
+	"crypto/rand"
 	"fmt"
 	"html/template"
-	"math/rand"
+	"math/big"
 	"os"
 	"strconv"
 	"strings"
@@ -25,14 +26,15 @@ var Cmd = &cobra.Command{
 const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
 func generatePassword() (string, error) {
-	bytes := make([]byte, 64)
-
-	for i := 0; i < 64; i++ {
-		index := rand.Intn(len(charset))
-		bytes[i] = charset[index]
+	s := make([]byte, 64)
+	for i := range s {
+		idx, err := rand.Int(rand.Reader, big.NewInt(int64(len(charset))))
+		if err != nil {
+			return "", err
+		}
+		s[i] = charset[idx.Int64()]
 	}
-
-	return string(bytes), nil
+	return string(s), nil
 }
 
 func prompt(reader *bufio.Reader, defaultValue string, message string) (string, error) {
