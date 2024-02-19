@@ -55,7 +55,7 @@ var (
 	}
 )
 
-func init() {
+func Init() {
 	err := godotenv.Load()
 	if err != nil {
 		logrus.WithError(err).Fatal("failed to load .env file")
