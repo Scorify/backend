@@ -58,6 +58,27 @@ func (cu *CheckUpdate) SetNillableSource(s *string) *CheckUpdate {
 	return cu
 }
 
+// SetWeight sets the "weight" field.
+func (cu *CheckUpdate) SetWeight(i int) *CheckUpdate {
+	cu.mutation.ResetWeight()
+	cu.mutation.SetWeight(i)
+	return cu
+}
+
+// SetNillableWeight sets the "weight" field if the given value is not nil.
+func (cu *CheckUpdate) SetNillableWeight(i *int) *CheckUpdate {
+	if i != nil {
+		cu.SetWeight(*i)
+	}
+	return cu
+}
+
+// AddWeight adds i to the "weight" field.
+func (cu *CheckUpdate) AddWeight(i int) *CheckUpdate {
+	cu.mutation.AddWeight(i)
+	return cu
+}
+
 // SetDefaultConfig sets the "default_config" field.
 func (cu *CheckUpdate) SetDefaultConfig(sc structs.CheckConfiguration) *CheckUpdate {
 	cu.mutation.SetDefaultConfig(sc)
@@ -152,6 +173,11 @@ func (cu *CheckUpdate) check() error {
 			return &ValidationError{Name: "source", err: fmt.Errorf(`ent: validator failed for field "Check.source": %w`, err)}
 		}
 	}
+	if v, ok := cu.mutation.Weight(); ok {
+		if err := check.WeightValidator(v); err != nil {
+			return &ValidationError{Name: "weight", err: fmt.Errorf(`ent: validator failed for field "Check.weight": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -172,6 +198,12 @@ func (cu *CheckUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := cu.mutation.Source(); ok {
 		_spec.SetField(check.FieldSource, field.TypeString, value)
+	}
+	if value, ok := cu.mutation.Weight(); ok {
+		_spec.SetField(check.FieldWeight, field.TypeInt, value)
+	}
+	if value, ok := cu.mutation.AddedWeight(); ok {
+		_spec.AddField(check.FieldWeight, field.TypeInt, value)
 	}
 	if value, ok := cu.mutation.DefaultConfig(); ok {
 		_spec.SetField(check.FieldDefaultConfig, field.TypeJSON, value)
@@ -266,6 +298,27 @@ func (cuo *CheckUpdateOne) SetNillableSource(s *string) *CheckUpdateOne {
 	if s != nil {
 		cuo.SetSource(*s)
 	}
+	return cuo
+}
+
+// SetWeight sets the "weight" field.
+func (cuo *CheckUpdateOne) SetWeight(i int) *CheckUpdateOne {
+	cuo.mutation.ResetWeight()
+	cuo.mutation.SetWeight(i)
+	return cuo
+}
+
+// SetNillableWeight sets the "weight" field if the given value is not nil.
+func (cuo *CheckUpdateOne) SetNillableWeight(i *int) *CheckUpdateOne {
+	if i != nil {
+		cuo.SetWeight(*i)
+	}
+	return cuo
+}
+
+// AddWeight adds i to the "weight" field.
+func (cuo *CheckUpdateOne) AddWeight(i int) *CheckUpdateOne {
+	cuo.mutation.AddWeight(i)
 	return cuo
 }
 
@@ -376,6 +429,11 @@ func (cuo *CheckUpdateOne) check() error {
 			return &ValidationError{Name: "source", err: fmt.Errorf(`ent: validator failed for field "Check.source": %w`, err)}
 		}
 	}
+	if v, ok := cuo.mutation.Weight(); ok {
+		if err := check.WeightValidator(v); err != nil {
+			return &ValidationError{Name: "weight", err: fmt.Errorf(`ent: validator failed for field "Check.weight": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -413,6 +471,12 @@ func (cuo *CheckUpdateOne) sqlSave(ctx context.Context) (_node *Check, err error
 	}
 	if value, ok := cuo.mutation.Source(); ok {
 		_spec.SetField(check.FieldSource, field.TypeString, value)
+	}
+	if value, ok := cuo.mutation.Weight(); ok {
+		_spec.SetField(check.FieldWeight, field.TypeInt, value)
+	}
+	if value, ok := cuo.mutation.AddedWeight(); ok {
+		_spec.AddField(check.FieldWeight, field.TypeInt, value)
 	}
 	if value, ok := cuo.mutation.DefaultConfig(); ok {
 		_spec.SetField(check.FieldDefaultConfig, field.TypeJSON, value)
