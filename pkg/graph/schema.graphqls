@@ -39,6 +39,7 @@ type Check {
   id: ID!
   name: String!
   source: Source!
+  weight: Int!
   config: CheckConfiguration! @hasRole(roles: [admin])
 }
 
@@ -89,12 +90,14 @@ type Mutation {
   createCheck(
     name: String!
     source: String!
+    weight: Int!
     config: JSON!
     editable_fields: [String!]!
   ): Check! @hasRole(roles: [admin])
   updateCheck(
     id: ID!
     name: String
+    weight: Int
     config: JSON
     editable_fields: [String!]
   ): Check! @hasRole(roles: [admin])
