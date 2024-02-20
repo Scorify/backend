@@ -63,6 +63,7 @@ type ComplexityRoot struct {
 		ID     func(childComplexity int) int
 		Name   func(childComplexity int) int
 		Source func(childComplexity int) int
+		Weight func(childComplexity int) int
 	}
 
 	CheckConfiguration struct {
@@ -90,14 +91,14 @@ type ComplexityRoot struct {
 	Mutation struct {
 		AdminLogin             func(childComplexity int, id string) int
 		ChangePassword         func(childComplexity int, oldPassword string, newPassword string) int
-		CreateCheck            func(childComplexity int, name string, source string, config string, editableFields []string) int
+		CreateCheck            func(childComplexity int, name string, source string, weight int, config string, editableFields []string) int
 		CreateUser             func(childComplexity int, username string, password string, role user.Role, number *int) int
 		DeleteCheck            func(childComplexity int, id string) int
 		DeleteUser             func(childComplexity int, id string) int
 		EditConfig             func(childComplexity int, id string, config string) int
 		Login                  func(childComplexity int, username string, password string) int
 		SendGlobalNotification func(childComplexity int, message string, typeArg model.NotificationType) int
-		UpdateCheck            func(childComplexity int, id string, name *string, config *string, editableFields []string) int
+		UpdateCheck            func(childComplexity int, id string, name *string, weight *int, config *string, editableFields []string) int
 		UpdateUser             func(childComplexity int, id string, username *string, password *string, number *int) int
 	}
 
@@ -138,6 +139,7 @@ type CheckResolver interface {
 	ID(ctx context.Context, obj *ent.Check) (string, error)
 
 	Source(ctx context.Context, obj *ent.Check) (*model.Source, error)
+
 	Config(ctx context.Context, obj *ent.Check) (*structs.CheckConfiguration, error)
 }
 type CheckConfigurationResolver interface {
@@ -153,8 +155,8 @@ type MutationResolver interface {
 	Login(ctx context.Context, username string, password string) (*model.LoginOutput, error)
 	AdminLogin(ctx context.Context, id string) (*model.LoginOutput, error)
 	ChangePassword(ctx context.Context, oldPassword string, newPassword string) (bool, error)
-	CreateCheck(ctx context.Context, name string, source string, config string, editableFields []string) (*ent.Check, error)
-	UpdateCheck(ctx context.Context, id string, name *string, config *string, editableFields []string) (*ent.Check, error)
+	CreateCheck(ctx context.Context, name string, source string, weight int, config string, editableFields []string) (*ent.Check, error)
+	UpdateCheck(ctx context.Context, id string, name *string, weight *int, config *string, editableFields []string) (*ent.Check, error)
 	DeleteCheck(ctx context.Context, id string) (bool, error)
 	CreateUser(ctx context.Context, username string, password string, role user.Role, number *int) (*ent.User, error)
 	UpdateUser(ctx context.Context, id string, username *string, password *string, number *int) (*ent.User, error)
@@ -225,6 +227,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Check.Source(childComplexity), true
+
+	case "Check.weight":
+		if e.complexity.Check.Weight == nil {
+			break
+		}
+
+		return e.complexity.Check.Weight(childComplexity), true
 
 	case "CheckConfiguration.config":
 		if e.complexity.CheckConfiguration.Config == nil {
@@ -351,7 +360,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.CreateCheck(childComplexity, args["name"].(string), args["source"].(string), args["config"].(string), args["editable_fields"].([]string)), true
+		return e.complexity.Mutation.CreateCheck(childComplexity, args["name"].(string), args["source"].(string), args["weight"].(int), args["config"].(string), args["editable_fields"].([]string)), true
 
 	case "Mutation.createUser":
 		if e.complexity.Mutation.CreateUser == nil {
@@ -435,7 +444,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UpdateCheck(childComplexity, args["id"].(string), args["name"].(*string), args["config"].(*string), args["editable_fields"].([]string)), true
+		return e.complexity.Mutation.UpdateCheck(childComplexity, args["id"].(string), args["name"].(*string), args["weight"].(*int), args["config"].(*string), args["editable_fields"].([]string)), true
 
 	case "Mutation.updateUser":
 		if e.complexity.Mutation.UpdateUser == nil {
@@ -798,24 +807,33 @@ func (ec *executionContext) field_Mutation_createCheck_args(ctx context.Context,
 		}
 	}
 	args["source"] = arg1
-	var arg2 string
+	var arg2 int
+	if tmp, ok := rawArgs["weight"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("weight"))
+		arg2, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["weight"] = arg2
+	var arg3 string
 	if tmp, ok := rawArgs["config"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("config"))
-		arg2, err = ec.unmarshalNJSON2string(ctx, tmp)
+		arg3, err = ec.unmarshalNJSON2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["config"] = arg2
-	var arg3 []string
+	args["config"] = arg3
+	var arg4 []string
 	if tmp, ok := rawArgs["editable_fields"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("editable_fields"))
-		arg3, err = ec.unmarshalNString2ᚕstringᚄ(ctx, tmp)
+		arg4, err = ec.unmarshalNString2ᚕstringᚄ(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["editable_fields"] = arg3
+	args["editable_fields"] = arg4
 	return args, nil
 }
 
@@ -984,24 +1002,33 @@ func (ec *executionContext) field_Mutation_updateCheck_args(ctx context.Context,
 		}
 	}
 	args["name"] = arg1
-	var arg2 *string
+	var arg2 *int
+	if tmp, ok := rawArgs["weight"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("weight"))
+		arg2, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["weight"] = arg2
+	var arg3 *string
 	if tmp, ok := rawArgs["config"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("config"))
-		arg2, err = ec.unmarshalOJSON2ᚖstring(ctx, tmp)
+		arg3, err = ec.unmarshalOJSON2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["config"] = arg2
-	var arg3 []string
+	args["config"] = arg3
+	var arg4 []string
 	if tmp, ok := rawArgs["editable_fields"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("editable_fields"))
-		arg3, err = ec.unmarshalOString2ᚕstringᚄ(ctx, tmp)
+		arg4, err = ec.unmarshalOString2ᚕstringᚄ(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["editable_fields"] = arg3
+	args["editable_fields"] = arg4
 	return args, nil
 }
 
@@ -1287,6 +1314,50 @@ func (ec *executionContext) fieldContext_Check_source(ctx context.Context, field
 				return ec.fieldContext_Source_schema(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Source", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Check_weight(ctx context.Context, field graphql.CollectedField, obj *ent.Check) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Check_weight(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Weight, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Check_weight(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Check",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	return fc, nil
@@ -1587,6 +1658,8 @@ func (ec *executionContext) fieldContext_Config_check(ctx context.Context, field
 				return ec.fieldContext_Check_name(ctx, field)
 			case "source":
 				return ec.fieldContext_Check_source(ctx, field)
+			case "weight":
+				return ec.fieldContext_Check_weight(ctx, field)
 			case "config":
 				return ec.fieldContext_Check_config(ctx, field)
 			}
@@ -2214,7 +2287,7 @@ func (ec *executionContext) _Mutation_createCheck(ctx context.Context, field gra
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().CreateCheck(rctx, fc.Args["name"].(string), fc.Args["source"].(string), fc.Args["config"].(string), fc.Args["editable_fields"].([]string))
+			return ec.resolvers.Mutation().CreateCheck(rctx, fc.Args["name"].(string), fc.Args["source"].(string), fc.Args["weight"].(int), fc.Args["config"].(string), fc.Args["editable_fields"].([]string))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			roles, err := ec.unmarshalORole2ᚕᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚋuserᚐRole(ctx, []interface{}{"admin"})
@@ -2268,6 +2341,8 @@ func (ec *executionContext) fieldContext_Mutation_createCheck(ctx context.Contex
 				return ec.fieldContext_Check_name(ctx, field)
 			case "source":
 				return ec.fieldContext_Check_source(ctx, field)
+			case "weight":
+				return ec.fieldContext_Check_weight(ctx, field)
 			case "config":
 				return ec.fieldContext_Check_config(ctx, field)
 			}
@@ -2303,7 +2378,7 @@ func (ec *executionContext) _Mutation_updateCheck(ctx context.Context, field gra
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().UpdateCheck(rctx, fc.Args["id"].(string), fc.Args["name"].(*string), fc.Args["config"].(*string), fc.Args["editable_fields"].([]string))
+			return ec.resolvers.Mutation().UpdateCheck(rctx, fc.Args["id"].(string), fc.Args["name"].(*string), fc.Args["weight"].(*int), fc.Args["config"].(*string), fc.Args["editable_fields"].([]string))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			roles, err := ec.unmarshalORole2ᚕᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚋuserᚐRole(ctx, []interface{}{"admin"})
@@ -2357,6 +2432,8 @@ func (ec *executionContext) fieldContext_Mutation_updateCheck(ctx context.Contex
 				return ec.fieldContext_Check_name(ctx, field)
 			case "source":
 				return ec.fieldContext_Check_source(ctx, field)
+			case "weight":
+				return ec.fieldContext_Check_weight(ctx, field)
 			case "config":
 				return ec.fieldContext_Check_config(ctx, field)
 			}
@@ -3277,6 +3354,8 @@ func (ec *executionContext) fieldContext_Query_checks(ctx context.Context, field
 				return ec.fieldContext_Check_name(ctx, field)
 			case "source":
 				return ec.fieldContext_Check_source(ctx, field)
+			case "weight":
+				return ec.fieldContext_Check_weight(ctx, field)
 			case "config":
 				return ec.fieldContext_Check_config(ctx, field)
 			}
@@ -3331,6 +3410,8 @@ func (ec *executionContext) fieldContext_Query_check(ctx context.Context, field 
 				return ec.fieldContext_Check_name(ctx, field)
 			case "source":
 				return ec.fieldContext_Check_source(ctx, field)
+			case "weight":
+				return ec.fieldContext_Check_weight(ctx, field)
 			case "config":
 				return ec.fieldContext_Check_config(ctx, field)
 			}
@@ -5833,6 +5914,11 @@ func (ec *executionContext) _Check(ctx context.Context, sel ast.SelectionSet, ob
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "weight":
+			out.Values[i] = ec._Check_weight(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
 		case "config":
 			field := field
 

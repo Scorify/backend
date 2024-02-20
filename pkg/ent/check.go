@@ -24,6 +24,8 @@ type Check struct {
 	Name string `json:"name"`
 	// The source of the check
 	Source string `json:"source"`
+	// The weight of the check
+	Weight int `json:"weight"`
 	// The default configuration of a check
 	DefaultConfig structs.CheckConfiguration `json:"default_config"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -57,6 +59,8 @@ func (*Check) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case check.FieldDefaultConfig:
 			values[i] = new([]byte)
+		case check.FieldWeight:
+			values[i] = new(sql.NullInt64)
 		case check.FieldName, check.FieldSource:
 			values[i] = new(sql.NullString)
 		case check.FieldID:
@@ -93,6 +97,12 @@ func (c *Check) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field source", values[i])
 			} else if value.Valid {
 				c.Source = value.String
+			}
+		case check.FieldWeight:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field weight", values[i])
+			} else if value.Valid {
+				c.Weight = int(value.Int64)
 			}
 		case check.FieldDefaultConfig:
 			if value, ok := values[i].(*[]byte); !ok {
@@ -148,6 +158,9 @@ func (c *Check) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("source=")
 	builder.WriteString(c.Source)
+	builder.WriteString(", ")
+	builder.WriteString("weight=")
+	builder.WriteString(fmt.Sprintf("%v", c.Weight))
 	builder.WriteString(", ")
 	builder.WriteString("default_config=")
 	builder.WriteString(fmt.Sprintf("%v", c.DefaultConfig))

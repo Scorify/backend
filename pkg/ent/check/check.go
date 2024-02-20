@@ -17,6 +17,8 @@ const (
 	FieldName = "name"
 	// FieldSource holds the string denoting the source field in the database.
 	FieldSource = "source"
+	// FieldWeight holds the string denoting the weight field in the database.
+	FieldWeight = "weight"
 	// FieldDefaultConfig holds the string denoting the default_config field in the database.
 	FieldDefaultConfig = "default_config"
 	// EdgeConfigs holds the string denoting the configs edge name in mutations.
@@ -37,6 +39,7 @@ var Columns = []string{
 	FieldID,
 	FieldName,
 	FieldSource,
+	FieldWeight,
 	FieldDefaultConfig,
 }
 
@@ -55,6 +58,8 @@ var (
 	NameValidator func(string) error
 	// SourceValidator is a validator for the "source" field. It is called by the builders before save.
 	SourceValidator func(string) error
+	// WeightValidator is a validator for the "weight" field. It is called by the builders before save.
+	WeightValidator func(int) error
 	// DefaultID holds the default value on creation for the "id" field.
 	DefaultID func() uuid.UUID
 )
@@ -75,6 +80,11 @@ func ByName(opts ...sql.OrderTermOption) OrderOption {
 // BySource orders the results by the source field.
 func BySource(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSource, opts...).ToFunc()
+}
+
+// ByWeight orders the results by the weight field.
+func ByWeight(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldWeight, opts...).ToFunc()
 }
 
 // ByConfigsCount orders the results by configs count.

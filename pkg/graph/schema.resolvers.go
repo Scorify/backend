@@ -172,7 +172,7 @@ func (r *mutationResolver) ChangePassword(ctx context.Context, oldPassword strin
 }
 
 // CreateCheck is the resolver for the createCheck field.
-func (r *mutationResolver) CreateCheck(ctx context.Context, name string, source string, config string, editableFields []string) (*ent.Check, error) {
+func (r *mutationResolver) CreateCheck(ctx context.Context, name string, source string, weight int, config string, editableFields []string) (*ent.Check, error) {
 	tx, err := r.Ent.Tx(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to start transaction: %v", err)
@@ -254,6 +254,7 @@ func (r *mutationResolver) CreateCheck(ctx context.Context, name string, source 
 
 	entCheck, err := tx.Check.Create().
 		SetName(name).
+		SetWeight(weight).
 		SetSource(source).
 		SetDefaultConfig(defaultConfig).
 		Save(ctx)
@@ -287,11 +288,12 @@ func (r *mutationResolver) CreateCheck(ctx context.Context, name string, source 
 	if err != nil {
 		return nil, fmt.Errorf("failed to commit transaction: %v", err)
 	}
+
 	return entCheck, nil
 }
 
 // UpdateCheck is the resolver for the updateCheck field.
-func (r *mutationResolver) UpdateCheck(ctx context.Context, id string, name *string, config *string, editableFields []string) (*ent.Check, error) {
+func (r *mutationResolver) UpdateCheck(ctx context.Context, id string, name *string, weight *int, config *string, editableFields []string) (*ent.Check, error) {
 	tx, err := r.Ent.Tx(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to start transaction: %v", err)
@@ -315,6 +317,11 @@ func (r *mutationResolver) UpdateCheck(ctx context.Context, id string, name *str
 
 	if name != nil {
 		checkUpdate.SetName(*name)
+	}
+
+	if weight != nil {
+		fmt.Println(1)
+		checkUpdate.SetWeight(*weight)
 	}
 
 	if config != nil || editableFields != nil {
@@ -442,12 +449,17 @@ func (r *mutationResolver) UpdateCheck(ctx context.Context, id string, name *str
 		return checkUpdateResult, err
 	}
 
+	entCheck, err = checkUpdate.Save(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update check: %v", err)
+	}
+
 	err = tx.Commit()
 	if err != nil {
 		return nil, fmt.Errorf("failed to commit transaction: %v", err)
 	}
 
-	return checkUpdate.Save(ctx)
+	return entCheck, nil
 }
 
 // DeleteCheck is the resolver for the deleteCheck field.
@@ -509,6 +521,7 @@ func (r *mutationResolver) CreateUser(ctx context.Context, username string, pass
 	if err != nil {
 		return nil, fmt.Errorf("failed to commit transaction: %v", err)
 	}
+
 	return entUser, nil
 }
 

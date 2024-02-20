@@ -44,6 +44,8 @@ type CheckMutation struct {
 	id             *uuid.UUID
 	name           *string
 	source         *string
+	weight         *int
+	addweight      *int
 	default_config *structs.CheckConfiguration
 	clearedFields  map[string]struct{}
 	configs        map[uuid.UUID]struct{}
@@ -230,6 +232,62 @@ func (m *CheckMutation) ResetSource() {
 	m.source = nil
 }
 
+// SetWeight sets the "weight" field.
+func (m *CheckMutation) SetWeight(i int) {
+	m.weight = &i
+	m.addweight = nil
+}
+
+// Weight returns the value of the "weight" field in the mutation.
+func (m *CheckMutation) Weight() (r int, exists bool) {
+	v := m.weight
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWeight returns the old "weight" field's value of the Check entity.
+// If the Check object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CheckMutation) OldWeight(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWeight is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWeight requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWeight: %w", err)
+	}
+	return oldValue.Weight, nil
+}
+
+// AddWeight adds i to the "weight" field.
+func (m *CheckMutation) AddWeight(i int) {
+	if m.addweight != nil {
+		*m.addweight += i
+	} else {
+		m.addweight = &i
+	}
+}
+
+// AddedWeight returns the value that was added to the "weight" field in this mutation.
+func (m *CheckMutation) AddedWeight() (r int, exists bool) {
+	v := m.addweight
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetWeight resets all changes to the "weight" field.
+func (m *CheckMutation) ResetWeight() {
+	m.weight = nil
+	m.addweight = nil
+}
+
 // SetDefaultConfig sets the "default_config" field.
 func (m *CheckMutation) SetDefaultConfig(sc structs.CheckConfiguration) {
 	m.default_config = &sc
@@ -354,12 +412,15 @@ func (m *CheckMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *CheckMutation) Fields() []string {
-	fields := make([]string, 0, 3)
+	fields := make([]string, 0, 4)
 	if m.name != nil {
 		fields = append(fields, check.FieldName)
 	}
 	if m.source != nil {
 		fields = append(fields, check.FieldSource)
+	}
+	if m.weight != nil {
+		fields = append(fields, check.FieldWeight)
 	}
 	if m.default_config != nil {
 		fields = append(fields, check.FieldDefaultConfig)
@@ -376,6 +437,8 @@ func (m *CheckMutation) Field(name string) (ent.Value, bool) {
 		return m.Name()
 	case check.FieldSource:
 		return m.Source()
+	case check.FieldWeight:
+		return m.Weight()
 	case check.FieldDefaultConfig:
 		return m.DefaultConfig()
 	}
@@ -391,6 +454,8 @@ func (m *CheckMutation) OldField(ctx context.Context, name string) (ent.Value, e
 		return m.OldName(ctx)
 	case check.FieldSource:
 		return m.OldSource(ctx)
+	case check.FieldWeight:
+		return m.OldWeight(ctx)
 	case check.FieldDefaultConfig:
 		return m.OldDefaultConfig(ctx)
 	}
@@ -416,6 +481,13 @@ func (m *CheckMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetSource(v)
 		return nil
+	case check.FieldWeight:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWeight(v)
+		return nil
 	case check.FieldDefaultConfig:
 		v, ok := value.(structs.CheckConfiguration)
 		if !ok {
@@ -430,13 +502,21 @@ func (m *CheckMutation) SetField(name string, value ent.Value) error {
 // AddedFields returns all numeric fields that were incremented/decremented during
 // this mutation.
 func (m *CheckMutation) AddedFields() []string {
-	return nil
+	var fields []string
+	if m.addweight != nil {
+		fields = append(fields, check.FieldWeight)
+	}
+	return fields
 }
 
 // AddedField returns the numeric value that was incremented/decremented on a field
 // with the given name. The second boolean return value indicates that this field
 // was not set, or was not defined in the schema.
 func (m *CheckMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case check.FieldWeight:
+		return m.AddedWeight()
+	}
 	return nil, false
 }
 
@@ -445,6 +525,13 @@ func (m *CheckMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *CheckMutation) AddField(name string, value ent.Value) error {
 	switch name {
+	case check.FieldWeight:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddWeight(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Check numeric field %s", name)
 }
@@ -477,6 +564,9 @@ func (m *CheckMutation) ResetField(name string) error {
 		return nil
 	case check.FieldSource:
 		m.ResetSource()
+		return nil
+	case check.FieldWeight:
+		m.ResetWeight()
 		return nil
 	case check.FieldDefaultConfig:
 		m.ResetDefaultConfig()

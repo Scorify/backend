@@ -34,6 +34,12 @@ func (cc *CheckCreate) SetSource(s string) *CheckCreate {
 	return cc
 }
 
+// SetWeight sets the "weight" field.
+func (cc *CheckCreate) SetWeight(i int) *CheckCreate {
+	cc.mutation.SetWeight(i)
+	return cc
+}
+
 // SetDefaultConfig sets the "default_config" field.
 func (cc *CheckCreate) SetDefaultConfig(sc structs.CheckConfiguration) *CheckCreate {
 	cc.mutation.SetDefaultConfig(sc)
@@ -128,6 +134,14 @@ func (cc *CheckCreate) check() error {
 			return &ValidationError{Name: "source", err: fmt.Errorf(`ent: validator failed for field "Check.source": %w`, err)}
 		}
 	}
+	if _, ok := cc.mutation.Weight(); !ok {
+		return &ValidationError{Name: "weight", err: errors.New(`ent: missing required field "Check.weight"`)}
+	}
+	if v, ok := cc.mutation.Weight(); ok {
+		if err := check.WeightValidator(v); err != nil {
+			return &ValidationError{Name: "weight", err: fmt.Errorf(`ent: validator failed for field "Check.weight": %w`, err)}
+		}
+	}
 	if _, ok := cc.mutation.DefaultConfig(); !ok {
 		return &ValidationError{Name: "default_config", err: errors.New(`ent: missing required field "Check.default_config"`)}
 	}
@@ -173,6 +187,10 @@ func (cc *CheckCreate) createSpec() (*Check, *sqlgraph.CreateSpec) {
 	if value, ok := cc.mutation.Source(); ok {
 		_spec.SetField(check.FieldSource, field.TypeString, value)
 		_node.Source = value
+	}
+	if value, ok := cc.mutation.Weight(); ok {
+		_spec.SetField(check.FieldWeight, field.TypeInt, value)
+		_node.Weight = value
 	}
 	if value, ok := cc.mutation.DefaultConfig(); ok {
 		_spec.SetField(check.FieldDefaultConfig, field.TypeJSON, value)

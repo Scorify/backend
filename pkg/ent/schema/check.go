@@ -32,6 +32,10 @@ func (Check) Fields() []ent.Field {
 			StructTag(`json:"source"`).
 			Comment("The source of the check").
 			NotEmpty(),
+		field.Int("weight").
+			StructTag(`json:"weight"`).
+			Comment("The weight of the check").
+			NonNegative(),
 		field.JSON("default_config", structs.CheckConfiguration{}).
 			StructTag(`json:"default_config"`).
 			Comment("The default configuration of a check"),
