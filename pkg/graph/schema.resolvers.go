@@ -273,10 +273,26 @@ func (r *mutationResolver) CreateCheck(ctx context.Context, name string, source 
 	entCheckConfigs := []*ent.CheckConfigCreate{}
 
 	for _, entUser := range entUsers {
+		templateConfig := make(map[string]interface{})
+		for key, value := range defaultConfig.Config {
+			switch val := value.(type) {
+			case string:
+				templateConfig[key] = helpers.ConfigTemplate(
+					val,
+					helpers.Template{
+						Number: entUser.Number,
+						Name:   entUser.Username,
+					},
+				)
+			default:
+				templateConfig[key] = val
+			}
+		}
+
 		entCheckConfigs = append(entCheckConfigs, tx.CheckConfig.Create().
 			SetCheck(entCheck).
 			SetUser(entUser).
-			SetConfig(defaultConfig.Config))
+			SetConfig(templateConfig))
 	}
 
 	_, err = tx.CheckConfig.CreateBulk(entCheckConfigs...).Save(ctx)
@@ -416,6 +432,7 @@ func (r *mutationResolver) UpdateCheck(ctx context.Context, id string, name *str
 
 		// get all configs to update
 		entConfigs, err := tx.CheckConfig.Query().
+			WithUser().
 			Where(
 				checkconfig.HasCheckWith(
 					check.IDEQ(uuid),
@@ -428,13 +445,23 @@ func (r *mutationResolver) UpdateCheck(ctx context.Context, id string, name *str
 
 		// update specific fields that were changed
 		for _, entConfig := range entConfigs {
-			tempConfig := entConfig.Config
 			for key, value := range patchFields {
-				tempConfig[key] = value
+				switch val := value.(type) {
+				case string:
+					entConfig.Config[key] = helpers.ConfigTemplate(
+						val,
+						helpers.Template{
+							Number: entConfig.Edges.User.Number,
+							Name:   entConfig.Edges.User.Username,
+						},
+					)
+				default:
+					entConfig.Config[key] = val
+				}
 			}
 
 			_, err = entConfig.Update().
-				SetConfig(tempConfig).
+				SetConfig(entConfig.Config).
 				Save(ctx)
 			if err != nil {
 				return nil, err
