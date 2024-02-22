@@ -49,19 +49,13 @@ var (
 			},
 		},
 	}
-	// CredentialsColumns holds the columns for the "credentials" table.
-	CredentialsColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeInt, Increment: true},
-	}
-	// CredentialsTable holds the schema information for the "credentials" table.
-	CredentialsTable = &schema.Table{
-		Name:       "credentials",
-		Columns:    CredentialsColumns,
-		PrimaryKey: []*schema.Column{CredentialsColumns[0]},
-	}
 	// RoundsColumns holds the columns for the "rounds" table.
 	RoundsColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "id", Type: field.TypeUUID, Unique: true},
+		{Name: "number", Type: field.TypeInt},
+		{Name: "complete", Type: field.TypeBool, Default: false},
+		{Name: "started_at", Type: field.TypeTime, Nullable: true},
+		{Name: "ended_at", Type: field.TypeTime, Nullable: true},
 	}
 	// RoundsTable holds the schema information for the "rounds" table.
 	RoundsTable = &schema.Table{
@@ -69,25 +63,68 @@ var (
 		Columns:    RoundsColumns,
 		PrimaryKey: []*schema.Column{RoundsColumns[0]},
 	}
+	// ScoreCachesColumns holds the columns for the "score_caches" table.
+	ScoreCachesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "points", Type: field.TypeInt},
+		{Name: "score_cache_round", Type: field.TypeUUID},
+		{Name: "score_cache_user", Type: field.TypeUUID},
+	}
+	// ScoreCachesTable holds the schema information for the "score_caches" table.
+	ScoreCachesTable = &schema.Table{
+		Name:       "score_caches",
+		Columns:    ScoreCachesColumns,
+		PrimaryKey: []*schema.Column{ScoreCachesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "score_caches_rounds_round",
+				Columns:    []*schema.Column{ScoreCachesColumns[2]},
+				RefColumns: []*schema.Column{RoundsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "score_caches_users_user",
+				Columns:    []*schema.Column{ScoreCachesColumns[3]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
 	// StatusColumns holds the columns for the "status" table.
 	StatusColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "id", Type: field.TypeUUID, Unique: true},
+		{Name: "error", Type: field.TypeString, Nullable: true},
+		{Name: "status", Type: field.TypeEnum, Enums: []string{"up", "down", "unknown"}, Default: "unknown"},
+		{Name: "updated_at", Type: field.TypeTime, Nullable: true},
+		{Name: "status_check", Type: field.TypeUUID},
+		{Name: "status_round", Type: field.TypeUUID},
+		{Name: "status_user", Type: field.TypeUUID},
 	}
 	// StatusTable holds the schema information for the "status" table.
 	StatusTable = &schema.Table{
 		Name:       "status",
 		Columns:    StatusColumns,
 		PrimaryKey: []*schema.Column{StatusColumns[0]},
-	}
-	// TeamsColumns holds the columns for the "teams" table.
-	TeamsColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeInt, Increment: true},
-	}
-	// TeamsTable holds the schema information for the "teams" table.
-	TeamsTable = &schema.Table{
-		Name:       "teams",
-		Columns:    TeamsColumns,
-		PrimaryKey: []*schema.Column{TeamsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "status_checks_check",
+				Columns:    []*schema.Column{StatusColumns[4]},
+				RefColumns: []*schema.Column{ChecksColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "status_rounds_round",
+				Columns:    []*schema.Column{StatusColumns[5]},
+				RefColumns: []*schema.Column{RoundsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "status_users_user",
+				Columns:    []*schema.Column{StatusColumns[6]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
 	}
 	// UsersColumns holds the columns for the "users" table.
 	UsersColumns = []*schema.Column{
@@ -107,10 +144,9 @@ var (
 	Tables = []*schema.Table{
 		ChecksTable,
 		CheckConfigsTable,
-		CredentialsTable,
 		RoundsTable,
+		ScoreCachesTable,
 		StatusTable,
-		TeamsTable,
 		UsersTable,
 	}
 )
@@ -118,4 +154,9 @@ var (
 func init() {
 	CheckConfigsTable.ForeignKeys[0].RefTable = ChecksTable
 	CheckConfigsTable.ForeignKeys[1].RefTable = UsersTable
+	ScoreCachesTable.ForeignKeys[0].RefTable = RoundsTable
+	ScoreCachesTable.ForeignKeys[1].RefTable = UsersTable
+	StatusTable.ForeignKeys[0].RefTable = ChecksTable
+	StatusTable.ForeignKeys[1].RefTable = RoundsTable
+	StatusTable.ForeignKeys[2].RefTable = UsersTable
 }

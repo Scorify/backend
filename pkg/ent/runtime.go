@@ -6,7 +6,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/scorify/backend/pkg/ent/check"
 	"github.com/scorify/backend/pkg/ent/checkconfig"
+	"github.com/scorify/backend/pkg/ent/round"
 	"github.com/scorify/backend/pkg/ent/schema"
+	"github.com/scorify/backend/pkg/ent/scorecache"
+	"github.com/scorify/backend/pkg/ent/status"
 	"github.com/scorify/backend/pkg/ent/user"
 )
 
@@ -38,6 +41,32 @@ func init() {
 	checkconfigDescID := checkconfigFields[0].Descriptor()
 	// checkconfig.DefaultID holds the default value on creation for the id field.
 	checkconfig.DefaultID = checkconfigDescID.Default.(func() uuid.UUID)
+	roundFields := schema.Round{}.Fields()
+	_ = roundFields
+	// roundDescNumber is the schema descriptor for number field.
+	roundDescNumber := roundFields[1].Descriptor()
+	// round.NumberValidator is a validator for the "number" field. It is called by the builders before save.
+	round.NumberValidator = roundDescNumber.Validators[0].(func(int) error)
+	// roundDescComplete is the schema descriptor for complete field.
+	roundDescComplete := roundFields[2].Descriptor()
+	// round.DefaultComplete holds the default value on creation for the complete field.
+	round.DefaultComplete = roundDescComplete.Default.(bool)
+	// roundDescID is the schema descriptor for id field.
+	roundDescID := roundFields[0].Descriptor()
+	// round.DefaultID holds the default value on creation for the id field.
+	round.DefaultID = roundDescID.Default.(func() uuid.UUID)
+	scorecacheFields := schema.ScoreCache{}.Fields()
+	_ = scorecacheFields
+	// scorecacheDescPoints is the schema descriptor for points field.
+	scorecacheDescPoints := scorecacheFields[0].Descriptor()
+	// scorecache.PointsValidator is a validator for the "points" field. It is called by the builders before save.
+	scorecache.PointsValidator = scorecacheDescPoints.Validators[0].(func(int) error)
+	statusFields := schema.Status{}.Fields()
+	_ = statusFields
+	// statusDescID is the schema descriptor for id field.
+	statusDescID := statusFields[0].Descriptor()
+	// status.DefaultID holds the default value on creation for the id field.
+	status.DefaultID = statusDescID.Default.(func() uuid.UUID)
 	userFields := schema.User{}.Fields()
 	_ = userFields
 	// userDescUsername is the schema descriptor for username field.

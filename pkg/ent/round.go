@@ -5,18 +5,61 @@ package ent
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
+	"github.com/google/uuid"
 	"github.com/scorify/backend/pkg/ent/round"
 )
 
 // Round is the model entity for the Round schema.
 type Round struct {
-	config
+	config `json:"-"`
 	// ID of the ent.
-	ID           int `json:"id,omitempty"`
+	// The uuid of a round
+	ID uuid.UUID `json:"id"`
+	// The number of the round
+	Number int `json:"number"`
+	// The completion status of the round
+	Complete bool `json:"complete"`
+	// The start time of the round
+	StartedAt time.Time `json:"started_at"`
+	// The end time of the round
+	EndedAt time.Time `json:"ended_at"`
+	// Edges holds the relations/edges for other nodes in the graph.
+	// The values are being populated by the RoundQuery when eager-loading is set.
+	Edges        RoundEdges `json:"edges"`
 	selectValues sql.SelectValues
+}
+
+// RoundEdges holds the relations/edges for other nodes in the graph.
+type RoundEdges struct {
+	// The statuses of a round
+	Statuses []*Status `json:"statuses"`
+	// The score caches of a round
+	Scorecaches []*ScoreCache `json:"scorecaches"`
+	// loadedTypes holds the information for reporting if a
+	// type was loaded (or requested) in eager-loading or not.
+	loadedTypes [2]bool
+}
+
+// StatusesOrErr returns the Statuses value or an error if the edge
+// was not loaded in eager-loading.
+func (e RoundEdges) StatusesOrErr() ([]*Status, error) {
+	if e.loadedTypes[0] {
+		return e.Statuses, nil
+	}
+	return nil, &NotLoadedError{edge: "statuses"}
+}
+
+// ScorecachesOrErr returns the Scorecaches value or an error if the edge
+// was not loaded in eager-loading.
+func (e RoundEdges) ScorecachesOrErr() ([]*ScoreCache, error) {
+	if e.loadedTypes[1] {
+		return e.Scorecaches, nil
+	}
+	return nil, &NotLoadedError{edge: "scorecaches"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -24,8 +67,14 @@ func (*Round) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case round.FieldID:
+		case round.FieldComplete:
+			values[i] = new(sql.NullBool)
+		case round.FieldNumber:
 			values[i] = new(sql.NullInt64)
+		case round.FieldStartedAt, round.FieldEndedAt:
+			values[i] = new(sql.NullTime)
+		case round.FieldID:
+			values[i] = new(uuid.UUID)
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -42,11 +91,35 @@ func (r *Round) assignValues(columns []string, values []any) error {
 	for i := range columns {
 		switch columns[i] {
 		case round.FieldID:
-			value, ok := values[i].(*sql.NullInt64)
-			if !ok {
-				return fmt.Errorf("unexpected type %T for field id", value)
+			if value, ok := values[i].(*uuid.UUID); !ok {
+				return fmt.Errorf("unexpected type %T for field id", values[i])
+			} else if value != nil {
+				r.ID = *value
 			}
-			r.ID = int(value.Int64)
+		case round.FieldNumber:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field number", values[i])
+			} else if value.Valid {
+				r.Number = int(value.Int64)
+			}
+		case round.FieldComplete:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field complete", values[i])
+			} else if value.Valid {
+				r.Complete = value.Bool
+			}
+		case round.FieldStartedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field started_at", values[i])
+			} else if value.Valid {
+				r.StartedAt = value.Time
+			}
+		case round.FieldEndedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field ended_at", values[i])
+			} else if value.Valid {
+				r.EndedAt = value.Time
+			}
 		default:
 			r.selectValues.Set(columns[i], values[i])
 		}
@@ -58,6 +131,16 @@ func (r *Round) assignValues(columns []string, values []any) error {
 // This includes values selected through modifiers, order, etc.
 func (r *Round) Value(name string) (ent.Value, error) {
 	return r.selectValues.Get(name)
+}
+
+// QueryStatuses queries the "statuses" edge of the Round entity.
+func (r *Round) QueryStatuses() *StatusQuery {
+	return NewRoundClient(r.config).QueryStatuses(r)
+}
+
+// QueryScorecaches queries the "scorecaches" edge of the Round entity.
+func (r *Round) QueryScorecaches() *ScoreCacheQuery {
+	return NewRoundClient(r.config).QueryScorecaches(r)
 }
 
 // Update returns a builder for updating this Round.
@@ -82,7 +165,18 @@ func (r *Round) Unwrap() *Round {
 func (r *Round) String() string {
 	var builder strings.Builder
 	builder.WriteString("Round(")
-	builder.WriteString(fmt.Sprintf("id=%v", r.ID))
+	builder.WriteString(fmt.Sprintf("id=%v, ", r.ID))
+	builder.WriteString("number=")
+	builder.WriteString(fmt.Sprintf("%v", r.Number))
+	builder.WriteString(", ")
+	builder.WriteString("complete=")
+	builder.WriteString(fmt.Sprintf("%v", r.Complete))
+	builder.WriteString(", ")
+	builder.WriteString("started_at=")
+	builder.WriteString(r.StartedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("ended_at=")
+	builder.WriteString(r.EndedAt.Format(time.ANSIC))
 	builder.WriteByte(')')
 	return builder.String()
 }

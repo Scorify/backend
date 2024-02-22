@@ -23,6 +23,8 @@ const (
 	FieldDefaultConfig = "default_config"
 	// EdgeConfigs holds the string denoting the configs edge name in mutations.
 	EdgeConfigs = "configs"
+	// EdgeStatuses holds the string denoting the statuses edge name in mutations.
+	EdgeStatuses = "statuses"
 	// Table holds the table name of the check in the database.
 	Table = "checks"
 	// ConfigsTable is the table that holds the configs relation/edge.
@@ -32,6 +34,13 @@ const (
 	ConfigsInverseTable = "check_configs"
 	// ConfigsColumn is the table column denoting the configs relation/edge.
 	ConfigsColumn = "check_config_check"
+	// StatusesTable is the table that holds the statuses relation/edge.
+	StatusesTable = "status"
+	// StatusesInverseTable is the table name for the Status entity.
+	// It exists in this package in order to avoid circular dependency with the "status" package.
+	StatusesInverseTable = "status"
+	// StatusesColumn is the table column denoting the statuses relation/edge.
+	StatusesColumn = "status_check"
 )
 
 // Columns holds all SQL columns for check fields.
@@ -100,10 +109,31 @@ func ByConfigs(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newConfigsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByStatusesCount orders the results by statuses count.
+func ByStatusesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newStatusesStep(), opts...)
+	}
+}
+
+// ByStatuses orders the results by statuses terms.
+func ByStatuses(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newStatusesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newConfigsStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(ConfigsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, true, ConfigsTable, ConfigsColumn),
+	)
+}
+func newStatusesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(StatusesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, true, StatusesTable, StatusesColumn),
 	)
 }

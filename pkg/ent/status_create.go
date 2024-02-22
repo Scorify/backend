@@ -4,11 +4,17 @@ package ent
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"time"
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
+	"github.com/scorify/backend/pkg/ent/check"
+	"github.com/scorify/backend/pkg/ent/round"
 	"github.com/scorify/backend/pkg/ent/status"
+	"github.com/scorify/backend/pkg/ent/user"
 )
 
 // StatusCreate is the builder for creating a Status entity.
@@ -18,6 +24,95 @@ type StatusCreate struct {
 	hooks    []Hook
 }
 
+// SetError sets the "error" field.
+func (sc *StatusCreate) SetError(s string) *StatusCreate {
+	sc.mutation.SetError(s)
+	return sc
+}
+
+// SetNillableError sets the "error" field if the given value is not nil.
+func (sc *StatusCreate) SetNillableError(s *string) *StatusCreate {
+	if s != nil {
+		sc.SetError(*s)
+	}
+	return sc
+}
+
+// SetStatus sets the "status" field.
+func (sc *StatusCreate) SetStatus(s status.Status) *StatusCreate {
+	sc.mutation.SetStatus(s)
+	return sc
+}
+
+// SetNillableStatus sets the "status" field if the given value is not nil.
+func (sc *StatusCreate) SetNillableStatus(s *status.Status) *StatusCreate {
+	if s != nil {
+		sc.SetStatus(*s)
+	}
+	return sc
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (sc *StatusCreate) SetUpdatedAt(t time.Time) *StatusCreate {
+	sc.mutation.SetUpdatedAt(t)
+	return sc
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (sc *StatusCreate) SetNillableUpdatedAt(t *time.Time) *StatusCreate {
+	if t != nil {
+		sc.SetUpdatedAt(*t)
+	}
+	return sc
+}
+
+// SetID sets the "id" field.
+func (sc *StatusCreate) SetID(u uuid.UUID) *StatusCreate {
+	sc.mutation.SetID(u)
+	return sc
+}
+
+// SetNillableID sets the "id" field if the given value is not nil.
+func (sc *StatusCreate) SetNillableID(u *uuid.UUID) *StatusCreate {
+	if u != nil {
+		sc.SetID(*u)
+	}
+	return sc
+}
+
+// SetCheckID sets the "check" edge to the Check entity by ID.
+func (sc *StatusCreate) SetCheckID(id uuid.UUID) *StatusCreate {
+	sc.mutation.SetCheckID(id)
+	return sc
+}
+
+// SetCheck sets the "check" edge to the Check entity.
+func (sc *StatusCreate) SetCheck(c *Check) *StatusCreate {
+	return sc.SetCheckID(c.ID)
+}
+
+// SetRoundID sets the "round" edge to the Round entity by ID.
+func (sc *StatusCreate) SetRoundID(id uuid.UUID) *StatusCreate {
+	sc.mutation.SetRoundID(id)
+	return sc
+}
+
+// SetRound sets the "round" edge to the Round entity.
+func (sc *StatusCreate) SetRound(r *Round) *StatusCreate {
+	return sc.SetRoundID(r.ID)
+}
+
+// SetUserID sets the "user" edge to the User entity by ID.
+func (sc *StatusCreate) SetUserID(id uuid.UUID) *StatusCreate {
+	sc.mutation.SetUserID(id)
+	return sc
+}
+
+// SetUser sets the "user" edge to the User entity.
+func (sc *StatusCreate) SetUser(u *User) *StatusCreate {
+	return sc.SetUserID(u.ID)
+}
+
 // Mutation returns the StatusMutation object of the builder.
 func (sc *StatusCreate) Mutation() *StatusMutation {
 	return sc.mutation
@@ -25,6 +120,7 @@ func (sc *StatusCreate) Mutation() *StatusMutation {
 
 // Save creates the Status in the database.
 func (sc *StatusCreate) Save(ctx context.Context) (*Status, error) {
+	sc.defaults()
 	return withHooks(ctx, sc.sqlSave, sc.mutation, sc.hooks)
 }
 
@@ -50,8 +146,37 @@ func (sc *StatusCreate) ExecX(ctx context.Context) {
 	}
 }
 
+// defaults sets the default values of the builder before save.
+func (sc *StatusCreate) defaults() {
+	if _, ok := sc.mutation.Status(); !ok {
+		v := status.DefaultStatus
+		sc.mutation.SetStatus(v)
+	}
+	if _, ok := sc.mutation.ID(); !ok {
+		v := status.DefaultID()
+		sc.mutation.SetID(v)
+	}
+}
+
 // check runs all checks and user-defined validators on the builder.
 func (sc *StatusCreate) check() error {
+	if _, ok := sc.mutation.Status(); !ok {
+		return &ValidationError{Name: "status", err: errors.New(`ent: missing required field "Status.status"`)}
+	}
+	if v, ok := sc.mutation.Status(); ok {
+		if err := status.StatusValidator(v); err != nil {
+			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Status.status": %w`, err)}
+		}
+	}
+	if _, ok := sc.mutation.CheckID(); !ok {
+		return &ValidationError{Name: "check", err: errors.New(`ent: missing required edge "Status.check"`)}
+	}
+	if _, ok := sc.mutation.RoundID(); !ok {
+		return &ValidationError{Name: "round", err: errors.New(`ent: missing required edge "Status.round"`)}
+	}
+	if _, ok := sc.mutation.UserID(); !ok {
+		return &ValidationError{Name: "user", err: errors.New(`ent: missing required edge "Status.user"`)}
+	}
 	return nil
 }
 
@@ -66,8 +191,13 @@ func (sc *StatusCreate) sqlSave(ctx context.Context) (*Status, error) {
 		}
 		return nil, err
 	}
-	id := _spec.ID.Value.(int64)
-	_node.ID = int(id)
+	if _spec.ID.Value != nil {
+		if id, ok := _spec.ID.Value.(*uuid.UUID); ok {
+			_node.ID = *id
+		} else if err := _node.ID.Scan(_spec.ID.Value); err != nil {
+			return nil, err
+		}
+	}
 	sc.mutation.id = &_node.ID
 	sc.mutation.done = true
 	return _node, nil
@@ -76,8 +206,75 @@ func (sc *StatusCreate) sqlSave(ctx context.Context) (*Status, error) {
 func (sc *StatusCreate) createSpec() (*Status, *sqlgraph.CreateSpec) {
 	var (
 		_node = &Status{config: sc.config}
-		_spec = sqlgraph.NewCreateSpec(status.Table, sqlgraph.NewFieldSpec(status.FieldID, field.TypeInt))
+		_spec = sqlgraph.NewCreateSpec(status.Table, sqlgraph.NewFieldSpec(status.FieldID, field.TypeUUID))
 	)
+	if id, ok := sc.mutation.ID(); ok {
+		_node.ID = id
+		_spec.ID.Value = &id
+	}
+	if value, ok := sc.mutation.Error(); ok {
+		_spec.SetField(status.FieldError, field.TypeString, value)
+		_node.Error = value
+	}
+	if value, ok := sc.mutation.Status(); ok {
+		_spec.SetField(status.FieldStatus, field.TypeEnum, value)
+		_node.Status = value
+	}
+	if value, ok := sc.mutation.UpdatedAt(); ok {
+		_spec.SetField(status.FieldUpdatedAt, field.TypeTime, value)
+		_node.UpdatedAt = value
+	}
+	if nodes := sc.mutation.CheckIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   status.CheckTable,
+			Columns: []string{status.CheckColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(check.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.status_check = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := sc.mutation.RoundIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   status.RoundTable,
+			Columns: []string{status.RoundColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(round.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.status_round = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := sc.mutation.UserIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   status.UserTable,
+			Columns: []string{status.UserColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.status_user = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
 	return _node, _spec
 }
 
@@ -99,6 +296,7 @@ func (scb *StatusCreateBulk) Save(ctx context.Context) ([]*Status, error) {
 	for i := range scb.builders {
 		func(i int, root context.Context) {
 			builder := scb.builders[i]
+			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*StatusMutation)
 				if !ok {
@@ -125,10 +323,6 @@ func (scb *StatusCreateBulk) Save(ctx context.Context) ([]*Status, error) {
 					return nil, err
 				}
 				mutation.id = &nodes[i].ID
-				if specs[i].ID.Value != nil {
-					id := specs[i].ID.Value.(int64)
-					nodes[i].ID = int(id)
-				}
 				mutation.done = true
 				return nodes[i], nil
 			})

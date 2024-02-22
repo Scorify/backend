@@ -12,6 +12,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/scorify/backend/pkg/ent/check"
 	"github.com/scorify/backend/pkg/ent/checkconfig"
+	"github.com/scorify/backend/pkg/ent/status"
 	"github.com/scorify/backend/pkg/structs"
 )
 
@@ -73,6 +74,21 @@ func (cc *CheckCreate) AddConfigs(c ...*CheckConfig) *CheckCreate {
 		ids[i] = c[i].ID
 	}
 	return cc.AddConfigIDs(ids...)
+}
+
+// AddStatusIDs adds the "statuses" edge to the Status entity by IDs.
+func (cc *CheckCreate) AddStatusIDs(ids ...uuid.UUID) *CheckCreate {
+	cc.mutation.AddStatusIDs(ids...)
+	return cc
+}
+
+// AddStatuses adds the "statuses" edges to the Status entity.
+func (cc *CheckCreate) AddStatuses(s ...*Status) *CheckCreate {
+	ids := make([]uuid.UUID, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return cc.AddStatusIDs(ids...)
 }
 
 // Mutation returns the CheckMutation object of the builder.
@@ -205,6 +221,22 @@ func (cc *CheckCreate) createSpec() (*Check, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(checkconfig.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := cc.mutation.StatusesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   check.StatusesTable,
+			Columns: []string{check.StatusesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(status.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

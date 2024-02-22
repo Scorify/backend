@@ -14,17 +14,21 @@ import (
 	"github.com/google/uuid"
 	"github.com/scorify/backend/pkg/ent/checkconfig"
 	"github.com/scorify/backend/pkg/ent/predicate"
+	"github.com/scorify/backend/pkg/ent/scorecache"
+	"github.com/scorify/backend/pkg/ent/status"
 	"github.com/scorify/backend/pkg/ent/user"
 )
 
 // UserQuery is the builder for querying User entities.
 type UserQuery struct {
 	config
-	ctx         *QueryContext
-	order       []user.OrderOption
-	inters      []Interceptor
-	predicates  []predicate.User
-	withConfigs *CheckConfigQuery
+	ctx             *QueryContext
+	order           []user.OrderOption
+	inters          []Interceptor
+	predicates      []predicate.User
+	withConfigs     *CheckConfigQuery
+	withStatus      *StatusQuery
+	withScorecaches *ScoreCacheQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -76,6 +80,50 @@ func (uq *UserQuery) QueryConfigs() *CheckConfigQuery {
 			sqlgraph.From(user.Table, user.FieldID, selector),
 			sqlgraph.To(checkconfig.Table, checkconfig.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, true, user.ConfigsTable, user.ConfigsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(uq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryStatus chains the current query on the "status" edge.
+func (uq *UserQuery) QueryStatus() *StatusQuery {
+	query := (&StatusClient{config: uq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := uq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := uq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, selector),
+			sqlgraph.To(status.Table, status.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, user.StatusTable, user.StatusColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(uq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryScorecaches chains the current query on the "scorecaches" edge.
+func (uq *UserQuery) QueryScorecaches() *ScoreCacheQuery {
+	query := (&ScoreCacheClient{config: uq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := uq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := uq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, selector),
+			sqlgraph.To(scorecache.Table, scorecache.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, user.ScorecachesTable, user.ScorecachesColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(uq.driver.Dialect(), step)
 		return fromU, nil
@@ -270,12 +318,14 @@ func (uq *UserQuery) Clone() *UserQuery {
 		return nil
 	}
 	return &UserQuery{
-		config:      uq.config,
-		ctx:         uq.ctx.Clone(),
-		order:       append([]user.OrderOption{}, uq.order...),
-		inters:      append([]Interceptor{}, uq.inters...),
-		predicates:  append([]predicate.User{}, uq.predicates...),
-		withConfigs: uq.withConfigs.Clone(),
+		config:          uq.config,
+		ctx:             uq.ctx.Clone(),
+		order:           append([]user.OrderOption{}, uq.order...),
+		inters:          append([]Interceptor{}, uq.inters...),
+		predicates:      append([]predicate.User{}, uq.predicates...),
+		withConfigs:     uq.withConfigs.Clone(),
+		withStatus:      uq.withStatus.Clone(),
+		withScorecaches: uq.withScorecaches.Clone(),
 		// clone intermediate query.
 		sql:  uq.sql.Clone(),
 		path: uq.path,
@@ -290,6 +340,28 @@ func (uq *UserQuery) WithConfigs(opts ...func(*CheckConfigQuery)) *UserQuery {
 		opt(query)
 	}
 	uq.withConfigs = query
+	return uq
+}
+
+// WithStatus tells the query-builder to eager-load the nodes that are connected to
+// the "status" edge. The optional arguments are used to configure the query builder of the edge.
+func (uq *UserQuery) WithStatus(opts ...func(*StatusQuery)) *UserQuery {
+	query := (&StatusClient{config: uq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	uq.withStatus = query
+	return uq
+}
+
+// WithScorecaches tells the query-builder to eager-load the nodes that are connected to
+// the "scorecaches" edge. The optional arguments are used to configure the query builder of the edge.
+func (uq *UserQuery) WithScorecaches(opts ...func(*ScoreCacheQuery)) *UserQuery {
+	query := (&ScoreCacheClient{config: uq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	uq.withScorecaches = query
 	return uq
 }
 
@@ -371,8 +443,10 @@ func (uq *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 	var (
 		nodes       = []*User{}
 		_spec       = uq.querySpec()
-		loadedTypes = [1]bool{
+		loadedTypes = [3]bool{
 			uq.withConfigs != nil,
+			uq.withStatus != nil,
+			uq.withScorecaches != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -397,6 +471,20 @@ func (uq *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 		if err := uq.loadConfigs(ctx, query, nodes,
 			func(n *User) { n.Edges.Configs = []*CheckConfig{} },
 			func(n *User, e *CheckConfig) { n.Edges.Configs = append(n.Edges.Configs, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := uq.withStatus; query != nil {
+		if err := uq.loadStatus(ctx, query, nodes,
+			func(n *User) { n.Edges.Status = []*Status{} },
+			func(n *User, e *Status) { n.Edges.Status = append(n.Edges.Status, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := uq.withScorecaches; query != nil {
+		if err := uq.loadScorecaches(ctx, query, nodes,
+			func(n *User) { n.Edges.Scorecaches = []*ScoreCache{} },
+			func(n *User, e *ScoreCache) { n.Edges.Scorecaches = append(n.Edges.Scorecaches, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -429,6 +517,68 @@ func (uq *UserQuery) loadConfigs(ctx context.Context, query *CheckConfigQuery, n
 		node, ok := nodeids[*fk]
 		if !ok {
 			return fmt.Errorf(`unexpected referenced foreign-key "check_config_user" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (uq *UserQuery) loadStatus(ctx context.Context, query *StatusQuery, nodes []*User, init func(*User), assign func(*User, *Status)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*User)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.Status(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(user.StatusColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.status_user
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "status_user" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "status_user" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (uq *UserQuery) loadScorecaches(ctx context.Context, query *ScoreCacheQuery, nodes []*User, init func(*User), assign func(*User, *ScoreCache)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*User)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.ScoreCache(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(user.ScorecachesColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.score_cache_user
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "score_cache_user" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "score_cache_user" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}

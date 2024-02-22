@@ -4,11 +4,16 @@ package ent
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"time"
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
 	"github.com/scorify/backend/pkg/ent/round"
+	"github.com/scorify/backend/pkg/ent/scorecache"
+	"github.com/scorify/backend/pkg/ent/status"
 )
 
 // RoundCreate is the builder for creating a Round entity.
@@ -18,6 +23,98 @@ type RoundCreate struct {
 	hooks    []Hook
 }
 
+// SetNumber sets the "number" field.
+func (rc *RoundCreate) SetNumber(i int) *RoundCreate {
+	rc.mutation.SetNumber(i)
+	return rc
+}
+
+// SetComplete sets the "complete" field.
+func (rc *RoundCreate) SetComplete(b bool) *RoundCreate {
+	rc.mutation.SetComplete(b)
+	return rc
+}
+
+// SetNillableComplete sets the "complete" field if the given value is not nil.
+func (rc *RoundCreate) SetNillableComplete(b *bool) *RoundCreate {
+	if b != nil {
+		rc.SetComplete(*b)
+	}
+	return rc
+}
+
+// SetStartedAt sets the "started_at" field.
+func (rc *RoundCreate) SetStartedAt(t time.Time) *RoundCreate {
+	rc.mutation.SetStartedAt(t)
+	return rc
+}
+
+// SetNillableStartedAt sets the "started_at" field if the given value is not nil.
+func (rc *RoundCreate) SetNillableStartedAt(t *time.Time) *RoundCreate {
+	if t != nil {
+		rc.SetStartedAt(*t)
+	}
+	return rc
+}
+
+// SetEndedAt sets the "ended_at" field.
+func (rc *RoundCreate) SetEndedAt(t time.Time) *RoundCreate {
+	rc.mutation.SetEndedAt(t)
+	return rc
+}
+
+// SetNillableEndedAt sets the "ended_at" field if the given value is not nil.
+func (rc *RoundCreate) SetNillableEndedAt(t *time.Time) *RoundCreate {
+	if t != nil {
+		rc.SetEndedAt(*t)
+	}
+	return rc
+}
+
+// SetID sets the "id" field.
+func (rc *RoundCreate) SetID(u uuid.UUID) *RoundCreate {
+	rc.mutation.SetID(u)
+	return rc
+}
+
+// SetNillableID sets the "id" field if the given value is not nil.
+func (rc *RoundCreate) SetNillableID(u *uuid.UUID) *RoundCreate {
+	if u != nil {
+		rc.SetID(*u)
+	}
+	return rc
+}
+
+// AddStatusIDs adds the "statuses" edge to the Status entity by IDs.
+func (rc *RoundCreate) AddStatusIDs(ids ...uuid.UUID) *RoundCreate {
+	rc.mutation.AddStatusIDs(ids...)
+	return rc
+}
+
+// AddStatuses adds the "statuses" edges to the Status entity.
+func (rc *RoundCreate) AddStatuses(s ...*Status) *RoundCreate {
+	ids := make([]uuid.UUID, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return rc.AddStatusIDs(ids...)
+}
+
+// AddScorecachIDs adds the "scorecaches" edge to the ScoreCache entity by IDs.
+func (rc *RoundCreate) AddScorecachIDs(ids ...int) *RoundCreate {
+	rc.mutation.AddScorecachIDs(ids...)
+	return rc
+}
+
+// AddScorecaches adds the "scorecaches" edges to the ScoreCache entity.
+func (rc *RoundCreate) AddScorecaches(s ...*ScoreCache) *RoundCreate {
+	ids := make([]int, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return rc.AddScorecachIDs(ids...)
+}
+
 // Mutation returns the RoundMutation object of the builder.
 func (rc *RoundCreate) Mutation() *RoundMutation {
 	return rc.mutation
@@ -25,6 +122,7 @@ func (rc *RoundCreate) Mutation() *RoundMutation {
 
 // Save creates the Round in the database.
 func (rc *RoundCreate) Save(ctx context.Context) (*Round, error) {
+	rc.defaults()
 	return withHooks(ctx, rc.sqlSave, rc.mutation, rc.hooks)
 }
 
@@ -50,8 +148,31 @@ func (rc *RoundCreate) ExecX(ctx context.Context) {
 	}
 }
 
+// defaults sets the default values of the builder before save.
+func (rc *RoundCreate) defaults() {
+	if _, ok := rc.mutation.Complete(); !ok {
+		v := round.DefaultComplete
+		rc.mutation.SetComplete(v)
+	}
+	if _, ok := rc.mutation.ID(); !ok {
+		v := round.DefaultID()
+		rc.mutation.SetID(v)
+	}
+}
+
 // check runs all checks and user-defined validators on the builder.
 func (rc *RoundCreate) check() error {
+	if _, ok := rc.mutation.Number(); !ok {
+		return &ValidationError{Name: "number", err: errors.New(`ent: missing required field "Round.number"`)}
+	}
+	if v, ok := rc.mutation.Number(); ok {
+		if err := round.NumberValidator(v); err != nil {
+			return &ValidationError{Name: "number", err: fmt.Errorf(`ent: validator failed for field "Round.number": %w`, err)}
+		}
+	}
+	if _, ok := rc.mutation.Complete(); !ok {
+		return &ValidationError{Name: "complete", err: errors.New(`ent: missing required field "Round.complete"`)}
+	}
 	return nil
 }
 
@@ -66,8 +187,13 @@ func (rc *RoundCreate) sqlSave(ctx context.Context) (*Round, error) {
 		}
 		return nil, err
 	}
-	id := _spec.ID.Value.(int64)
-	_node.ID = int(id)
+	if _spec.ID.Value != nil {
+		if id, ok := _spec.ID.Value.(*uuid.UUID); ok {
+			_node.ID = *id
+		} else if err := _node.ID.Scan(_spec.ID.Value); err != nil {
+			return nil, err
+		}
+	}
 	rc.mutation.id = &_node.ID
 	rc.mutation.done = true
 	return _node, nil
@@ -76,8 +202,60 @@ func (rc *RoundCreate) sqlSave(ctx context.Context) (*Round, error) {
 func (rc *RoundCreate) createSpec() (*Round, *sqlgraph.CreateSpec) {
 	var (
 		_node = &Round{config: rc.config}
-		_spec = sqlgraph.NewCreateSpec(round.Table, sqlgraph.NewFieldSpec(round.FieldID, field.TypeInt))
+		_spec = sqlgraph.NewCreateSpec(round.Table, sqlgraph.NewFieldSpec(round.FieldID, field.TypeUUID))
 	)
+	if id, ok := rc.mutation.ID(); ok {
+		_node.ID = id
+		_spec.ID.Value = &id
+	}
+	if value, ok := rc.mutation.Number(); ok {
+		_spec.SetField(round.FieldNumber, field.TypeInt, value)
+		_node.Number = value
+	}
+	if value, ok := rc.mutation.Complete(); ok {
+		_spec.SetField(round.FieldComplete, field.TypeBool, value)
+		_node.Complete = value
+	}
+	if value, ok := rc.mutation.StartedAt(); ok {
+		_spec.SetField(round.FieldStartedAt, field.TypeTime, value)
+		_node.StartedAt = value
+	}
+	if value, ok := rc.mutation.EndedAt(); ok {
+		_spec.SetField(round.FieldEndedAt, field.TypeTime, value)
+		_node.EndedAt = value
+	}
+	if nodes := rc.mutation.StatusesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   round.StatusesTable,
+			Columns: []string{round.StatusesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(status.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := rc.mutation.ScorecachesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   round.ScorecachesTable,
+			Columns: []string{round.ScorecachesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(scorecache.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
 	return _node, _spec
 }
 
@@ -99,6 +277,7 @@ func (rcb *RoundCreateBulk) Save(ctx context.Context) ([]*Round, error) {
 	for i := range rcb.builders {
 		func(i int, root context.Context) {
 			builder := rcb.builders[i]
+			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*RoundMutation)
 				if !ok {
@@ -125,10 +304,6 @@ func (rcb *RoundCreateBulk) Save(ctx context.Context) ([]*Round, error) {
 					return nil, err
 				}
 				mutation.id = &nodes[i].ID
-				if specs[i].ID.Value != nil {
-					id := specs[i].ID.Value.(int64)
-					nodes[i].ID = int(id)
-				}
 				mutation.done = true
 				return nodes[i], nil
 			})

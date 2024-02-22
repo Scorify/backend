@@ -11,6 +11,8 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
 	"github.com/scorify/backend/pkg/ent/checkconfig"
+	"github.com/scorify/backend/pkg/ent/scorecache"
+	"github.com/scorify/backend/pkg/ent/status"
 	"github.com/scorify/backend/pkg/ent/user"
 )
 
@@ -88,6 +90,36 @@ func (uc *UserCreate) AddConfigs(c ...*CheckConfig) *UserCreate {
 		ids[i] = c[i].ID
 	}
 	return uc.AddConfigIDs(ids...)
+}
+
+// AddStatuIDs adds the "status" edge to the Status entity by IDs.
+func (uc *UserCreate) AddStatuIDs(ids ...uuid.UUID) *UserCreate {
+	uc.mutation.AddStatuIDs(ids...)
+	return uc
+}
+
+// AddStatus adds the "status" edges to the Status entity.
+func (uc *UserCreate) AddStatus(s ...*Status) *UserCreate {
+	ids := make([]uuid.UUID, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return uc.AddStatuIDs(ids...)
+}
+
+// AddScorecachIDs adds the "scorecaches" edge to the ScoreCache entity by IDs.
+func (uc *UserCreate) AddScorecachIDs(ids ...int) *UserCreate {
+	uc.mutation.AddScorecachIDs(ids...)
+	return uc
+}
+
+// AddScorecaches adds the "scorecaches" edges to the ScoreCache entity.
+func (uc *UserCreate) AddScorecaches(s ...*ScoreCache) *UserCreate {
+	ids := make([]int, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return uc.AddScorecachIDs(ids...)
 }
 
 // Mutation returns the UserMutation object of the builder.
@@ -226,6 +258,38 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(checkconfig.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := uc.mutation.StatusIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   user.StatusTable,
+			Columns: []string{user.StatusColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(status.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := uc.mutation.ScorecachesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   user.ScorecachesTable,
+			Columns: []string{user.ScorecachesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(scorecache.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

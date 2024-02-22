@@ -36,9 +36,13 @@ type User struct {
 type UserEdges struct {
 	// The configuration of a check
 	Configs []*CheckConfig `json:"config"`
+	// The status of a user
+	Status []*Status `json:"status"`
+	// The score caches of a user
+	Scorecaches []*ScoreCache `json:"scorecaches"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [3]bool
 }
 
 // ConfigsOrErr returns the Configs value or an error if the edge
@@ -48,6 +52,24 @@ func (e UserEdges) ConfigsOrErr() ([]*CheckConfig, error) {
 		return e.Configs, nil
 	}
 	return nil, &NotLoadedError{edge: "configs"}
+}
+
+// StatusOrErr returns the Status value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) StatusOrErr() ([]*Status, error) {
+	if e.loadedTypes[1] {
+		return e.Status, nil
+	}
+	return nil, &NotLoadedError{edge: "status"}
+}
+
+// ScorecachesOrErr returns the Scorecaches value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) ScorecachesOrErr() ([]*ScoreCache, error) {
+	if e.loadedTypes[2] {
+		return e.Scorecaches, nil
+	}
+	return nil, &NotLoadedError{edge: "scorecaches"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -122,6 +144,16 @@ func (u *User) Value(name string) (ent.Value, error) {
 // QueryConfigs queries the "configs" edge of the User entity.
 func (u *User) QueryConfigs() *CheckConfigQuery {
 	return NewUserClient(u.config).QueryConfigs(u)
+}
+
+// QueryStatus queries the "status" edge of the User entity.
+func (u *User) QueryStatus() *StatusQuery {
+	return NewUserClient(u.config).QueryStatus(u)
+}
+
+// QueryScorecaches queries the "scorecaches" edge of the User entity.
+func (u *User) QueryScorecaches() *ScoreCacheQuery {
+	return NewUserClient(u.config).QueryScorecaches(u)
 }
 
 // Update returns a builder for updating this User.

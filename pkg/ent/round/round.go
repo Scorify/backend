@@ -4,6 +4,8 @@ package round
 
 import (
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
+	"github.com/google/uuid"
 )
 
 const (
@@ -11,13 +13,43 @@ const (
 	Label = "round"
 	// FieldID holds the string denoting the id field in the database.
 	FieldID = "id"
+	// FieldNumber holds the string denoting the number field in the database.
+	FieldNumber = "number"
+	// FieldComplete holds the string denoting the complete field in the database.
+	FieldComplete = "complete"
+	// FieldStartedAt holds the string denoting the started_at field in the database.
+	FieldStartedAt = "started_at"
+	// FieldEndedAt holds the string denoting the ended_at field in the database.
+	FieldEndedAt = "ended_at"
+	// EdgeStatuses holds the string denoting the statuses edge name in mutations.
+	EdgeStatuses = "statuses"
+	// EdgeScorecaches holds the string denoting the scorecaches edge name in mutations.
+	EdgeScorecaches = "scorecaches"
 	// Table holds the table name of the round in the database.
 	Table = "rounds"
+	// StatusesTable is the table that holds the statuses relation/edge.
+	StatusesTable = "status"
+	// StatusesInverseTable is the table name for the Status entity.
+	// It exists in this package in order to avoid circular dependency with the "status" package.
+	StatusesInverseTable = "status"
+	// StatusesColumn is the table column denoting the statuses relation/edge.
+	StatusesColumn = "status_round"
+	// ScorecachesTable is the table that holds the scorecaches relation/edge.
+	ScorecachesTable = "score_caches"
+	// ScorecachesInverseTable is the table name for the ScoreCache entity.
+	// It exists in this package in order to avoid circular dependency with the "scorecache" package.
+	ScorecachesInverseTable = "score_caches"
+	// ScorecachesColumn is the table column denoting the scorecaches relation/edge.
+	ScorecachesColumn = "score_cache_round"
 )
 
 // Columns holds all SQL columns for round fields.
 var Columns = []string{
 	FieldID,
+	FieldNumber,
+	FieldComplete,
+	FieldStartedAt,
+	FieldEndedAt,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -30,10 +62,81 @@ func ValidColumn(column string) bool {
 	return false
 }
 
+var (
+	// NumberValidator is a validator for the "number" field. It is called by the builders before save.
+	NumberValidator func(int) error
+	// DefaultComplete holds the default value on creation for the "complete" field.
+	DefaultComplete bool
+	// DefaultID holds the default value on creation for the "id" field.
+	DefaultID func() uuid.UUID
+)
+
 // OrderOption defines the ordering options for the Round queries.
 type OrderOption func(*sql.Selector)
 
 // ByID orders the results by the id field.
 func ByID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldID, opts...).ToFunc()
+}
+
+// ByNumber orders the results by the number field.
+func ByNumber(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldNumber, opts...).ToFunc()
+}
+
+// ByComplete orders the results by the complete field.
+func ByComplete(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldComplete, opts...).ToFunc()
+}
+
+// ByStartedAt orders the results by the started_at field.
+func ByStartedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldStartedAt, opts...).ToFunc()
+}
+
+// ByEndedAt orders the results by the ended_at field.
+func ByEndedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldEndedAt, opts...).ToFunc()
+}
+
+// ByStatusesCount orders the results by statuses count.
+func ByStatusesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newStatusesStep(), opts...)
+	}
+}
+
+// ByStatuses orders the results by statuses terms.
+func ByStatuses(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newStatusesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByScorecachesCount orders the results by scorecaches count.
+func ByScorecachesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newScorecachesStep(), opts...)
+	}
+}
+
+// ByScorecaches orders the results by scorecaches terms.
+func ByScorecaches(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newScorecachesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+func newStatusesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(StatusesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, true, StatusesTable, StatusesColumn),
+	)
+}
+func newScorecachesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ScorecachesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, true, ScorecachesTable, ScorecachesColumn),
+	)
 }

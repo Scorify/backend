@@ -6,12 +6,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
 	"github.com/scorify/backend/pkg/ent/predicate"
 	"github.com/scorify/backend/pkg/ent/round"
+	"github.com/scorify/backend/pkg/ent/scorecache"
+	"github.com/scorify/backend/pkg/ent/status"
 )
 
 // RoundUpdate is the builder for updating Round entities.
@@ -27,9 +31,156 @@ func (ru *RoundUpdate) Where(ps ...predicate.Round) *RoundUpdate {
 	return ru
 }
 
+// SetNumber sets the "number" field.
+func (ru *RoundUpdate) SetNumber(i int) *RoundUpdate {
+	ru.mutation.ResetNumber()
+	ru.mutation.SetNumber(i)
+	return ru
+}
+
+// SetNillableNumber sets the "number" field if the given value is not nil.
+func (ru *RoundUpdate) SetNillableNumber(i *int) *RoundUpdate {
+	if i != nil {
+		ru.SetNumber(*i)
+	}
+	return ru
+}
+
+// AddNumber adds i to the "number" field.
+func (ru *RoundUpdate) AddNumber(i int) *RoundUpdate {
+	ru.mutation.AddNumber(i)
+	return ru
+}
+
+// SetComplete sets the "complete" field.
+func (ru *RoundUpdate) SetComplete(b bool) *RoundUpdate {
+	ru.mutation.SetComplete(b)
+	return ru
+}
+
+// SetNillableComplete sets the "complete" field if the given value is not nil.
+func (ru *RoundUpdate) SetNillableComplete(b *bool) *RoundUpdate {
+	if b != nil {
+		ru.SetComplete(*b)
+	}
+	return ru
+}
+
+// SetStartedAt sets the "started_at" field.
+func (ru *RoundUpdate) SetStartedAt(t time.Time) *RoundUpdate {
+	ru.mutation.SetStartedAt(t)
+	return ru
+}
+
+// SetNillableStartedAt sets the "started_at" field if the given value is not nil.
+func (ru *RoundUpdate) SetNillableStartedAt(t *time.Time) *RoundUpdate {
+	if t != nil {
+		ru.SetStartedAt(*t)
+	}
+	return ru
+}
+
+// ClearStartedAt clears the value of the "started_at" field.
+func (ru *RoundUpdate) ClearStartedAt() *RoundUpdate {
+	ru.mutation.ClearStartedAt()
+	return ru
+}
+
+// SetEndedAt sets the "ended_at" field.
+func (ru *RoundUpdate) SetEndedAt(t time.Time) *RoundUpdate {
+	ru.mutation.SetEndedAt(t)
+	return ru
+}
+
+// SetNillableEndedAt sets the "ended_at" field if the given value is not nil.
+func (ru *RoundUpdate) SetNillableEndedAt(t *time.Time) *RoundUpdate {
+	if t != nil {
+		ru.SetEndedAt(*t)
+	}
+	return ru
+}
+
+// ClearEndedAt clears the value of the "ended_at" field.
+func (ru *RoundUpdate) ClearEndedAt() *RoundUpdate {
+	ru.mutation.ClearEndedAt()
+	return ru
+}
+
+// AddStatusIDs adds the "statuses" edge to the Status entity by IDs.
+func (ru *RoundUpdate) AddStatusIDs(ids ...uuid.UUID) *RoundUpdate {
+	ru.mutation.AddStatusIDs(ids...)
+	return ru
+}
+
+// AddStatuses adds the "statuses" edges to the Status entity.
+func (ru *RoundUpdate) AddStatuses(s ...*Status) *RoundUpdate {
+	ids := make([]uuid.UUID, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return ru.AddStatusIDs(ids...)
+}
+
+// AddScorecachIDs adds the "scorecaches" edge to the ScoreCache entity by IDs.
+func (ru *RoundUpdate) AddScorecachIDs(ids ...int) *RoundUpdate {
+	ru.mutation.AddScorecachIDs(ids...)
+	return ru
+}
+
+// AddScorecaches adds the "scorecaches" edges to the ScoreCache entity.
+func (ru *RoundUpdate) AddScorecaches(s ...*ScoreCache) *RoundUpdate {
+	ids := make([]int, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return ru.AddScorecachIDs(ids...)
+}
+
 // Mutation returns the RoundMutation object of the builder.
 func (ru *RoundUpdate) Mutation() *RoundMutation {
 	return ru.mutation
+}
+
+// ClearStatuses clears all "statuses" edges to the Status entity.
+func (ru *RoundUpdate) ClearStatuses() *RoundUpdate {
+	ru.mutation.ClearStatuses()
+	return ru
+}
+
+// RemoveStatusIDs removes the "statuses" edge to Status entities by IDs.
+func (ru *RoundUpdate) RemoveStatusIDs(ids ...uuid.UUID) *RoundUpdate {
+	ru.mutation.RemoveStatusIDs(ids...)
+	return ru
+}
+
+// RemoveStatuses removes "statuses" edges to Status entities.
+func (ru *RoundUpdate) RemoveStatuses(s ...*Status) *RoundUpdate {
+	ids := make([]uuid.UUID, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return ru.RemoveStatusIDs(ids...)
+}
+
+// ClearScorecaches clears all "scorecaches" edges to the ScoreCache entity.
+func (ru *RoundUpdate) ClearScorecaches() *RoundUpdate {
+	ru.mutation.ClearScorecaches()
+	return ru
+}
+
+// RemoveScorecachIDs removes the "scorecaches" edge to ScoreCache entities by IDs.
+func (ru *RoundUpdate) RemoveScorecachIDs(ids ...int) *RoundUpdate {
+	ru.mutation.RemoveScorecachIDs(ids...)
+	return ru
+}
+
+// RemoveScorecaches removes "scorecaches" edges to ScoreCache entities.
+func (ru *RoundUpdate) RemoveScorecaches(s ...*ScoreCache) *RoundUpdate {
+	ids := make([]int, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return ru.RemoveScorecachIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -59,14 +210,138 @@ func (ru *RoundUpdate) ExecX(ctx context.Context) {
 	}
 }
 
+// check runs all checks and user-defined validators on the builder.
+func (ru *RoundUpdate) check() error {
+	if v, ok := ru.mutation.Number(); ok {
+		if err := round.NumberValidator(v); err != nil {
+			return &ValidationError{Name: "number", err: fmt.Errorf(`ent: validator failed for field "Round.number": %w`, err)}
+		}
+	}
+	return nil
+}
+
 func (ru *RoundUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	_spec := sqlgraph.NewUpdateSpec(round.Table, round.Columns, sqlgraph.NewFieldSpec(round.FieldID, field.TypeInt))
+	if err := ru.check(); err != nil {
+		return n, err
+	}
+	_spec := sqlgraph.NewUpdateSpec(round.Table, round.Columns, sqlgraph.NewFieldSpec(round.FieldID, field.TypeUUID))
 	if ps := ru.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
+	}
+	if value, ok := ru.mutation.Number(); ok {
+		_spec.SetField(round.FieldNumber, field.TypeInt, value)
+	}
+	if value, ok := ru.mutation.AddedNumber(); ok {
+		_spec.AddField(round.FieldNumber, field.TypeInt, value)
+	}
+	if value, ok := ru.mutation.Complete(); ok {
+		_spec.SetField(round.FieldComplete, field.TypeBool, value)
+	}
+	if value, ok := ru.mutation.StartedAt(); ok {
+		_spec.SetField(round.FieldStartedAt, field.TypeTime, value)
+	}
+	if ru.mutation.StartedAtCleared() {
+		_spec.ClearField(round.FieldStartedAt, field.TypeTime)
+	}
+	if value, ok := ru.mutation.EndedAt(); ok {
+		_spec.SetField(round.FieldEndedAt, field.TypeTime, value)
+	}
+	if ru.mutation.EndedAtCleared() {
+		_spec.ClearField(round.FieldEndedAt, field.TypeTime)
+	}
+	if ru.mutation.StatusesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   round.StatusesTable,
+			Columns: []string{round.StatusesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(status.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ru.mutation.RemovedStatusesIDs(); len(nodes) > 0 && !ru.mutation.StatusesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   round.StatusesTable,
+			Columns: []string{round.StatusesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(status.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ru.mutation.StatusesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   round.StatusesTable,
+			Columns: []string{round.StatusesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(status.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if ru.mutation.ScorecachesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   round.ScorecachesTable,
+			Columns: []string{round.ScorecachesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(scorecache.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ru.mutation.RemovedScorecachesIDs(); len(nodes) > 0 && !ru.mutation.ScorecachesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   round.ScorecachesTable,
+			Columns: []string{round.ScorecachesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(scorecache.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ru.mutation.ScorecachesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   round.ScorecachesTable,
+			Columns: []string{round.ScorecachesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(scorecache.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if n, err = sqlgraph.UpdateNodes(ctx, ru.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -88,9 +363,156 @@ type RoundUpdateOne struct {
 	mutation *RoundMutation
 }
 
+// SetNumber sets the "number" field.
+func (ruo *RoundUpdateOne) SetNumber(i int) *RoundUpdateOne {
+	ruo.mutation.ResetNumber()
+	ruo.mutation.SetNumber(i)
+	return ruo
+}
+
+// SetNillableNumber sets the "number" field if the given value is not nil.
+func (ruo *RoundUpdateOne) SetNillableNumber(i *int) *RoundUpdateOne {
+	if i != nil {
+		ruo.SetNumber(*i)
+	}
+	return ruo
+}
+
+// AddNumber adds i to the "number" field.
+func (ruo *RoundUpdateOne) AddNumber(i int) *RoundUpdateOne {
+	ruo.mutation.AddNumber(i)
+	return ruo
+}
+
+// SetComplete sets the "complete" field.
+func (ruo *RoundUpdateOne) SetComplete(b bool) *RoundUpdateOne {
+	ruo.mutation.SetComplete(b)
+	return ruo
+}
+
+// SetNillableComplete sets the "complete" field if the given value is not nil.
+func (ruo *RoundUpdateOne) SetNillableComplete(b *bool) *RoundUpdateOne {
+	if b != nil {
+		ruo.SetComplete(*b)
+	}
+	return ruo
+}
+
+// SetStartedAt sets the "started_at" field.
+func (ruo *RoundUpdateOne) SetStartedAt(t time.Time) *RoundUpdateOne {
+	ruo.mutation.SetStartedAt(t)
+	return ruo
+}
+
+// SetNillableStartedAt sets the "started_at" field if the given value is not nil.
+func (ruo *RoundUpdateOne) SetNillableStartedAt(t *time.Time) *RoundUpdateOne {
+	if t != nil {
+		ruo.SetStartedAt(*t)
+	}
+	return ruo
+}
+
+// ClearStartedAt clears the value of the "started_at" field.
+func (ruo *RoundUpdateOne) ClearStartedAt() *RoundUpdateOne {
+	ruo.mutation.ClearStartedAt()
+	return ruo
+}
+
+// SetEndedAt sets the "ended_at" field.
+func (ruo *RoundUpdateOne) SetEndedAt(t time.Time) *RoundUpdateOne {
+	ruo.mutation.SetEndedAt(t)
+	return ruo
+}
+
+// SetNillableEndedAt sets the "ended_at" field if the given value is not nil.
+func (ruo *RoundUpdateOne) SetNillableEndedAt(t *time.Time) *RoundUpdateOne {
+	if t != nil {
+		ruo.SetEndedAt(*t)
+	}
+	return ruo
+}
+
+// ClearEndedAt clears the value of the "ended_at" field.
+func (ruo *RoundUpdateOne) ClearEndedAt() *RoundUpdateOne {
+	ruo.mutation.ClearEndedAt()
+	return ruo
+}
+
+// AddStatusIDs adds the "statuses" edge to the Status entity by IDs.
+func (ruo *RoundUpdateOne) AddStatusIDs(ids ...uuid.UUID) *RoundUpdateOne {
+	ruo.mutation.AddStatusIDs(ids...)
+	return ruo
+}
+
+// AddStatuses adds the "statuses" edges to the Status entity.
+func (ruo *RoundUpdateOne) AddStatuses(s ...*Status) *RoundUpdateOne {
+	ids := make([]uuid.UUID, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return ruo.AddStatusIDs(ids...)
+}
+
+// AddScorecachIDs adds the "scorecaches" edge to the ScoreCache entity by IDs.
+func (ruo *RoundUpdateOne) AddScorecachIDs(ids ...int) *RoundUpdateOne {
+	ruo.mutation.AddScorecachIDs(ids...)
+	return ruo
+}
+
+// AddScorecaches adds the "scorecaches" edges to the ScoreCache entity.
+func (ruo *RoundUpdateOne) AddScorecaches(s ...*ScoreCache) *RoundUpdateOne {
+	ids := make([]int, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return ruo.AddScorecachIDs(ids...)
+}
+
 // Mutation returns the RoundMutation object of the builder.
 func (ruo *RoundUpdateOne) Mutation() *RoundMutation {
 	return ruo.mutation
+}
+
+// ClearStatuses clears all "statuses" edges to the Status entity.
+func (ruo *RoundUpdateOne) ClearStatuses() *RoundUpdateOne {
+	ruo.mutation.ClearStatuses()
+	return ruo
+}
+
+// RemoveStatusIDs removes the "statuses" edge to Status entities by IDs.
+func (ruo *RoundUpdateOne) RemoveStatusIDs(ids ...uuid.UUID) *RoundUpdateOne {
+	ruo.mutation.RemoveStatusIDs(ids...)
+	return ruo
+}
+
+// RemoveStatuses removes "statuses" edges to Status entities.
+func (ruo *RoundUpdateOne) RemoveStatuses(s ...*Status) *RoundUpdateOne {
+	ids := make([]uuid.UUID, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return ruo.RemoveStatusIDs(ids...)
+}
+
+// ClearScorecaches clears all "scorecaches" edges to the ScoreCache entity.
+func (ruo *RoundUpdateOne) ClearScorecaches() *RoundUpdateOne {
+	ruo.mutation.ClearScorecaches()
+	return ruo
+}
+
+// RemoveScorecachIDs removes the "scorecaches" edge to ScoreCache entities by IDs.
+func (ruo *RoundUpdateOne) RemoveScorecachIDs(ids ...int) *RoundUpdateOne {
+	ruo.mutation.RemoveScorecachIDs(ids...)
+	return ruo
+}
+
+// RemoveScorecaches removes "scorecaches" edges to ScoreCache entities.
+func (ruo *RoundUpdateOne) RemoveScorecaches(s ...*ScoreCache) *RoundUpdateOne {
+	ids := make([]int, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return ruo.RemoveScorecachIDs(ids...)
 }
 
 // Where appends a list predicates to the RoundUpdate builder.
@@ -133,8 +555,21 @@ func (ruo *RoundUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
+// check runs all checks and user-defined validators on the builder.
+func (ruo *RoundUpdateOne) check() error {
+	if v, ok := ruo.mutation.Number(); ok {
+		if err := round.NumberValidator(v); err != nil {
+			return &ValidationError{Name: "number", err: fmt.Errorf(`ent: validator failed for field "Round.number": %w`, err)}
+		}
+	}
+	return nil
+}
+
 func (ruo *RoundUpdateOne) sqlSave(ctx context.Context) (_node *Round, err error) {
-	_spec := sqlgraph.NewUpdateSpec(round.Table, round.Columns, sqlgraph.NewFieldSpec(round.FieldID, field.TypeInt))
+	if err := ruo.check(); err != nil {
+		return _node, err
+	}
+	_spec := sqlgraph.NewUpdateSpec(round.Table, round.Columns, sqlgraph.NewFieldSpec(round.FieldID, field.TypeUUID))
 	id, ok := ruo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "Round.id" for update`)}
@@ -158,6 +593,117 @@ func (ruo *RoundUpdateOne) sqlSave(ctx context.Context) (_node *Round, err error
 				ps[i](selector)
 			}
 		}
+	}
+	if value, ok := ruo.mutation.Number(); ok {
+		_spec.SetField(round.FieldNumber, field.TypeInt, value)
+	}
+	if value, ok := ruo.mutation.AddedNumber(); ok {
+		_spec.AddField(round.FieldNumber, field.TypeInt, value)
+	}
+	if value, ok := ruo.mutation.Complete(); ok {
+		_spec.SetField(round.FieldComplete, field.TypeBool, value)
+	}
+	if value, ok := ruo.mutation.StartedAt(); ok {
+		_spec.SetField(round.FieldStartedAt, field.TypeTime, value)
+	}
+	if ruo.mutation.StartedAtCleared() {
+		_spec.ClearField(round.FieldStartedAt, field.TypeTime)
+	}
+	if value, ok := ruo.mutation.EndedAt(); ok {
+		_spec.SetField(round.FieldEndedAt, field.TypeTime, value)
+	}
+	if ruo.mutation.EndedAtCleared() {
+		_spec.ClearField(round.FieldEndedAt, field.TypeTime)
+	}
+	if ruo.mutation.StatusesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   round.StatusesTable,
+			Columns: []string{round.StatusesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(status.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ruo.mutation.RemovedStatusesIDs(); len(nodes) > 0 && !ruo.mutation.StatusesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   round.StatusesTable,
+			Columns: []string{round.StatusesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(status.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ruo.mutation.StatusesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   round.StatusesTable,
+			Columns: []string{round.StatusesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(status.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if ruo.mutation.ScorecachesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   round.ScorecachesTable,
+			Columns: []string{round.ScorecachesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(scorecache.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ruo.mutation.RemovedScorecachesIDs(); len(nodes) > 0 && !ruo.mutation.ScorecachesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   round.ScorecachesTable,
+			Columns: []string{round.ScorecachesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(scorecache.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ruo.mutation.ScorecachesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   round.ScorecachesTable,
+			Columns: []string{round.ScorecachesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(scorecache.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	_node = &Round{config: ruo.config}
 	_spec.Assign = _node.assignValues
