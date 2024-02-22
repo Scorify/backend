@@ -50,13 +50,31 @@ func (User) Fields() []ent.Field {
 func (User) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.From("configs", CheckConfig.Type).
+			StructTag(`json:"config"`).
+			Comment("The configuration of a check").
 			Annotations(
 				entsql.Annotation{
 					OnDelete: entsql.Cascade,
 				},
 			).
-			StructTag(`json:"config"`).
-			Comment("The configuration of a check").
+			Ref("user"),
+		edge.From("status", Status.Type).
+			StructTag(`json:"status"`).
+			Comment("The status of a user").
+			Annotations(
+				entsql.Annotation{
+					OnDelete: entsql.Cascade,
+				},
+			).
+			Ref("user"),
+		edge.From("scorecaches", ScoreCache.Type).
+			StructTag(`json:"scorecaches"`).
+			Comment("The score caches of a user").
+			Annotations(
+				entsql.Annotation{
+					OnDelete: entsql.Cascade,
+				},
+			).
 			Ref("user"),
 	}
 }
