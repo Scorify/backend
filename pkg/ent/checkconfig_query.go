@@ -335,12 +335,12 @@ func (ccq *CheckConfigQuery) WithUser(opts ...func(*UserQuery)) *CheckConfigQuer
 // Example:
 //
 //	var v []struct {
-//		Config map[string]interface {} `json:"config"`
+//		CreateTime time.Time `json:"create_time,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
 //	client.CheckConfig.Query().
-//		GroupBy(checkconfig.FieldConfig).
+//		GroupBy(checkconfig.FieldCreateTime).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 func (ccq *CheckConfigQuery) GroupBy(field string, fields ...string) *CheckConfigGroupBy {
@@ -358,11 +358,11 @@ func (ccq *CheckConfigQuery) GroupBy(field string, fields ...string) *CheckConfi
 // Example:
 //
 //	var v []struct {
-//		Config map[string]interface {} `json:"config"`
+//		CreateTime time.Time `json:"create_time,omitempty"`
 //	}
 //
 //	client.CheckConfig.Query().
-//		Select(checkconfig.FieldConfig).
+//		Select(checkconfig.FieldCreateTime).
 //		Scan(ctx, &v)
 func (ccq *CheckConfigQuery) Select(fields ...string) *CheckConfigSelect {
 	ccq.ctx.Fields = append(ccq.ctx.Fields, fields...)

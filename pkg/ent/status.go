@@ -22,12 +22,16 @@ type Status struct {
 	// ID of the ent.
 	// The uuid of a status
 	ID uuid.UUID `json:"id"`
+	// CreateTime holds the value of the "create_time" field.
+	CreateTime time.Time `json:"create_time,omitempty"`
+	// UpdateTime holds the value of the "update_time" field.
+	UpdateTime time.Time `json:"update_time,omitempty"`
 	// The error message of the status
 	Error string `json:"error"`
 	// The status of the status
 	Status status.Status `json:"status"`
-	// The update time of the status
-	UpdatedAt time.Time `json:"updated_at"`
+	// Weight holds the value of the "weight" field.
+	Weight int `json:"weight,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the StatusQuery when eager-loading is set.
 	Edges        StatusEdges `json:"edges"`
@@ -94,9 +98,11 @@ func (*Status) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case status.FieldWeight:
+			values[i] = new(sql.NullInt64)
 		case status.FieldError, status.FieldStatus:
 			values[i] = new(sql.NullString)
-		case status.FieldUpdatedAt:
+		case status.FieldCreateTime, status.FieldUpdateTime:
 			values[i] = new(sql.NullTime)
 		case status.FieldID:
 			values[i] = new(uuid.UUID)
@@ -127,6 +133,18 @@ func (s *Status) assignValues(columns []string, values []any) error {
 			} else if value != nil {
 				s.ID = *value
 			}
+		case status.FieldCreateTime:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field create_time", values[i])
+			} else if value.Valid {
+				s.CreateTime = value.Time
+			}
+		case status.FieldUpdateTime:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field update_time", values[i])
+			} else if value.Valid {
+				s.UpdateTime = value.Time
+			}
 		case status.FieldError:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field error", values[i])
@@ -139,11 +157,11 @@ func (s *Status) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				s.Status = status.Status(value.String)
 			}
-		case status.FieldUpdatedAt:
-			if value, ok := values[i].(*sql.NullTime); !ok {
-				return fmt.Errorf("unexpected type %T for field updated_at", values[i])
+		case status.FieldWeight:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field weight", values[i])
 			} else if value.Valid {
-				s.UpdatedAt = value.Time
+				s.Weight = int(value.Int64)
 			}
 		case status.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullScanner); !ok {
@@ -217,14 +235,20 @@ func (s *Status) String() string {
 	var builder strings.Builder
 	builder.WriteString("Status(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", s.ID))
+	builder.WriteString("create_time=")
+	builder.WriteString(s.CreateTime.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("update_time=")
+	builder.WriteString(s.UpdateTime.Format(time.ANSIC))
+	builder.WriteString(", ")
 	builder.WriteString("error=")
 	builder.WriteString(s.Error)
 	builder.WriteString(", ")
 	builder.WriteString("status=")
 	builder.WriteString(fmt.Sprintf("%v", s.Status))
 	builder.WriteString(", ")
-	builder.WriteString("updated_at=")
-	builder.WriteString(s.UpdatedAt.Format(time.ANSIC))
+	builder.WriteString("weight=")
+	builder.WriteString(fmt.Sprintf("%v", s.Weight))
 	builder.WriteByte(')')
 	return builder.String()
 }

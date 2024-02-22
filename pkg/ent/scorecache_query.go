@@ -335,12 +335,12 @@ func (scq *ScoreCacheQuery) WithUser(opts ...func(*UserQuery)) *ScoreCacheQuery 
 // Example:
 //
 //	var v []struct {
-//		Points int `json:"points"`
+//		CreateTime time.Time `json:"create_time,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
 //	client.ScoreCache.Query().
-//		GroupBy(scorecache.FieldPoints).
+//		GroupBy(scorecache.FieldCreateTime).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 func (scq *ScoreCacheQuery) GroupBy(field string, fields ...string) *ScoreCacheGroupBy {
@@ -358,11 +358,11 @@ func (scq *ScoreCacheQuery) GroupBy(field string, fields ...string) *ScoreCacheG
 // Example:
 //
 //	var v []struct {
-//		Points int `json:"points"`
+//		CreateTime time.Time `json:"create_time,omitempty"`
 //	}
 //
 //	client.ScoreCache.Query().
-//		Select(scorecache.FieldPoints).
+//		Select(scorecache.FieldCreateTime).
 //		Scan(ctx, &v)
 func (scq *ScoreCacheQuery) Select(fields ...string) *ScoreCacheSelect {
 	scq.ctx.Fields = append(scq.ctx.Fields, fields...)

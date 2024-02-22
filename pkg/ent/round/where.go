@@ -56,6 +56,16 @@ func IDLTE(id uuid.UUID) predicate.Round {
 	return predicate.Round(sql.FieldLTE(FieldID, id))
 }
 
+// CreateTime applies equality check predicate on the "create_time" field. It's identical to CreateTimeEQ.
+func CreateTime(v time.Time) predicate.Round {
+	return predicate.Round(sql.FieldEQ(FieldCreateTime, v))
+}
+
+// UpdateTime applies equality check predicate on the "update_time" field. It's identical to UpdateTimeEQ.
+func UpdateTime(v time.Time) predicate.Round {
+	return predicate.Round(sql.FieldEQ(FieldUpdateTime, v))
+}
+
 // Number applies equality check predicate on the "number" field. It's identical to NumberEQ.
 func Number(v int) predicate.Round {
 	return predicate.Round(sql.FieldEQ(FieldNumber, v))
@@ -66,14 +76,89 @@ func Complete(v bool) predicate.Round {
 	return predicate.Round(sql.FieldEQ(FieldComplete, v))
 }
 
-// StartedAt applies equality check predicate on the "started_at" field. It's identical to StartedAtEQ.
-func StartedAt(v time.Time) predicate.Round {
-	return predicate.Round(sql.FieldEQ(FieldStartedAt, v))
+// Points applies equality check predicate on the "points" field. It's identical to PointsEQ.
+func Points(v int) predicate.Round {
+	return predicate.Round(sql.FieldEQ(FieldPoints, v))
 }
 
-// EndedAt applies equality check predicate on the "ended_at" field. It's identical to EndedAtEQ.
-func EndedAt(v time.Time) predicate.Round {
-	return predicate.Round(sql.FieldEQ(FieldEndedAt, v))
+// CreateTimeEQ applies the EQ predicate on the "create_time" field.
+func CreateTimeEQ(v time.Time) predicate.Round {
+	return predicate.Round(sql.FieldEQ(FieldCreateTime, v))
+}
+
+// CreateTimeNEQ applies the NEQ predicate on the "create_time" field.
+func CreateTimeNEQ(v time.Time) predicate.Round {
+	return predicate.Round(sql.FieldNEQ(FieldCreateTime, v))
+}
+
+// CreateTimeIn applies the In predicate on the "create_time" field.
+func CreateTimeIn(vs ...time.Time) predicate.Round {
+	return predicate.Round(sql.FieldIn(FieldCreateTime, vs...))
+}
+
+// CreateTimeNotIn applies the NotIn predicate on the "create_time" field.
+func CreateTimeNotIn(vs ...time.Time) predicate.Round {
+	return predicate.Round(sql.FieldNotIn(FieldCreateTime, vs...))
+}
+
+// CreateTimeGT applies the GT predicate on the "create_time" field.
+func CreateTimeGT(v time.Time) predicate.Round {
+	return predicate.Round(sql.FieldGT(FieldCreateTime, v))
+}
+
+// CreateTimeGTE applies the GTE predicate on the "create_time" field.
+func CreateTimeGTE(v time.Time) predicate.Round {
+	return predicate.Round(sql.FieldGTE(FieldCreateTime, v))
+}
+
+// CreateTimeLT applies the LT predicate on the "create_time" field.
+func CreateTimeLT(v time.Time) predicate.Round {
+	return predicate.Round(sql.FieldLT(FieldCreateTime, v))
+}
+
+// CreateTimeLTE applies the LTE predicate on the "create_time" field.
+func CreateTimeLTE(v time.Time) predicate.Round {
+	return predicate.Round(sql.FieldLTE(FieldCreateTime, v))
+}
+
+// UpdateTimeEQ applies the EQ predicate on the "update_time" field.
+func UpdateTimeEQ(v time.Time) predicate.Round {
+	return predicate.Round(sql.FieldEQ(FieldUpdateTime, v))
+}
+
+// UpdateTimeNEQ applies the NEQ predicate on the "update_time" field.
+func UpdateTimeNEQ(v time.Time) predicate.Round {
+	return predicate.Round(sql.FieldNEQ(FieldUpdateTime, v))
+}
+
+// UpdateTimeIn applies the In predicate on the "update_time" field.
+func UpdateTimeIn(vs ...time.Time) predicate.Round {
+	return predicate.Round(sql.FieldIn(FieldUpdateTime, vs...))
+}
+
+// UpdateTimeNotIn applies the NotIn predicate on the "update_time" field.
+func UpdateTimeNotIn(vs ...time.Time) predicate.Round {
+	return predicate.Round(sql.FieldNotIn(FieldUpdateTime, vs...))
+}
+
+// UpdateTimeGT applies the GT predicate on the "update_time" field.
+func UpdateTimeGT(v time.Time) predicate.Round {
+	return predicate.Round(sql.FieldGT(FieldUpdateTime, v))
+}
+
+// UpdateTimeGTE applies the GTE predicate on the "update_time" field.
+func UpdateTimeGTE(v time.Time) predicate.Round {
+	return predicate.Round(sql.FieldGTE(FieldUpdateTime, v))
+}
+
+// UpdateTimeLT applies the LT predicate on the "update_time" field.
+func UpdateTimeLT(v time.Time) predicate.Round {
+	return predicate.Round(sql.FieldLT(FieldUpdateTime, v))
+}
+
+// UpdateTimeLTE applies the LTE predicate on the "update_time" field.
+func UpdateTimeLTE(v time.Time) predicate.Round {
+	return predicate.Round(sql.FieldLTE(FieldUpdateTime, v))
 }
 
 // NumberEQ applies the EQ predicate on the "number" field.
@@ -126,104 +211,44 @@ func CompleteNEQ(v bool) predicate.Round {
 	return predicate.Round(sql.FieldNEQ(FieldComplete, v))
 }
 
-// StartedAtEQ applies the EQ predicate on the "started_at" field.
-func StartedAtEQ(v time.Time) predicate.Round {
-	return predicate.Round(sql.FieldEQ(FieldStartedAt, v))
+// PointsEQ applies the EQ predicate on the "points" field.
+func PointsEQ(v int) predicate.Round {
+	return predicate.Round(sql.FieldEQ(FieldPoints, v))
 }
 
-// StartedAtNEQ applies the NEQ predicate on the "started_at" field.
-func StartedAtNEQ(v time.Time) predicate.Round {
-	return predicate.Round(sql.FieldNEQ(FieldStartedAt, v))
+// PointsNEQ applies the NEQ predicate on the "points" field.
+func PointsNEQ(v int) predicate.Round {
+	return predicate.Round(sql.FieldNEQ(FieldPoints, v))
 }
 
-// StartedAtIn applies the In predicate on the "started_at" field.
-func StartedAtIn(vs ...time.Time) predicate.Round {
-	return predicate.Round(sql.FieldIn(FieldStartedAt, vs...))
+// PointsIn applies the In predicate on the "points" field.
+func PointsIn(vs ...int) predicate.Round {
+	return predicate.Round(sql.FieldIn(FieldPoints, vs...))
 }
 
-// StartedAtNotIn applies the NotIn predicate on the "started_at" field.
-func StartedAtNotIn(vs ...time.Time) predicate.Round {
-	return predicate.Round(sql.FieldNotIn(FieldStartedAt, vs...))
+// PointsNotIn applies the NotIn predicate on the "points" field.
+func PointsNotIn(vs ...int) predicate.Round {
+	return predicate.Round(sql.FieldNotIn(FieldPoints, vs...))
 }
 
-// StartedAtGT applies the GT predicate on the "started_at" field.
-func StartedAtGT(v time.Time) predicate.Round {
-	return predicate.Round(sql.FieldGT(FieldStartedAt, v))
+// PointsGT applies the GT predicate on the "points" field.
+func PointsGT(v int) predicate.Round {
+	return predicate.Round(sql.FieldGT(FieldPoints, v))
 }
 
-// StartedAtGTE applies the GTE predicate on the "started_at" field.
-func StartedAtGTE(v time.Time) predicate.Round {
-	return predicate.Round(sql.FieldGTE(FieldStartedAt, v))
+// PointsGTE applies the GTE predicate on the "points" field.
+func PointsGTE(v int) predicate.Round {
+	return predicate.Round(sql.FieldGTE(FieldPoints, v))
 }
 
-// StartedAtLT applies the LT predicate on the "started_at" field.
-func StartedAtLT(v time.Time) predicate.Round {
-	return predicate.Round(sql.FieldLT(FieldStartedAt, v))
+// PointsLT applies the LT predicate on the "points" field.
+func PointsLT(v int) predicate.Round {
+	return predicate.Round(sql.FieldLT(FieldPoints, v))
 }
 
-// StartedAtLTE applies the LTE predicate on the "started_at" field.
-func StartedAtLTE(v time.Time) predicate.Round {
-	return predicate.Round(sql.FieldLTE(FieldStartedAt, v))
-}
-
-// StartedAtIsNil applies the IsNil predicate on the "started_at" field.
-func StartedAtIsNil() predicate.Round {
-	return predicate.Round(sql.FieldIsNull(FieldStartedAt))
-}
-
-// StartedAtNotNil applies the NotNil predicate on the "started_at" field.
-func StartedAtNotNil() predicate.Round {
-	return predicate.Round(sql.FieldNotNull(FieldStartedAt))
-}
-
-// EndedAtEQ applies the EQ predicate on the "ended_at" field.
-func EndedAtEQ(v time.Time) predicate.Round {
-	return predicate.Round(sql.FieldEQ(FieldEndedAt, v))
-}
-
-// EndedAtNEQ applies the NEQ predicate on the "ended_at" field.
-func EndedAtNEQ(v time.Time) predicate.Round {
-	return predicate.Round(sql.FieldNEQ(FieldEndedAt, v))
-}
-
-// EndedAtIn applies the In predicate on the "ended_at" field.
-func EndedAtIn(vs ...time.Time) predicate.Round {
-	return predicate.Round(sql.FieldIn(FieldEndedAt, vs...))
-}
-
-// EndedAtNotIn applies the NotIn predicate on the "ended_at" field.
-func EndedAtNotIn(vs ...time.Time) predicate.Round {
-	return predicate.Round(sql.FieldNotIn(FieldEndedAt, vs...))
-}
-
-// EndedAtGT applies the GT predicate on the "ended_at" field.
-func EndedAtGT(v time.Time) predicate.Round {
-	return predicate.Round(sql.FieldGT(FieldEndedAt, v))
-}
-
-// EndedAtGTE applies the GTE predicate on the "ended_at" field.
-func EndedAtGTE(v time.Time) predicate.Round {
-	return predicate.Round(sql.FieldGTE(FieldEndedAt, v))
-}
-
-// EndedAtLT applies the LT predicate on the "ended_at" field.
-func EndedAtLT(v time.Time) predicate.Round {
-	return predicate.Round(sql.FieldLT(FieldEndedAt, v))
-}
-
-// EndedAtLTE applies the LTE predicate on the "ended_at" field.
-func EndedAtLTE(v time.Time) predicate.Round {
-	return predicate.Round(sql.FieldLTE(FieldEndedAt, v))
-}
-
-// EndedAtIsNil applies the IsNil predicate on the "ended_at" field.
-func EndedAtIsNil() predicate.Round {
-	return predicate.Round(sql.FieldIsNull(FieldEndedAt))
-}
-
-// EndedAtNotNil applies the NotNil predicate on the "ended_at" field.
-func EndedAtNotNil() predicate.Round {
-	return predicate.Round(sql.FieldNotNull(FieldEndedAt))
+// PointsLTE applies the LTE predicate on the "points" field.
+func PointsLTE(v int) predicate.Round {
+	return predicate.Round(sql.FieldLTE(FieldPoints, v))
 }
 
 // HasStatuses applies the HasEdge predicate on the "statuses" edge.

@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
@@ -21,6 +22,10 @@ type CheckConfig struct {
 	// ID of the ent.
 	// The uuid of a check configuration
 	ID uuid.UUID `json:"id"`
+	// CreateTime holds the value of the "create_time" field.
+	CreateTime time.Time `json:"create_time,omitempty"`
+	// UpdateTime holds the value of the "update_time" field.
+	UpdateTime time.Time `json:"update_time,omitempty"`
 	// The configuration of a check
 	Config map[string]interface{} `json:"config"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -75,6 +80,8 @@ func (*CheckConfig) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case checkconfig.FieldConfig:
 			values[i] = new([]byte)
+		case checkconfig.FieldCreateTime, checkconfig.FieldUpdateTime:
+			values[i] = new(sql.NullTime)
 		case checkconfig.FieldID:
 			values[i] = new(uuid.UUID)
 		case checkconfig.ForeignKeys[0]: // check_config_check
@@ -101,6 +108,18 @@ func (cc *CheckConfig) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field id", values[i])
 			} else if value != nil {
 				cc.ID = *value
+			}
+		case checkconfig.FieldCreateTime:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field create_time", values[i])
+			} else if value.Valid {
+				cc.CreateTime = value.Time
+			}
+		case checkconfig.FieldUpdateTime:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field update_time", values[i])
+			} else if value.Valid {
+				cc.UpdateTime = value.Time
 			}
 		case checkconfig.FieldConfig:
 			if value, ok := values[i].(*[]byte); !ok {
@@ -170,6 +189,12 @@ func (cc *CheckConfig) String() string {
 	var builder strings.Builder
 	builder.WriteString("CheckConfig(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", cc.ID))
+	builder.WriteString("create_time=")
+	builder.WriteString(cc.CreateTime.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("update_time=")
+	builder.WriteString(cc.UpdateTime.Format(time.ANSIC))
+	builder.WriteString(", ")
 	builder.WriteString("config=")
 	builder.WriteString(fmt.Sprintf("%v", cc.Config))
 	builder.WriteByte(')')

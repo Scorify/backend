@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -27,6 +28,12 @@ type ScoreCacheUpdate struct {
 // Where appends a list predicates to the ScoreCacheUpdate builder.
 func (scu *ScoreCacheUpdate) Where(ps ...predicate.ScoreCache) *ScoreCacheUpdate {
 	scu.mutation.Where(ps...)
+	return scu
+}
+
+// SetUpdateTime sets the "update_time" field.
+func (scu *ScoreCacheUpdate) SetUpdateTime(t time.Time) *ScoreCacheUpdate {
+	scu.mutation.SetUpdateTime(t)
 	return scu
 }
 
@@ -92,6 +99,7 @@ func (scu *ScoreCacheUpdate) ClearUser() *ScoreCacheUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (scu *ScoreCacheUpdate) Save(ctx context.Context) (int, error) {
+	scu.defaults()
 	return withHooks(ctx, scu.sqlSave, scu.mutation, scu.hooks)
 }
 
@@ -114,6 +122,14 @@ func (scu *ScoreCacheUpdate) Exec(ctx context.Context) error {
 func (scu *ScoreCacheUpdate) ExecX(ctx context.Context) {
 	if err := scu.Exec(ctx); err != nil {
 		panic(err)
+	}
+}
+
+// defaults sets the default values of the builder before save.
+func (scu *ScoreCacheUpdate) defaults() {
+	if _, ok := scu.mutation.UpdateTime(); !ok {
+		v := scorecache.UpdateDefaultUpdateTime()
+		scu.mutation.SetUpdateTime(v)
 	}
 }
 
@@ -144,6 +160,9 @@ func (scu *ScoreCacheUpdate) sqlSave(ctx context.Context) (n int, err error) {
 				ps[i](selector)
 			}
 		}
+	}
+	if value, ok := scu.mutation.UpdateTime(); ok {
+		_spec.SetField(scorecache.FieldUpdateTime, field.TypeTime, value)
 	}
 	if value, ok := scu.mutation.Points(); ok {
 		_spec.SetField(scorecache.FieldPoints, field.TypeInt, value)
@@ -229,6 +248,12 @@ type ScoreCacheUpdateOne struct {
 	mutation *ScoreCacheMutation
 }
 
+// SetUpdateTime sets the "update_time" field.
+func (scuo *ScoreCacheUpdateOne) SetUpdateTime(t time.Time) *ScoreCacheUpdateOne {
+	scuo.mutation.SetUpdateTime(t)
+	return scuo
+}
+
 // SetPoints sets the "points" field.
 func (scuo *ScoreCacheUpdateOne) SetPoints(i int) *ScoreCacheUpdateOne {
 	scuo.mutation.ResetPoints()
@@ -304,6 +329,7 @@ func (scuo *ScoreCacheUpdateOne) Select(field string, fields ...string) *ScoreCa
 
 // Save executes the query and returns the updated ScoreCache entity.
 func (scuo *ScoreCacheUpdateOne) Save(ctx context.Context) (*ScoreCache, error) {
+	scuo.defaults()
 	return withHooks(ctx, scuo.sqlSave, scuo.mutation, scuo.hooks)
 }
 
@@ -326,6 +352,14 @@ func (scuo *ScoreCacheUpdateOne) Exec(ctx context.Context) error {
 func (scuo *ScoreCacheUpdateOne) ExecX(ctx context.Context) {
 	if err := scuo.Exec(ctx); err != nil {
 		panic(err)
+	}
+}
+
+// defaults sets the default values of the builder before save.
+func (scuo *ScoreCacheUpdateOne) defaults() {
+	if _, ok := scuo.mutation.UpdateTime(); !ok {
+		v := scorecache.UpdateDefaultUpdateTime()
+		scuo.mutation.SetUpdateTime(v)
 	}
 }
 
@@ -373,6 +407,9 @@ func (scuo *ScoreCacheUpdateOne) sqlSave(ctx context.Context) (_node *ScoreCache
 				ps[i](selector)
 			}
 		}
+	}
+	if value, ok := scuo.mutation.UpdateTime(); ok {
+		_spec.SetField(scorecache.FieldUpdateTime, field.TypeTime, value)
 	}
 	if value, ok := scuo.mutation.Points(); ok {
 		_spec.SetField(scorecache.FieldPoints, field.TypeInt, value)

@@ -371,12 +371,12 @@ func (sq *StatusQuery) WithUser(opts ...func(*UserQuery)) *StatusQuery {
 // Example:
 //
 //	var v []struct {
-//		Error string `json:"error"`
+//		CreateTime time.Time `json:"create_time,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
 //	client.Status.Query().
-//		GroupBy(status.FieldError).
+//		GroupBy(status.FieldCreateTime).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 func (sq *StatusQuery) GroupBy(field string, fields ...string) *StatusGroupBy {
@@ -394,11 +394,11 @@ func (sq *StatusQuery) GroupBy(field string, fields ...string) *StatusGroupBy {
 // Example:
 //
 //	var v []struct {
-//		Error string `json:"error"`
+//		CreateTime time.Time `json:"create_time,omitempty"`
 //	}
 //
 //	client.Status.Query().
-//		Select(status.FieldError).
+//		Select(status.FieldCreateTime).
 //		Scan(ctx, &v)
 func (sq *StatusQuery) Select(fields ...string) *StatusSelect {
 	sq.ctx.Fields = append(sq.ctx.Fields, fields...)

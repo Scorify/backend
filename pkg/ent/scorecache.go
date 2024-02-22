@@ -5,6 +5,7 @@ package ent
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
@@ -19,6 +20,10 @@ type ScoreCache struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID int `json:"id,omitempty"`
+	// CreateTime holds the value of the "create_time" field.
+	CreateTime time.Time `json:"create_time,omitempty"`
+	// UpdateTime holds the value of the "update_time" field.
+	UpdateTime time.Time `json:"update_time,omitempty"`
 	// The points of the round
 	Points int `json:"points"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -73,6 +78,8 @@ func (*ScoreCache) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case scorecache.FieldID, scorecache.FieldPoints:
 			values[i] = new(sql.NullInt64)
+		case scorecache.FieldCreateTime, scorecache.FieldUpdateTime:
+			values[i] = new(sql.NullTime)
 		case scorecache.ForeignKeys[0]: // score_cache_round
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		case scorecache.ForeignKeys[1]: // score_cache_user
@@ -98,6 +105,18 @@ func (sc *ScoreCache) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field id", value)
 			}
 			sc.ID = int(value.Int64)
+		case scorecache.FieldCreateTime:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field create_time", values[i])
+			} else if value.Valid {
+				sc.CreateTime = value.Time
+			}
+		case scorecache.FieldUpdateTime:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field update_time", values[i])
+			} else if value.Valid {
+				sc.UpdateTime = value.Time
+			}
 		case scorecache.FieldPoints:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field points", values[i])
@@ -164,6 +183,12 @@ func (sc *ScoreCache) String() string {
 	var builder strings.Builder
 	builder.WriteString("ScoreCache(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", sc.ID))
+	builder.WriteString("create_time=")
+	builder.WriteString(sc.CreateTime.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("update_time=")
+	builder.WriteString(sc.UpdateTime.Format(time.ANSIC))
+	builder.WriteString(", ")
 	builder.WriteString("points=")
 	builder.WriteString(fmt.Sprintf("%v", sc.Points))
 	builder.WriteByte(')')

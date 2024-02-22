@@ -335,12 +335,12 @@ func (rq *RoundQuery) WithScorecaches(opts ...func(*ScoreCacheQuery)) *RoundQuer
 // Example:
 //
 //	var v []struct {
-//		Number int `json:"number"`
+//		CreateTime time.Time `json:"create_time,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
 //	client.Round.Query().
-//		GroupBy(round.FieldNumber).
+//		GroupBy(round.FieldCreateTime).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 func (rq *RoundQuery) GroupBy(field string, fields ...string) *RoundGroupBy {
@@ -358,11 +358,11 @@ func (rq *RoundQuery) GroupBy(field string, fields ...string) *RoundGroupBy {
 // Example:
 //
 //	var v []struct {
-//		Number int `json:"number"`
+//		CreateTime time.Time `json:"create_time,omitempty"`
 //	}
 //
 //	client.Round.Query().
-//		Select(round.FieldNumber).
+//		Select(round.FieldCreateTime).
 //		Scan(ctx, &v)
 func (rq *RoundQuery) Select(fields ...string) *RoundSelect {
 	rq.ctx.Fields = append(rq.ctx.Fields, fields...)

@@ -3,6 +3,8 @@
 package round
 
 import (
+	"time"
+
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/google/uuid"
@@ -13,14 +15,16 @@ const (
 	Label = "round"
 	// FieldID holds the string denoting the id field in the database.
 	FieldID = "id"
+	// FieldCreateTime holds the string denoting the create_time field in the database.
+	FieldCreateTime = "create_time"
+	// FieldUpdateTime holds the string denoting the update_time field in the database.
+	FieldUpdateTime = "update_time"
 	// FieldNumber holds the string denoting the number field in the database.
 	FieldNumber = "number"
 	// FieldComplete holds the string denoting the complete field in the database.
 	FieldComplete = "complete"
-	// FieldStartedAt holds the string denoting the started_at field in the database.
-	FieldStartedAt = "started_at"
-	// FieldEndedAt holds the string denoting the ended_at field in the database.
-	FieldEndedAt = "ended_at"
+	// FieldPoints holds the string denoting the points field in the database.
+	FieldPoints = "points"
 	// EdgeStatuses holds the string denoting the statuses edge name in mutations.
 	EdgeStatuses = "statuses"
 	// EdgeScorecaches holds the string denoting the scorecaches edge name in mutations.
@@ -46,10 +50,11 @@ const (
 // Columns holds all SQL columns for round fields.
 var Columns = []string{
 	FieldID,
+	FieldCreateTime,
+	FieldUpdateTime,
 	FieldNumber,
 	FieldComplete,
-	FieldStartedAt,
-	FieldEndedAt,
+	FieldPoints,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -63,10 +68,18 @@ func ValidColumn(column string) bool {
 }
 
 var (
+	// DefaultCreateTime holds the default value on creation for the "create_time" field.
+	DefaultCreateTime func() time.Time
+	// DefaultUpdateTime holds the default value on creation for the "update_time" field.
+	DefaultUpdateTime func() time.Time
+	// UpdateDefaultUpdateTime holds the default value on update for the "update_time" field.
+	UpdateDefaultUpdateTime func() time.Time
 	// NumberValidator is a validator for the "number" field. It is called by the builders before save.
 	NumberValidator func(int) error
 	// DefaultComplete holds the default value on creation for the "complete" field.
 	DefaultComplete bool
+	// PointsValidator is a validator for the "points" field. It is called by the builders before save.
+	PointsValidator func(int) error
 	// DefaultID holds the default value on creation for the "id" field.
 	DefaultID func() uuid.UUID
 )
@@ -79,6 +92,16 @@ func ByID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldID, opts...).ToFunc()
 }
 
+// ByCreateTime orders the results by the create_time field.
+func ByCreateTime(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCreateTime, opts...).ToFunc()
+}
+
+// ByUpdateTime orders the results by the update_time field.
+func ByUpdateTime(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldUpdateTime, opts...).ToFunc()
+}
+
 // ByNumber orders the results by the number field.
 func ByNumber(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldNumber, opts...).ToFunc()
@@ -89,14 +112,9 @@ func ByComplete(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldComplete, opts...).ToFunc()
 }
 
-// ByStartedAt orders the results by the started_at field.
-func ByStartedAt(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldStartedAt, opts...).ToFunc()
-}
-
-// ByEndedAt orders the results by the ended_at field.
-func ByEndedAt(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldEndedAt, opts...).ToFunc()
+// ByPoints orders the results by the points field.
+func ByPoints(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPoints, opts...).ToFunc()
 }
 
 // ByStatusesCount orders the results by statuses count.

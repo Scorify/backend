@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -27,6 +28,12 @@ type CheckConfigUpdate struct {
 // Where appends a list predicates to the CheckConfigUpdate builder.
 func (ccu *CheckConfigUpdate) Where(ps ...predicate.CheckConfig) *CheckConfigUpdate {
 	ccu.mutation.Where(ps...)
+	return ccu
+}
+
+// SetUpdateTime sets the "update_time" field.
+func (ccu *CheckConfigUpdate) SetUpdateTime(t time.Time) *CheckConfigUpdate {
+	ccu.mutation.SetUpdateTime(t)
 	return ccu
 }
 
@@ -77,6 +84,7 @@ func (ccu *CheckConfigUpdate) ClearUser() *CheckConfigUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (ccu *CheckConfigUpdate) Save(ctx context.Context) (int, error) {
+	ccu.defaults()
 	return withHooks(ctx, ccu.sqlSave, ccu.mutation, ccu.hooks)
 }
 
@@ -102,6 +110,14 @@ func (ccu *CheckConfigUpdate) ExecX(ctx context.Context) {
 	}
 }
 
+// defaults sets the default values of the builder before save.
+func (ccu *CheckConfigUpdate) defaults() {
+	if _, ok := ccu.mutation.UpdateTime(); !ok {
+		v := checkconfig.UpdateDefaultUpdateTime()
+		ccu.mutation.SetUpdateTime(v)
+	}
+}
+
 // check runs all checks and user-defined validators on the builder.
 func (ccu *CheckConfigUpdate) check() error {
 	if _, ok := ccu.mutation.CheckID(); ccu.mutation.CheckCleared() && !ok {
@@ -124,6 +140,9 @@ func (ccu *CheckConfigUpdate) sqlSave(ctx context.Context) (n int, err error) {
 				ps[i](selector)
 			}
 		}
+	}
+	if value, ok := ccu.mutation.UpdateTime(); ok {
+		_spec.SetField(checkconfig.FieldUpdateTime, field.TypeTime, value)
 	}
 	if value, ok := ccu.mutation.Config(); ok {
 		_spec.SetField(checkconfig.FieldConfig, field.TypeJSON, value)
@@ -206,6 +225,12 @@ type CheckConfigUpdateOne struct {
 	mutation *CheckConfigMutation
 }
 
+// SetUpdateTime sets the "update_time" field.
+func (ccuo *CheckConfigUpdateOne) SetUpdateTime(t time.Time) *CheckConfigUpdateOne {
+	ccuo.mutation.SetUpdateTime(t)
+	return ccuo
+}
+
 // SetConfig sets the "config" field.
 func (ccuo *CheckConfigUpdateOne) SetConfig(m map[string]interface{}) *CheckConfigUpdateOne {
 	ccuo.mutation.SetConfig(m)
@@ -266,6 +291,7 @@ func (ccuo *CheckConfigUpdateOne) Select(field string, fields ...string) *CheckC
 
 // Save executes the query and returns the updated CheckConfig entity.
 func (ccuo *CheckConfigUpdateOne) Save(ctx context.Context) (*CheckConfig, error) {
+	ccuo.defaults()
 	return withHooks(ctx, ccuo.sqlSave, ccuo.mutation, ccuo.hooks)
 }
 
@@ -288,6 +314,14 @@ func (ccuo *CheckConfigUpdateOne) Exec(ctx context.Context) error {
 func (ccuo *CheckConfigUpdateOne) ExecX(ctx context.Context) {
 	if err := ccuo.Exec(ctx); err != nil {
 		panic(err)
+	}
+}
+
+// defaults sets the default values of the builder before save.
+func (ccuo *CheckConfigUpdateOne) defaults() {
+	if _, ok := ccuo.mutation.UpdateTime(); !ok {
+		v := checkconfig.UpdateDefaultUpdateTime()
+		ccuo.mutation.SetUpdateTime(v)
 	}
 }
 
@@ -330,6 +364,9 @@ func (ccuo *CheckConfigUpdateOne) sqlSave(ctx context.Context) (_node *CheckConf
 				ps[i](selector)
 			}
 		}
+	}
+	if value, ok := ccuo.mutation.UpdateTime(); ok {
+		_spec.SetField(checkconfig.FieldUpdateTime, field.TypeTime, value)
 	}
 	if value, ok := ccuo.mutation.Config(); ok {
 		_spec.SetField(checkconfig.FieldConfig, field.TypeJSON, value)

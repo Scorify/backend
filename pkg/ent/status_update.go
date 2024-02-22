@@ -32,6 +32,12 @@ func (su *StatusUpdate) Where(ps ...predicate.Status) *StatusUpdate {
 	return su
 }
 
+// SetUpdateTime sets the "update_time" field.
+func (su *StatusUpdate) SetUpdateTime(t time.Time) *StatusUpdate {
+	su.mutation.SetUpdateTime(t)
+	return su
+}
+
 // SetError sets the "error" field.
 func (su *StatusUpdate) SetError(s string) *StatusUpdate {
 	su.mutation.SetError(s)
@@ -66,23 +72,24 @@ func (su *StatusUpdate) SetNillableStatus(s *status.Status) *StatusUpdate {
 	return su
 }
 
-// SetUpdatedAt sets the "updated_at" field.
-func (su *StatusUpdate) SetUpdatedAt(t time.Time) *StatusUpdate {
-	su.mutation.SetUpdatedAt(t)
+// SetWeight sets the "weight" field.
+func (su *StatusUpdate) SetWeight(i int) *StatusUpdate {
+	su.mutation.ResetWeight()
+	su.mutation.SetWeight(i)
 	return su
 }
 
-// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
-func (su *StatusUpdate) SetNillableUpdatedAt(t *time.Time) *StatusUpdate {
-	if t != nil {
-		su.SetUpdatedAt(*t)
+// SetNillableWeight sets the "weight" field if the given value is not nil.
+func (su *StatusUpdate) SetNillableWeight(i *int) *StatusUpdate {
+	if i != nil {
+		su.SetWeight(*i)
 	}
 	return su
 }
 
-// ClearUpdatedAt clears the value of the "updated_at" field.
-func (su *StatusUpdate) ClearUpdatedAt() *StatusUpdate {
-	su.mutation.ClearUpdatedAt()
+// AddWeight adds i to the "weight" field.
+func (su *StatusUpdate) AddWeight(i int) *StatusUpdate {
+	su.mutation.AddWeight(i)
 	return su
 }
 
@@ -144,6 +151,7 @@ func (su *StatusUpdate) ClearUser() *StatusUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (su *StatusUpdate) Save(ctx context.Context) (int, error) {
+	su.defaults()
 	return withHooks(ctx, su.sqlSave, su.mutation, su.hooks)
 }
 
@@ -166,6 +174,14 @@ func (su *StatusUpdate) Exec(ctx context.Context) error {
 func (su *StatusUpdate) ExecX(ctx context.Context) {
 	if err := su.Exec(ctx); err != nil {
 		panic(err)
+	}
+}
+
+// defaults sets the default values of the builder before save.
+func (su *StatusUpdate) defaults() {
+	if _, ok := su.mutation.UpdateTime(); !ok {
+		v := status.UpdateDefaultUpdateTime()
+		su.mutation.SetUpdateTime(v)
 	}
 }
 
@@ -200,6 +216,9 @@ func (su *StatusUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			}
 		}
 	}
+	if value, ok := su.mutation.UpdateTime(); ok {
+		_spec.SetField(status.FieldUpdateTime, field.TypeTime, value)
+	}
 	if value, ok := su.mutation.Error(); ok {
 		_spec.SetField(status.FieldError, field.TypeString, value)
 	}
@@ -209,11 +228,11 @@ func (su *StatusUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := su.mutation.Status(); ok {
 		_spec.SetField(status.FieldStatus, field.TypeEnum, value)
 	}
-	if value, ok := su.mutation.UpdatedAt(); ok {
-		_spec.SetField(status.FieldUpdatedAt, field.TypeTime, value)
+	if value, ok := su.mutation.Weight(); ok {
+		_spec.SetField(status.FieldWeight, field.TypeInt, value)
 	}
-	if su.mutation.UpdatedAtCleared() {
-		_spec.ClearField(status.FieldUpdatedAt, field.TypeTime)
+	if value, ok := su.mutation.AddedWeight(); ok {
+		_spec.AddField(status.FieldWeight, field.TypeInt, value)
 	}
 	if su.mutation.CheckCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -322,6 +341,12 @@ type StatusUpdateOne struct {
 	mutation *StatusMutation
 }
 
+// SetUpdateTime sets the "update_time" field.
+func (suo *StatusUpdateOne) SetUpdateTime(t time.Time) *StatusUpdateOne {
+	suo.mutation.SetUpdateTime(t)
+	return suo
+}
+
 // SetError sets the "error" field.
 func (suo *StatusUpdateOne) SetError(s string) *StatusUpdateOne {
 	suo.mutation.SetError(s)
@@ -356,23 +381,24 @@ func (suo *StatusUpdateOne) SetNillableStatus(s *status.Status) *StatusUpdateOne
 	return suo
 }
 
-// SetUpdatedAt sets the "updated_at" field.
-func (suo *StatusUpdateOne) SetUpdatedAt(t time.Time) *StatusUpdateOne {
-	suo.mutation.SetUpdatedAt(t)
+// SetWeight sets the "weight" field.
+func (suo *StatusUpdateOne) SetWeight(i int) *StatusUpdateOne {
+	suo.mutation.ResetWeight()
+	suo.mutation.SetWeight(i)
 	return suo
 }
 
-// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
-func (suo *StatusUpdateOne) SetNillableUpdatedAt(t *time.Time) *StatusUpdateOne {
-	if t != nil {
-		suo.SetUpdatedAt(*t)
+// SetNillableWeight sets the "weight" field if the given value is not nil.
+func (suo *StatusUpdateOne) SetNillableWeight(i *int) *StatusUpdateOne {
+	if i != nil {
+		suo.SetWeight(*i)
 	}
 	return suo
 }
 
-// ClearUpdatedAt clears the value of the "updated_at" field.
-func (suo *StatusUpdateOne) ClearUpdatedAt() *StatusUpdateOne {
-	suo.mutation.ClearUpdatedAt()
+// AddWeight adds i to the "weight" field.
+func (suo *StatusUpdateOne) AddWeight(i int) *StatusUpdateOne {
+	suo.mutation.AddWeight(i)
 	return suo
 }
 
@@ -447,6 +473,7 @@ func (suo *StatusUpdateOne) Select(field string, fields ...string) *StatusUpdate
 
 // Save executes the query and returns the updated Status entity.
 func (suo *StatusUpdateOne) Save(ctx context.Context) (*Status, error) {
+	suo.defaults()
 	return withHooks(ctx, suo.sqlSave, suo.mutation, suo.hooks)
 }
 
@@ -469,6 +496,14 @@ func (suo *StatusUpdateOne) Exec(ctx context.Context) error {
 func (suo *StatusUpdateOne) ExecX(ctx context.Context) {
 	if err := suo.Exec(ctx); err != nil {
 		panic(err)
+	}
+}
+
+// defaults sets the default values of the builder before save.
+func (suo *StatusUpdateOne) defaults() {
+	if _, ok := suo.mutation.UpdateTime(); !ok {
+		v := status.UpdateDefaultUpdateTime()
+		suo.mutation.SetUpdateTime(v)
 	}
 }
 
@@ -520,6 +555,9 @@ func (suo *StatusUpdateOne) sqlSave(ctx context.Context) (_node *Status, err err
 			}
 		}
 	}
+	if value, ok := suo.mutation.UpdateTime(); ok {
+		_spec.SetField(status.FieldUpdateTime, field.TypeTime, value)
+	}
 	if value, ok := suo.mutation.Error(); ok {
 		_spec.SetField(status.FieldError, field.TypeString, value)
 	}
@@ -529,11 +567,11 @@ func (suo *StatusUpdateOne) sqlSave(ctx context.Context) (_node *Status, err err
 	if value, ok := suo.mutation.Status(); ok {
 		_spec.SetField(status.FieldStatus, field.TypeEnum, value)
 	}
-	if value, ok := suo.mutation.UpdatedAt(); ok {
-		_spec.SetField(status.FieldUpdatedAt, field.TypeTime, value)
+	if value, ok := suo.mutation.Weight(); ok {
+		_spec.SetField(status.FieldWeight, field.TypeInt, value)
 	}
-	if suo.mutation.UpdatedAtCleared() {
-		_spec.ClearField(status.FieldUpdatedAt, field.TypeTime)
+	if value, ok := suo.mutation.AddedWeight(); ok {
+		_spec.AddField(status.FieldWeight, field.TypeInt, value)
 	}
 	if suo.mutation.CheckCleared() {
 		edge := &sqlgraph.EdgeSpec{

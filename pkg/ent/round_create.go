@@ -23,6 +23,34 @@ type RoundCreate struct {
 	hooks    []Hook
 }
 
+// SetCreateTime sets the "create_time" field.
+func (rc *RoundCreate) SetCreateTime(t time.Time) *RoundCreate {
+	rc.mutation.SetCreateTime(t)
+	return rc
+}
+
+// SetNillableCreateTime sets the "create_time" field if the given value is not nil.
+func (rc *RoundCreate) SetNillableCreateTime(t *time.Time) *RoundCreate {
+	if t != nil {
+		rc.SetCreateTime(*t)
+	}
+	return rc
+}
+
+// SetUpdateTime sets the "update_time" field.
+func (rc *RoundCreate) SetUpdateTime(t time.Time) *RoundCreate {
+	rc.mutation.SetUpdateTime(t)
+	return rc
+}
+
+// SetNillableUpdateTime sets the "update_time" field if the given value is not nil.
+func (rc *RoundCreate) SetNillableUpdateTime(t *time.Time) *RoundCreate {
+	if t != nil {
+		rc.SetUpdateTime(*t)
+	}
+	return rc
+}
+
 // SetNumber sets the "number" field.
 func (rc *RoundCreate) SetNumber(i int) *RoundCreate {
 	rc.mutation.SetNumber(i)
@@ -43,31 +71,9 @@ func (rc *RoundCreate) SetNillableComplete(b *bool) *RoundCreate {
 	return rc
 }
 
-// SetStartedAt sets the "started_at" field.
-func (rc *RoundCreate) SetStartedAt(t time.Time) *RoundCreate {
-	rc.mutation.SetStartedAt(t)
-	return rc
-}
-
-// SetNillableStartedAt sets the "started_at" field if the given value is not nil.
-func (rc *RoundCreate) SetNillableStartedAt(t *time.Time) *RoundCreate {
-	if t != nil {
-		rc.SetStartedAt(*t)
-	}
-	return rc
-}
-
-// SetEndedAt sets the "ended_at" field.
-func (rc *RoundCreate) SetEndedAt(t time.Time) *RoundCreate {
-	rc.mutation.SetEndedAt(t)
-	return rc
-}
-
-// SetNillableEndedAt sets the "ended_at" field if the given value is not nil.
-func (rc *RoundCreate) SetNillableEndedAt(t *time.Time) *RoundCreate {
-	if t != nil {
-		rc.SetEndedAt(*t)
-	}
+// SetPoints sets the "points" field.
+func (rc *RoundCreate) SetPoints(i int) *RoundCreate {
+	rc.mutation.SetPoints(i)
 	return rc
 }
 
@@ -150,6 +156,14 @@ func (rc *RoundCreate) ExecX(ctx context.Context) {
 
 // defaults sets the default values of the builder before save.
 func (rc *RoundCreate) defaults() {
+	if _, ok := rc.mutation.CreateTime(); !ok {
+		v := round.DefaultCreateTime()
+		rc.mutation.SetCreateTime(v)
+	}
+	if _, ok := rc.mutation.UpdateTime(); !ok {
+		v := round.DefaultUpdateTime()
+		rc.mutation.SetUpdateTime(v)
+	}
 	if _, ok := rc.mutation.Complete(); !ok {
 		v := round.DefaultComplete
 		rc.mutation.SetComplete(v)
@@ -162,6 +176,12 @@ func (rc *RoundCreate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (rc *RoundCreate) check() error {
+	if _, ok := rc.mutation.CreateTime(); !ok {
+		return &ValidationError{Name: "create_time", err: errors.New(`ent: missing required field "Round.create_time"`)}
+	}
+	if _, ok := rc.mutation.UpdateTime(); !ok {
+		return &ValidationError{Name: "update_time", err: errors.New(`ent: missing required field "Round.update_time"`)}
+	}
 	if _, ok := rc.mutation.Number(); !ok {
 		return &ValidationError{Name: "number", err: errors.New(`ent: missing required field "Round.number"`)}
 	}
@@ -172,6 +192,14 @@ func (rc *RoundCreate) check() error {
 	}
 	if _, ok := rc.mutation.Complete(); !ok {
 		return &ValidationError{Name: "complete", err: errors.New(`ent: missing required field "Round.complete"`)}
+	}
+	if _, ok := rc.mutation.Points(); !ok {
+		return &ValidationError{Name: "points", err: errors.New(`ent: missing required field "Round.points"`)}
+	}
+	if v, ok := rc.mutation.Points(); ok {
+		if err := round.PointsValidator(v); err != nil {
+			return &ValidationError{Name: "points", err: fmt.Errorf(`ent: validator failed for field "Round.points": %w`, err)}
+		}
 	}
 	return nil
 }
@@ -208,6 +236,14 @@ func (rc *RoundCreate) createSpec() (*Round, *sqlgraph.CreateSpec) {
 		_node.ID = id
 		_spec.ID.Value = &id
 	}
+	if value, ok := rc.mutation.CreateTime(); ok {
+		_spec.SetField(round.FieldCreateTime, field.TypeTime, value)
+		_node.CreateTime = value
+	}
+	if value, ok := rc.mutation.UpdateTime(); ok {
+		_spec.SetField(round.FieldUpdateTime, field.TypeTime, value)
+		_node.UpdateTime = value
+	}
 	if value, ok := rc.mutation.Number(); ok {
 		_spec.SetField(round.FieldNumber, field.TypeInt, value)
 		_node.Number = value
@@ -216,13 +252,9 @@ func (rc *RoundCreate) createSpec() (*Round, *sqlgraph.CreateSpec) {
 		_spec.SetField(round.FieldComplete, field.TypeBool, value)
 		_node.Complete = value
 	}
-	if value, ok := rc.mutation.StartedAt(); ok {
-		_spec.SetField(round.FieldStartedAt, field.TypeTime, value)
-		_node.StartedAt = value
-	}
-	if value, ok := rc.mutation.EndedAt(); ok {
-		_spec.SetField(round.FieldEndedAt, field.TypeTime, value)
-		_node.EndedAt = value
+	if value, ok := rc.mutation.Points(); ok {
+		_spec.SetField(round.FieldPoints, field.TypeInt, value)
+		_node.Points = value
 	}
 	if nodes := rc.mutation.StatusesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

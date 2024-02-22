@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -28,6 +29,12 @@ type CheckUpdate struct {
 // Where appends a list predicates to the CheckUpdate builder.
 func (cu *CheckUpdate) Where(ps ...predicate.Check) *CheckUpdate {
 	cu.mutation.Where(ps...)
+	return cu
+}
+
+// SetUpdateTime sets the "update_time" field.
+func (cu *CheckUpdate) SetUpdateTime(t time.Time) *CheckUpdate {
+	cu.mutation.SetUpdateTime(t)
 	return cu
 }
 
@@ -173,6 +180,7 @@ func (cu *CheckUpdate) RemoveStatuses(s ...*Status) *CheckUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (cu *CheckUpdate) Save(ctx context.Context) (int, error) {
+	cu.defaults()
 	return withHooks(ctx, cu.sqlSave, cu.mutation, cu.hooks)
 }
 
@@ -195,6 +203,14 @@ func (cu *CheckUpdate) Exec(ctx context.Context) error {
 func (cu *CheckUpdate) ExecX(ctx context.Context) {
 	if err := cu.Exec(ctx); err != nil {
 		panic(err)
+	}
+}
+
+// defaults sets the default values of the builder before save.
+func (cu *CheckUpdate) defaults() {
+	if _, ok := cu.mutation.UpdateTime(); !ok {
+		v := check.UpdateDefaultUpdateTime()
+		cu.mutation.SetUpdateTime(v)
 	}
 }
 
@@ -229,6 +245,9 @@ func (cu *CheckUpdate) sqlSave(ctx context.Context) (n int, err error) {
 				ps[i](selector)
 			}
 		}
+	}
+	if value, ok := cu.mutation.UpdateTime(); ok {
+		_spec.SetField(check.FieldUpdateTime, field.TypeTime, value)
 	}
 	if value, ok := cu.mutation.Name(); ok {
 		_spec.SetField(check.FieldName, field.TypeString, value)
@@ -353,6 +372,12 @@ type CheckUpdateOne struct {
 	fields   []string
 	hooks    []Hook
 	mutation *CheckMutation
+}
+
+// SetUpdateTime sets the "update_time" field.
+func (cuo *CheckUpdateOne) SetUpdateTime(t time.Time) *CheckUpdateOne {
+	cuo.mutation.SetUpdateTime(t)
+	return cuo
 }
 
 // SetName sets the "name" field.
@@ -510,6 +535,7 @@ func (cuo *CheckUpdateOne) Select(field string, fields ...string) *CheckUpdateOn
 
 // Save executes the query and returns the updated Check entity.
 func (cuo *CheckUpdateOne) Save(ctx context.Context) (*Check, error) {
+	cuo.defaults()
 	return withHooks(ctx, cuo.sqlSave, cuo.mutation, cuo.hooks)
 }
 
@@ -532,6 +558,14 @@ func (cuo *CheckUpdateOne) Exec(ctx context.Context) error {
 func (cuo *CheckUpdateOne) ExecX(ctx context.Context) {
 	if err := cuo.Exec(ctx); err != nil {
 		panic(err)
+	}
+}
+
+// defaults sets the default values of the builder before save.
+func (cuo *CheckUpdateOne) defaults() {
+	if _, ok := cuo.mutation.UpdateTime(); !ok {
+		v := check.UpdateDefaultUpdateTime()
+		cuo.mutation.SetUpdateTime(v)
 	}
 }
 
@@ -583,6 +617,9 @@ func (cuo *CheckUpdateOne) sqlSave(ctx context.Context) (_node *Check, err error
 				ps[i](selector)
 			}
 		}
+	}
+	if value, ok := cuo.mutation.UpdateTime(); ok {
+		_spec.SetField(check.FieldUpdateTime, field.TypeTime, value)
 	}
 	if value, ok := cuo.mutation.Name(); ok {
 		_spec.SetField(check.FieldName, field.TypeString, value)

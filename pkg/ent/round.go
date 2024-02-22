@@ -19,14 +19,16 @@ type Round struct {
 	// ID of the ent.
 	// The uuid of a round
 	ID uuid.UUID `json:"id"`
+	// CreateTime holds the value of the "create_time" field.
+	CreateTime time.Time `json:"create_time,omitempty"`
+	// UpdateTime holds the value of the "update_time" field.
+	UpdateTime time.Time `json:"update_time,omitempty"`
 	// The number of the round
 	Number int `json:"number"`
 	// The completion status of the round
 	Complete bool `json:"complete"`
-	// The start time of the round
-	StartedAt time.Time `json:"started_at"`
-	// The end time of the round
-	EndedAt time.Time `json:"ended_at"`
+	// The points of the round
+	Points int `json:"points"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the RoundQuery when eager-loading is set.
 	Edges        RoundEdges `json:"edges"`
@@ -69,9 +71,9 @@ func (*Round) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case round.FieldComplete:
 			values[i] = new(sql.NullBool)
-		case round.FieldNumber:
+		case round.FieldNumber, round.FieldPoints:
 			values[i] = new(sql.NullInt64)
-		case round.FieldStartedAt, round.FieldEndedAt:
+		case round.FieldCreateTime, round.FieldUpdateTime:
 			values[i] = new(sql.NullTime)
 		case round.FieldID:
 			values[i] = new(uuid.UUID)
@@ -96,6 +98,18 @@ func (r *Round) assignValues(columns []string, values []any) error {
 			} else if value != nil {
 				r.ID = *value
 			}
+		case round.FieldCreateTime:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field create_time", values[i])
+			} else if value.Valid {
+				r.CreateTime = value.Time
+			}
+		case round.FieldUpdateTime:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field update_time", values[i])
+			} else if value.Valid {
+				r.UpdateTime = value.Time
+			}
 		case round.FieldNumber:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field number", values[i])
@@ -108,17 +122,11 @@ func (r *Round) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				r.Complete = value.Bool
 			}
-		case round.FieldStartedAt:
-			if value, ok := values[i].(*sql.NullTime); !ok {
-				return fmt.Errorf("unexpected type %T for field started_at", values[i])
+		case round.FieldPoints:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field points", values[i])
 			} else if value.Valid {
-				r.StartedAt = value.Time
-			}
-		case round.FieldEndedAt:
-			if value, ok := values[i].(*sql.NullTime); !ok {
-				return fmt.Errorf("unexpected type %T for field ended_at", values[i])
-			} else if value.Valid {
-				r.EndedAt = value.Time
+				r.Points = int(value.Int64)
 			}
 		default:
 			r.selectValues.Set(columns[i], values[i])
@@ -166,17 +174,20 @@ func (r *Round) String() string {
 	var builder strings.Builder
 	builder.WriteString("Round(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", r.ID))
+	builder.WriteString("create_time=")
+	builder.WriteString(r.CreateTime.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("update_time=")
+	builder.WriteString(r.UpdateTime.Format(time.ANSIC))
+	builder.WriteString(", ")
 	builder.WriteString("number=")
 	builder.WriteString(fmt.Sprintf("%v", r.Number))
 	builder.WriteString(", ")
 	builder.WriteString("complete=")
 	builder.WriteString(fmt.Sprintf("%v", r.Complete))
 	builder.WriteString(", ")
-	builder.WriteString("started_at=")
-	builder.WriteString(r.StartedAt.Format(time.ANSIC))
-	builder.WriteString(", ")
-	builder.WriteString("ended_at=")
-	builder.WriteString(r.EndedAt.Format(time.ANSIC))
+	builder.WriteString("points=")
+	builder.WriteString(fmt.Sprintf("%v", r.Points))
 	builder.WriteByte(')')
 	return builder.String()
 }

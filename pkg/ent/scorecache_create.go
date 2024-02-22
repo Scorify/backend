@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
@@ -20,6 +21,34 @@ type ScoreCacheCreate struct {
 	config
 	mutation *ScoreCacheMutation
 	hooks    []Hook
+}
+
+// SetCreateTime sets the "create_time" field.
+func (scc *ScoreCacheCreate) SetCreateTime(t time.Time) *ScoreCacheCreate {
+	scc.mutation.SetCreateTime(t)
+	return scc
+}
+
+// SetNillableCreateTime sets the "create_time" field if the given value is not nil.
+func (scc *ScoreCacheCreate) SetNillableCreateTime(t *time.Time) *ScoreCacheCreate {
+	if t != nil {
+		scc.SetCreateTime(*t)
+	}
+	return scc
+}
+
+// SetUpdateTime sets the "update_time" field.
+func (scc *ScoreCacheCreate) SetUpdateTime(t time.Time) *ScoreCacheCreate {
+	scc.mutation.SetUpdateTime(t)
+	return scc
+}
+
+// SetNillableUpdateTime sets the "update_time" field if the given value is not nil.
+func (scc *ScoreCacheCreate) SetNillableUpdateTime(t *time.Time) *ScoreCacheCreate {
+	if t != nil {
+		scc.SetUpdateTime(*t)
+	}
+	return scc
 }
 
 // SetPoints sets the "points" field.
@@ -57,6 +86,7 @@ func (scc *ScoreCacheCreate) Mutation() *ScoreCacheMutation {
 
 // Save creates the ScoreCache in the database.
 func (scc *ScoreCacheCreate) Save(ctx context.Context) (*ScoreCache, error) {
+	scc.defaults()
 	return withHooks(ctx, scc.sqlSave, scc.mutation, scc.hooks)
 }
 
@@ -82,8 +112,26 @@ func (scc *ScoreCacheCreate) ExecX(ctx context.Context) {
 	}
 }
 
+// defaults sets the default values of the builder before save.
+func (scc *ScoreCacheCreate) defaults() {
+	if _, ok := scc.mutation.CreateTime(); !ok {
+		v := scorecache.DefaultCreateTime()
+		scc.mutation.SetCreateTime(v)
+	}
+	if _, ok := scc.mutation.UpdateTime(); !ok {
+		v := scorecache.DefaultUpdateTime()
+		scc.mutation.SetUpdateTime(v)
+	}
+}
+
 // check runs all checks and user-defined validators on the builder.
 func (scc *ScoreCacheCreate) check() error {
+	if _, ok := scc.mutation.CreateTime(); !ok {
+		return &ValidationError{Name: "create_time", err: errors.New(`ent: missing required field "ScoreCache.create_time"`)}
+	}
+	if _, ok := scc.mutation.UpdateTime(); !ok {
+		return &ValidationError{Name: "update_time", err: errors.New(`ent: missing required field "ScoreCache.update_time"`)}
+	}
 	if _, ok := scc.mutation.Points(); !ok {
 		return &ValidationError{Name: "points", err: errors.New(`ent: missing required field "ScoreCache.points"`)}
 	}
@@ -124,6 +172,14 @@ func (scc *ScoreCacheCreate) createSpec() (*ScoreCache, *sqlgraph.CreateSpec) {
 		_node = &ScoreCache{config: scc.config}
 		_spec = sqlgraph.NewCreateSpec(scorecache.Table, sqlgraph.NewFieldSpec(scorecache.FieldID, field.TypeInt))
 	)
+	if value, ok := scc.mutation.CreateTime(); ok {
+		_spec.SetField(scorecache.FieldCreateTime, field.TypeTime, value)
+		_node.CreateTime = value
+	}
+	if value, ok := scc.mutation.UpdateTime(); ok {
+		_spec.SetField(scorecache.FieldUpdateTime, field.TypeTime, value)
+		_node.UpdateTime = value
+	}
 	if value, ok := scc.mutation.Points(); ok {
 		_spec.SetField(scorecache.FieldPoints, field.TypeInt, value)
 		_node.Points = value
@@ -183,6 +239,7 @@ func (sccb *ScoreCacheCreateBulk) Save(ctx context.Context) ([]*ScoreCache, erro
 	for i := range sccb.builders {
 		func(i int, root context.Context) {
 			builder := sccb.builders[i]
+			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*ScoreCacheMutation)
 				if !ok {

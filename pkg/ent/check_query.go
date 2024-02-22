@@ -335,12 +335,12 @@ func (cq *CheckQuery) WithStatuses(opts ...func(*StatusQuery)) *CheckQuery {
 // Example:
 //
 //	var v []struct {
-//		Name string `json:"name"`
+//		CreateTime time.Time `json:"create_time,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
 //	client.Check.Query().
-//		GroupBy(check.FieldName).
+//		GroupBy(check.FieldCreateTime).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 func (cq *CheckQuery) GroupBy(field string, fields ...string) *CheckGroupBy {
@@ -358,11 +358,11 @@ func (cq *CheckQuery) GroupBy(field string, fields ...string) *CheckGroupBy {
 // Example:
 //
 //	var v []struct {
-//		Name string `json:"name"`
+//		CreateTime time.Time `json:"create_time,omitempty"`
 //	}
 //
 //	client.Check.Query().
-//		Select(check.FieldName).
+//		Select(check.FieldCreateTime).
 //		Scan(ctx, &v)
 func (cq *CheckQuery) Select(fields ...string) *CheckSelect {
 	cq.ctx.Fields = append(cq.ctx.Fields, fields...)

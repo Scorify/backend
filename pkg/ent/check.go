@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
@@ -20,6 +21,10 @@ type Check struct {
 	// ID of the ent.
 	// The uuid of a check
 	ID uuid.UUID `json:"id"`
+	// CreateTime holds the value of the "create_time" field.
+	CreateTime time.Time `json:"create_time,omitempty"`
+	// UpdateTime holds the value of the "update_time" field.
+	UpdateTime time.Time `json:"update_time,omitempty"`
 	// The name of the check
 	Name string `json:"name"`
 	// The source of the check
@@ -74,6 +79,8 @@ func (*Check) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullInt64)
 		case check.FieldName, check.FieldSource:
 			values[i] = new(sql.NullString)
+		case check.FieldCreateTime, check.FieldUpdateTime:
+			values[i] = new(sql.NullTime)
 		case check.FieldID:
 			values[i] = new(uuid.UUID)
 		default:
@@ -96,6 +103,18 @@ func (c *Check) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field id", values[i])
 			} else if value != nil {
 				c.ID = *value
+			}
+		case check.FieldCreateTime:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field create_time", values[i])
+			} else if value.Valid {
+				c.CreateTime = value.Time
+			}
+		case check.FieldUpdateTime:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field update_time", values[i])
+			} else if value.Valid {
+				c.UpdateTime = value.Time
 			}
 		case check.FieldName:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -169,6 +188,12 @@ func (c *Check) String() string {
 	var builder strings.Builder
 	builder.WriteString("Check(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", c.ID))
+	builder.WriteString("create_time=")
+	builder.WriteString(c.CreateTime.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("update_time=")
+	builder.WriteString(c.UpdateTime.Format(time.ANSIC))
+	builder.WriteString(", ")
 	builder.WriteString("name=")
 	builder.WriteString(c.Name)
 	builder.WriteString(", ")

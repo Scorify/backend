@@ -31,6 +31,12 @@ func (ru *RoundUpdate) Where(ps ...predicate.Round) *RoundUpdate {
 	return ru
 }
 
+// SetUpdateTime sets the "update_time" field.
+func (ru *RoundUpdate) SetUpdateTime(t time.Time) *RoundUpdate {
+	ru.mutation.SetUpdateTime(t)
+	return ru
+}
+
 // SetNumber sets the "number" field.
 func (ru *RoundUpdate) SetNumber(i int) *RoundUpdate {
 	ru.mutation.ResetNumber()
@@ -66,43 +72,24 @@ func (ru *RoundUpdate) SetNillableComplete(b *bool) *RoundUpdate {
 	return ru
 }
 
-// SetStartedAt sets the "started_at" field.
-func (ru *RoundUpdate) SetStartedAt(t time.Time) *RoundUpdate {
-	ru.mutation.SetStartedAt(t)
+// SetPoints sets the "points" field.
+func (ru *RoundUpdate) SetPoints(i int) *RoundUpdate {
+	ru.mutation.ResetPoints()
+	ru.mutation.SetPoints(i)
 	return ru
 }
 
-// SetNillableStartedAt sets the "started_at" field if the given value is not nil.
-func (ru *RoundUpdate) SetNillableStartedAt(t *time.Time) *RoundUpdate {
-	if t != nil {
-		ru.SetStartedAt(*t)
+// SetNillablePoints sets the "points" field if the given value is not nil.
+func (ru *RoundUpdate) SetNillablePoints(i *int) *RoundUpdate {
+	if i != nil {
+		ru.SetPoints(*i)
 	}
 	return ru
 }
 
-// ClearStartedAt clears the value of the "started_at" field.
-func (ru *RoundUpdate) ClearStartedAt() *RoundUpdate {
-	ru.mutation.ClearStartedAt()
-	return ru
-}
-
-// SetEndedAt sets the "ended_at" field.
-func (ru *RoundUpdate) SetEndedAt(t time.Time) *RoundUpdate {
-	ru.mutation.SetEndedAt(t)
-	return ru
-}
-
-// SetNillableEndedAt sets the "ended_at" field if the given value is not nil.
-func (ru *RoundUpdate) SetNillableEndedAt(t *time.Time) *RoundUpdate {
-	if t != nil {
-		ru.SetEndedAt(*t)
-	}
-	return ru
-}
-
-// ClearEndedAt clears the value of the "ended_at" field.
-func (ru *RoundUpdate) ClearEndedAt() *RoundUpdate {
-	ru.mutation.ClearEndedAt()
+// AddPoints adds i to the "points" field.
+func (ru *RoundUpdate) AddPoints(i int) *RoundUpdate {
+	ru.mutation.AddPoints(i)
 	return ru
 }
 
@@ -185,6 +172,7 @@ func (ru *RoundUpdate) RemoveScorecaches(s ...*ScoreCache) *RoundUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (ru *RoundUpdate) Save(ctx context.Context) (int, error) {
+	ru.defaults()
 	return withHooks(ctx, ru.sqlSave, ru.mutation, ru.hooks)
 }
 
@@ -210,11 +198,24 @@ func (ru *RoundUpdate) ExecX(ctx context.Context) {
 	}
 }
 
+// defaults sets the default values of the builder before save.
+func (ru *RoundUpdate) defaults() {
+	if _, ok := ru.mutation.UpdateTime(); !ok {
+		v := round.UpdateDefaultUpdateTime()
+		ru.mutation.SetUpdateTime(v)
+	}
+}
+
 // check runs all checks and user-defined validators on the builder.
 func (ru *RoundUpdate) check() error {
 	if v, ok := ru.mutation.Number(); ok {
 		if err := round.NumberValidator(v); err != nil {
 			return &ValidationError{Name: "number", err: fmt.Errorf(`ent: validator failed for field "Round.number": %w`, err)}
+		}
+	}
+	if v, ok := ru.mutation.Points(); ok {
+		if err := round.PointsValidator(v); err != nil {
+			return &ValidationError{Name: "points", err: fmt.Errorf(`ent: validator failed for field "Round.points": %w`, err)}
 		}
 	}
 	return nil
@@ -232,6 +233,9 @@ func (ru *RoundUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			}
 		}
 	}
+	if value, ok := ru.mutation.UpdateTime(); ok {
+		_spec.SetField(round.FieldUpdateTime, field.TypeTime, value)
+	}
 	if value, ok := ru.mutation.Number(); ok {
 		_spec.SetField(round.FieldNumber, field.TypeInt, value)
 	}
@@ -241,17 +245,11 @@ func (ru *RoundUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := ru.mutation.Complete(); ok {
 		_spec.SetField(round.FieldComplete, field.TypeBool, value)
 	}
-	if value, ok := ru.mutation.StartedAt(); ok {
-		_spec.SetField(round.FieldStartedAt, field.TypeTime, value)
+	if value, ok := ru.mutation.Points(); ok {
+		_spec.SetField(round.FieldPoints, field.TypeInt, value)
 	}
-	if ru.mutation.StartedAtCleared() {
-		_spec.ClearField(round.FieldStartedAt, field.TypeTime)
-	}
-	if value, ok := ru.mutation.EndedAt(); ok {
-		_spec.SetField(round.FieldEndedAt, field.TypeTime, value)
-	}
-	if ru.mutation.EndedAtCleared() {
-		_spec.ClearField(round.FieldEndedAt, field.TypeTime)
+	if value, ok := ru.mutation.AddedPoints(); ok {
+		_spec.AddField(round.FieldPoints, field.TypeInt, value)
 	}
 	if ru.mutation.StatusesCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -363,6 +361,12 @@ type RoundUpdateOne struct {
 	mutation *RoundMutation
 }
 
+// SetUpdateTime sets the "update_time" field.
+func (ruo *RoundUpdateOne) SetUpdateTime(t time.Time) *RoundUpdateOne {
+	ruo.mutation.SetUpdateTime(t)
+	return ruo
+}
+
 // SetNumber sets the "number" field.
 func (ruo *RoundUpdateOne) SetNumber(i int) *RoundUpdateOne {
 	ruo.mutation.ResetNumber()
@@ -398,43 +402,24 @@ func (ruo *RoundUpdateOne) SetNillableComplete(b *bool) *RoundUpdateOne {
 	return ruo
 }
 
-// SetStartedAt sets the "started_at" field.
-func (ruo *RoundUpdateOne) SetStartedAt(t time.Time) *RoundUpdateOne {
-	ruo.mutation.SetStartedAt(t)
+// SetPoints sets the "points" field.
+func (ruo *RoundUpdateOne) SetPoints(i int) *RoundUpdateOne {
+	ruo.mutation.ResetPoints()
+	ruo.mutation.SetPoints(i)
 	return ruo
 }
 
-// SetNillableStartedAt sets the "started_at" field if the given value is not nil.
-func (ruo *RoundUpdateOne) SetNillableStartedAt(t *time.Time) *RoundUpdateOne {
-	if t != nil {
-		ruo.SetStartedAt(*t)
+// SetNillablePoints sets the "points" field if the given value is not nil.
+func (ruo *RoundUpdateOne) SetNillablePoints(i *int) *RoundUpdateOne {
+	if i != nil {
+		ruo.SetPoints(*i)
 	}
 	return ruo
 }
 
-// ClearStartedAt clears the value of the "started_at" field.
-func (ruo *RoundUpdateOne) ClearStartedAt() *RoundUpdateOne {
-	ruo.mutation.ClearStartedAt()
-	return ruo
-}
-
-// SetEndedAt sets the "ended_at" field.
-func (ruo *RoundUpdateOne) SetEndedAt(t time.Time) *RoundUpdateOne {
-	ruo.mutation.SetEndedAt(t)
-	return ruo
-}
-
-// SetNillableEndedAt sets the "ended_at" field if the given value is not nil.
-func (ruo *RoundUpdateOne) SetNillableEndedAt(t *time.Time) *RoundUpdateOne {
-	if t != nil {
-		ruo.SetEndedAt(*t)
-	}
-	return ruo
-}
-
-// ClearEndedAt clears the value of the "ended_at" field.
-func (ruo *RoundUpdateOne) ClearEndedAt() *RoundUpdateOne {
-	ruo.mutation.ClearEndedAt()
+// AddPoints adds i to the "points" field.
+func (ruo *RoundUpdateOne) AddPoints(i int) *RoundUpdateOne {
+	ruo.mutation.AddPoints(i)
 	return ruo
 }
 
@@ -530,6 +515,7 @@ func (ruo *RoundUpdateOne) Select(field string, fields ...string) *RoundUpdateOn
 
 // Save executes the query and returns the updated Round entity.
 func (ruo *RoundUpdateOne) Save(ctx context.Context) (*Round, error) {
+	ruo.defaults()
 	return withHooks(ctx, ruo.sqlSave, ruo.mutation, ruo.hooks)
 }
 
@@ -555,11 +541,24 @@ func (ruo *RoundUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
+// defaults sets the default values of the builder before save.
+func (ruo *RoundUpdateOne) defaults() {
+	if _, ok := ruo.mutation.UpdateTime(); !ok {
+		v := round.UpdateDefaultUpdateTime()
+		ruo.mutation.SetUpdateTime(v)
+	}
+}
+
 // check runs all checks and user-defined validators on the builder.
 func (ruo *RoundUpdateOne) check() error {
 	if v, ok := ruo.mutation.Number(); ok {
 		if err := round.NumberValidator(v); err != nil {
 			return &ValidationError{Name: "number", err: fmt.Errorf(`ent: validator failed for field "Round.number": %w`, err)}
+		}
+	}
+	if v, ok := ruo.mutation.Points(); ok {
+		if err := round.PointsValidator(v); err != nil {
+			return &ValidationError{Name: "points", err: fmt.Errorf(`ent: validator failed for field "Round.points": %w`, err)}
 		}
 	}
 	return nil
@@ -594,6 +593,9 @@ func (ruo *RoundUpdateOne) sqlSave(ctx context.Context) (_node *Round, err error
 			}
 		}
 	}
+	if value, ok := ruo.mutation.UpdateTime(); ok {
+		_spec.SetField(round.FieldUpdateTime, field.TypeTime, value)
+	}
 	if value, ok := ruo.mutation.Number(); ok {
 		_spec.SetField(round.FieldNumber, field.TypeInt, value)
 	}
@@ -603,17 +605,11 @@ func (ruo *RoundUpdateOne) sqlSave(ctx context.Context) (_node *Round, err error
 	if value, ok := ruo.mutation.Complete(); ok {
 		_spec.SetField(round.FieldComplete, field.TypeBool, value)
 	}
-	if value, ok := ruo.mutation.StartedAt(); ok {
-		_spec.SetField(round.FieldStartedAt, field.TypeTime, value)
+	if value, ok := ruo.mutation.Points(); ok {
+		_spec.SetField(round.FieldPoints, field.TypeInt, value)
 	}
-	if ruo.mutation.StartedAtCleared() {
-		_spec.ClearField(round.FieldStartedAt, field.TypeTime)
-	}
-	if value, ok := ruo.mutation.EndedAt(); ok {
-		_spec.SetField(round.FieldEndedAt, field.TypeTime, value)
-	}
-	if ruo.mutation.EndedAtCleared() {
-		_spec.ClearField(round.FieldEndedAt, field.TypeTime)
+	if value, ok := ruo.mutation.AddedPoints(); ok {
+		_spec.AddField(round.FieldPoints, field.TypeInt, value)
 	}
 	if ruo.mutation.StatusesCleared() {
 		edge := &sqlgraph.EdgeSpec{

@@ -11,6 +11,8 @@ var (
 	// ChecksColumns holds the columns for the "checks" table.
 	ChecksColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Unique: true},
+		{Name: "create_time", Type: field.TypeTime},
+		{Name: "update_time", Type: field.TypeTime},
 		{Name: "name", Type: field.TypeString, Unique: true},
 		{Name: "source", Type: field.TypeString},
 		{Name: "weight", Type: field.TypeInt},
@@ -25,6 +27,8 @@ var (
 	// CheckConfigsColumns holds the columns for the "check_configs" table.
 	CheckConfigsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Unique: true},
+		{Name: "create_time", Type: field.TypeTime},
+		{Name: "update_time", Type: field.TypeTime},
 		{Name: "config", Type: field.TypeJSON},
 		{Name: "check_config_check", Type: field.TypeUUID},
 		{Name: "check_config_user", Type: field.TypeUUID},
@@ -37,13 +41,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "check_configs_checks_check",
-				Columns:    []*schema.Column{CheckConfigsColumns[2]},
+				Columns:    []*schema.Column{CheckConfigsColumns[4]},
 				RefColumns: []*schema.Column{ChecksColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "check_configs_users_user",
-				Columns:    []*schema.Column{CheckConfigsColumns[3]},
+				Columns:    []*schema.Column{CheckConfigsColumns[5]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -52,10 +56,11 @@ var (
 	// RoundsColumns holds the columns for the "rounds" table.
 	RoundsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Unique: true},
+		{Name: "create_time", Type: field.TypeTime},
+		{Name: "update_time", Type: field.TypeTime},
 		{Name: "number", Type: field.TypeInt},
 		{Name: "complete", Type: field.TypeBool, Default: false},
-		{Name: "started_at", Type: field.TypeTime, Nullable: true},
-		{Name: "ended_at", Type: field.TypeTime, Nullable: true},
+		{Name: "points", Type: field.TypeInt},
 	}
 	// RoundsTable holds the schema information for the "rounds" table.
 	RoundsTable = &schema.Table{
@@ -66,6 +71,8 @@ var (
 	// ScoreCachesColumns holds the columns for the "score_caches" table.
 	ScoreCachesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "create_time", Type: field.TypeTime},
+		{Name: "update_time", Type: field.TypeTime},
 		{Name: "points", Type: field.TypeInt},
 		{Name: "score_cache_round", Type: field.TypeUUID},
 		{Name: "score_cache_user", Type: field.TypeUUID},
@@ -78,13 +85,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "score_caches_rounds_round",
-				Columns:    []*schema.Column{ScoreCachesColumns[2]},
+				Columns:    []*schema.Column{ScoreCachesColumns[4]},
 				RefColumns: []*schema.Column{RoundsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "score_caches_users_user",
-				Columns:    []*schema.Column{ScoreCachesColumns[3]},
+				Columns:    []*schema.Column{ScoreCachesColumns[5]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -93,9 +100,11 @@ var (
 	// StatusColumns holds the columns for the "status" table.
 	StatusColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Unique: true},
+		{Name: "create_time", Type: field.TypeTime},
+		{Name: "update_time", Type: field.TypeTime},
 		{Name: "error", Type: field.TypeString, Nullable: true},
 		{Name: "status", Type: field.TypeEnum, Enums: []string{"up", "down", "unknown"}, Default: "unknown"},
-		{Name: "updated_at", Type: field.TypeTime, Nullable: true},
+		{Name: "weight", Type: field.TypeInt},
 		{Name: "status_check", Type: field.TypeUUID},
 		{Name: "status_round", Type: field.TypeUUID},
 		{Name: "status_user", Type: field.TypeUUID},
@@ -108,19 +117,19 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "status_checks_check",
-				Columns:    []*schema.Column{StatusColumns[4]},
+				Columns:    []*schema.Column{StatusColumns[6]},
 				RefColumns: []*schema.Column{ChecksColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "status_rounds_round",
-				Columns:    []*schema.Column{StatusColumns[5]},
+				Columns:    []*schema.Column{StatusColumns[7]},
 				RefColumns: []*schema.Column{RoundsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "status_users_user",
-				Columns:    []*schema.Column{StatusColumns[6]},
+				Columns:    []*schema.Column{StatusColumns[8]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -129,6 +138,8 @@ var (
 	// UsersColumns holds the columns for the "users" table.
 	UsersColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Unique: true},
+		{Name: "create_time", Type: field.TypeTime},
+		{Name: "update_time", Type: field.TypeTime},
 		{Name: "username", Type: field.TypeString, Unique: true},
 		{Name: "password", Type: field.TypeString},
 		{Name: "role", Type: field.TypeEnum, Enums: []string{"admin", "user"}, Default: "user"},

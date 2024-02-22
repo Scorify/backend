@@ -56,14 +56,104 @@ func IDLTE(id uuid.UUID) predicate.Status {
 	return predicate.Status(sql.FieldLTE(FieldID, id))
 }
 
+// CreateTime applies equality check predicate on the "create_time" field. It's identical to CreateTimeEQ.
+func CreateTime(v time.Time) predicate.Status {
+	return predicate.Status(sql.FieldEQ(FieldCreateTime, v))
+}
+
+// UpdateTime applies equality check predicate on the "update_time" field. It's identical to UpdateTimeEQ.
+func UpdateTime(v time.Time) predicate.Status {
+	return predicate.Status(sql.FieldEQ(FieldUpdateTime, v))
+}
+
 // Error applies equality check predicate on the "error" field. It's identical to ErrorEQ.
 func Error(v string) predicate.Status {
 	return predicate.Status(sql.FieldEQ(FieldError, v))
 }
 
-// UpdatedAt applies equality check predicate on the "updated_at" field. It's identical to UpdatedAtEQ.
-func UpdatedAt(v time.Time) predicate.Status {
-	return predicate.Status(sql.FieldEQ(FieldUpdatedAt, v))
+// Weight applies equality check predicate on the "weight" field. It's identical to WeightEQ.
+func Weight(v int) predicate.Status {
+	return predicate.Status(sql.FieldEQ(FieldWeight, v))
+}
+
+// CreateTimeEQ applies the EQ predicate on the "create_time" field.
+func CreateTimeEQ(v time.Time) predicate.Status {
+	return predicate.Status(sql.FieldEQ(FieldCreateTime, v))
+}
+
+// CreateTimeNEQ applies the NEQ predicate on the "create_time" field.
+func CreateTimeNEQ(v time.Time) predicate.Status {
+	return predicate.Status(sql.FieldNEQ(FieldCreateTime, v))
+}
+
+// CreateTimeIn applies the In predicate on the "create_time" field.
+func CreateTimeIn(vs ...time.Time) predicate.Status {
+	return predicate.Status(sql.FieldIn(FieldCreateTime, vs...))
+}
+
+// CreateTimeNotIn applies the NotIn predicate on the "create_time" field.
+func CreateTimeNotIn(vs ...time.Time) predicate.Status {
+	return predicate.Status(sql.FieldNotIn(FieldCreateTime, vs...))
+}
+
+// CreateTimeGT applies the GT predicate on the "create_time" field.
+func CreateTimeGT(v time.Time) predicate.Status {
+	return predicate.Status(sql.FieldGT(FieldCreateTime, v))
+}
+
+// CreateTimeGTE applies the GTE predicate on the "create_time" field.
+func CreateTimeGTE(v time.Time) predicate.Status {
+	return predicate.Status(sql.FieldGTE(FieldCreateTime, v))
+}
+
+// CreateTimeLT applies the LT predicate on the "create_time" field.
+func CreateTimeLT(v time.Time) predicate.Status {
+	return predicate.Status(sql.FieldLT(FieldCreateTime, v))
+}
+
+// CreateTimeLTE applies the LTE predicate on the "create_time" field.
+func CreateTimeLTE(v time.Time) predicate.Status {
+	return predicate.Status(sql.FieldLTE(FieldCreateTime, v))
+}
+
+// UpdateTimeEQ applies the EQ predicate on the "update_time" field.
+func UpdateTimeEQ(v time.Time) predicate.Status {
+	return predicate.Status(sql.FieldEQ(FieldUpdateTime, v))
+}
+
+// UpdateTimeNEQ applies the NEQ predicate on the "update_time" field.
+func UpdateTimeNEQ(v time.Time) predicate.Status {
+	return predicate.Status(sql.FieldNEQ(FieldUpdateTime, v))
+}
+
+// UpdateTimeIn applies the In predicate on the "update_time" field.
+func UpdateTimeIn(vs ...time.Time) predicate.Status {
+	return predicate.Status(sql.FieldIn(FieldUpdateTime, vs...))
+}
+
+// UpdateTimeNotIn applies the NotIn predicate on the "update_time" field.
+func UpdateTimeNotIn(vs ...time.Time) predicate.Status {
+	return predicate.Status(sql.FieldNotIn(FieldUpdateTime, vs...))
+}
+
+// UpdateTimeGT applies the GT predicate on the "update_time" field.
+func UpdateTimeGT(v time.Time) predicate.Status {
+	return predicate.Status(sql.FieldGT(FieldUpdateTime, v))
+}
+
+// UpdateTimeGTE applies the GTE predicate on the "update_time" field.
+func UpdateTimeGTE(v time.Time) predicate.Status {
+	return predicate.Status(sql.FieldGTE(FieldUpdateTime, v))
+}
+
+// UpdateTimeLT applies the LT predicate on the "update_time" field.
+func UpdateTimeLT(v time.Time) predicate.Status {
+	return predicate.Status(sql.FieldLT(FieldUpdateTime, v))
+}
+
+// UpdateTimeLTE applies the LTE predicate on the "update_time" field.
+func UpdateTimeLTE(v time.Time) predicate.Status {
+	return predicate.Status(sql.FieldLTE(FieldUpdateTime, v))
 }
 
 // ErrorEQ applies the EQ predicate on the "error" field.
@@ -161,54 +251,44 @@ func StatusNotIn(vs ...Status) predicate.Status {
 	return predicate.Status(sql.FieldNotIn(FieldStatus, vs...))
 }
 
-// UpdatedAtEQ applies the EQ predicate on the "updated_at" field.
-func UpdatedAtEQ(v time.Time) predicate.Status {
-	return predicate.Status(sql.FieldEQ(FieldUpdatedAt, v))
+// WeightEQ applies the EQ predicate on the "weight" field.
+func WeightEQ(v int) predicate.Status {
+	return predicate.Status(sql.FieldEQ(FieldWeight, v))
 }
 
-// UpdatedAtNEQ applies the NEQ predicate on the "updated_at" field.
-func UpdatedAtNEQ(v time.Time) predicate.Status {
-	return predicate.Status(sql.FieldNEQ(FieldUpdatedAt, v))
+// WeightNEQ applies the NEQ predicate on the "weight" field.
+func WeightNEQ(v int) predicate.Status {
+	return predicate.Status(sql.FieldNEQ(FieldWeight, v))
 }
 
-// UpdatedAtIn applies the In predicate on the "updated_at" field.
-func UpdatedAtIn(vs ...time.Time) predicate.Status {
-	return predicate.Status(sql.FieldIn(FieldUpdatedAt, vs...))
+// WeightIn applies the In predicate on the "weight" field.
+func WeightIn(vs ...int) predicate.Status {
+	return predicate.Status(sql.FieldIn(FieldWeight, vs...))
 }
 
-// UpdatedAtNotIn applies the NotIn predicate on the "updated_at" field.
-func UpdatedAtNotIn(vs ...time.Time) predicate.Status {
-	return predicate.Status(sql.FieldNotIn(FieldUpdatedAt, vs...))
+// WeightNotIn applies the NotIn predicate on the "weight" field.
+func WeightNotIn(vs ...int) predicate.Status {
+	return predicate.Status(sql.FieldNotIn(FieldWeight, vs...))
 }
 
-// UpdatedAtGT applies the GT predicate on the "updated_at" field.
-func UpdatedAtGT(v time.Time) predicate.Status {
-	return predicate.Status(sql.FieldGT(FieldUpdatedAt, v))
+// WeightGT applies the GT predicate on the "weight" field.
+func WeightGT(v int) predicate.Status {
+	return predicate.Status(sql.FieldGT(FieldWeight, v))
 }
 
-// UpdatedAtGTE applies the GTE predicate on the "updated_at" field.
-func UpdatedAtGTE(v time.Time) predicate.Status {
-	return predicate.Status(sql.FieldGTE(FieldUpdatedAt, v))
+// WeightGTE applies the GTE predicate on the "weight" field.
+func WeightGTE(v int) predicate.Status {
+	return predicate.Status(sql.FieldGTE(FieldWeight, v))
 }
 
-// UpdatedAtLT applies the LT predicate on the "updated_at" field.
-func UpdatedAtLT(v time.Time) predicate.Status {
-	return predicate.Status(sql.FieldLT(FieldUpdatedAt, v))
+// WeightLT applies the LT predicate on the "weight" field.
+func WeightLT(v int) predicate.Status {
+	return predicate.Status(sql.FieldLT(FieldWeight, v))
 }
 
-// UpdatedAtLTE applies the LTE predicate on the "updated_at" field.
-func UpdatedAtLTE(v time.Time) predicate.Status {
-	return predicate.Status(sql.FieldLTE(FieldUpdatedAt, v))
-}
-
-// UpdatedAtIsNil applies the IsNil predicate on the "updated_at" field.
-func UpdatedAtIsNil() predicate.Status {
-	return predicate.Status(sql.FieldIsNull(FieldUpdatedAt))
-}
-
-// UpdatedAtNotNil applies the NotNil predicate on the "updated_at" field.
-func UpdatedAtNotNil() predicate.Status {
-	return predicate.Status(sql.FieldNotNull(FieldUpdatedAt))
+// WeightLTE applies the LTE predicate on the "weight" field.
+func WeightLTE(v int) predicate.Status {
+	return predicate.Status(sql.FieldLTE(FieldWeight, v))
 }
 
 // HasCheck applies the HasEdge predicate on the "check" edge.

@@ -24,6 +24,34 @@ type StatusCreate struct {
 	hooks    []Hook
 }
 
+// SetCreateTime sets the "create_time" field.
+func (sc *StatusCreate) SetCreateTime(t time.Time) *StatusCreate {
+	sc.mutation.SetCreateTime(t)
+	return sc
+}
+
+// SetNillableCreateTime sets the "create_time" field if the given value is not nil.
+func (sc *StatusCreate) SetNillableCreateTime(t *time.Time) *StatusCreate {
+	if t != nil {
+		sc.SetCreateTime(*t)
+	}
+	return sc
+}
+
+// SetUpdateTime sets the "update_time" field.
+func (sc *StatusCreate) SetUpdateTime(t time.Time) *StatusCreate {
+	sc.mutation.SetUpdateTime(t)
+	return sc
+}
+
+// SetNillableUpdateTime sets the "update_time" field if the given value is not nil.
+func (sc *StatusCreate) SetNillableUpdateTime(t *time.Time) *StatusCreate {
+	if t != nil {
+		sc.SetUpdateTime(*t)
+	}
+	return sc
+}
+
 // SetError sets the "error" field.
 func (sc *StatusCreate) SetError(s string) *StatusCreate {
 	sc.mutation.SetError(s)
@@ -52,17 +80,9 @@ func (sc *StatusCreate) SetNillableStatus(s *status.Status) *StatusCreate {
 	return sc
 }
 
-// SetUpdatedAt sets the "updated_at" field.
-func (sc *StatusCreate) SetUpdatedAt(t time.Time) *StatusCreate {
-	sc.mutation.SetUpdatedAt(t)
-	return sc
-}
-
-// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
-func (sc *StatusCreate) SetNillableUpdatedAt(t *time.Time) *StatusCreate {
-	if t != nil {
-		sc.SetUpdatedAt(*t)
-	}
+// SetWeight sets the "weight" field.
+func (sc *StatusCreate) SetWeight(i int) *StatusCreate {
+	sc.mutation.SetWeight(i)
 	return sc
 }
 
@@ -148,6 +168,14 @@ func (sc *StatusCreate) ExecX(ctx context.Context) {
 
 // defaults sets the default values of the builder before save.
 func (sc *StatusCreate) defaults() {
+	if _, ok := sc.mutation.CreateTime(); !ok {
+		v := status.DefaultCreateTime()
+		sc.mutation.SetCreateTime(v)
+	}
+	if _, ok := sc.mutation.UpdateTime(); !ok {
+		v := status.DefaultUpdateTime()
+		sc.mutation.SetUpdateTime(v)
+	}
 	if _, ok := sc.mutation.Status(); !ok {
 		v := status.DefaultStatus
 		sc.mutation.SetStatus(v)
@@ -160,6 +188,12 @@ func (sc *StatusCreate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (sc *StatusCreate) check() error {
+	if _, ok := sc.mutation.CreateTime(); !ok {
+		return &ValidationError{Name: "create_time", err: errors.New(`ent: missing required field "Status.create_time"`)}
+	}
+	if _, ok := sc.mutation.UpdateTime(); !ok {
+		return &ValidationError{Name: "update_time", err: errors.New(`ent: missing required field "Status.update_time"`)}
+	}
 	if _, ok := sc.mutation.Status(); !ok {
 		return &ValidationError{Name: "status", err: errors.New(`ent: missing required field "Status.status"`)}
 	}
@@ -167,6 +201,9 @@ func (sc *StatusCreate) check() error {
 		if err := status.StatusValidator(v); err != nil {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Status.status": %w`, err)}
 		}
+	}
+	if _, ok := sc.mutation.Weight(); !ok {
+		return &ValidationError{Name: "weight", err: errors.New(`ent: missing required field "Status.weight"`)}
 	}
 	if _, ok := sc.mutation.CheckID(); !ok {
 		return &ValidationError{Name: "check", err: errors.New(`ent: missing required edge "Status.check"`)}
@@ -212,6 +249,14 @@ func (sc *StatusCreate) createSpec() (*Status, *sqlgraph.CreateSpec) {
 		_node.ID = id
 		_spec.ID.Value = &id
 	}
+	if value, ok := sc.mutation.CreateTime(); ok {
+		_spec.SetField(status.FieldCreateTime, field.TypeTime, value)
+		_node.CreateTime = value
+	}
+	if value, ok := sc.mutation.UpdateTime(); ok {
+		_spec.SetField(status.FieldUpdateTime, field.TypeTime, value)
+		_node.UpdateTime = value
+	}
 	if value, ok := sc.mutation.Error(); ok {
 		_spec.SetField(status.FieldError, field.TypeString, value)
 		_node.Error = value
@@ -220,9 +265,9 @@ func (sc *StatusCreate) createSpec() (*Status, *sqlgraph.CreateSpec) {
 		_spec.SetField(status.FieldStatus, field.TypeEnum, value)
 		_node.Status = value
 	}
-	if value, ok := sc.mutation.UpdatedAt(); ok {
-		_spec.SetField(status.FieldUpdatedAt, field.TypeTime, value)
-		_node.UpdatedAt = value
+	if value, ok := sc.mutation.Weight(); ok {
+		_spec.SetField(status.FieldWeight, field.TypeInt, value)
+		_node.Weight = value
 	}
 	if nodes := sc.mutation.CheckIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

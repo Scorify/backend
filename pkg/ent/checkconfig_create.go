@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
@@ -20,6 +21,34 @@ type CheckConfigCreate struct {
 	config
 	mutation *CheckConfigMutation
 	hooks    []Hook
+}
+
+// SetCreateTime sets the "create_time" field.
+func (ccc *CheckConfigCreate) SetCreateTime(t time.Time) *CheckConfigCreate {
+	ccc.mutation.SetCreateTime(t)
+	return ccc
+}
+
+// SetNillableCreateTime sets the "create_time" field if the given value is not nil.
+func (ccc *CheckConfigCreate) SetNillableCreateTime(t *time.Time) *CheckConfigCreate {
+	if t != nil {
+		ccc.SetCreateTime(*t)
+	}
+	return ccc
+}
+
+// SetUpdateTime sets the "update_time" field.
+func (ccc *CheckConfigCreate) SetUpdateTime(t time.Time) *CheckConfigCreate {
+	ccc.mutation.SetUpdateTime(t)
+	return ccc
+}
+
+// SetNillableUpdateTime sets the "update_time" field if the given value is not nil.
+func (ccc *CheckConfigCreate) SetNillableUpdateTime(t *time.Time) *CheckConfigCreate {
+	if t != nil {
+		ccc.SetUpdateTime(*t)
+	}
+	return ccc
 }
 
 // SetConfig sets the "config" field.
@@ -99,6 +128,14 @@ func (ccc *CheckConfigCreate) ExecX(ctx context.Context) {
 
 // defaults sets the default values of the builder before save.
 func (ccc *CheckConfigCreate) defaults() {
+	if _, ok := ccc.mutation.CreateTime(); !ok {
+		v := checkconfig.DefaultCreateTime()
+		ccc.mutation.SetCreateTime(v)
+	}
+	if _, ok := ccc.mutation.UpdateTime(); !ok {
+		v := checkconfig.DefaultUpdateTime()
+		ccc.mutation.SetUpdateTime(v)
+	}
 	if _, ok := ccc.mutation.ID(); !ok {
 		v := checkconfig.DefaultID()
 		ccc.mutation.SetID(v)
@@ -107,6 +144,12 @@ func (ccc *CheckConfigCreate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (ccc *CheckConfigCreate) check() error {
+	if _, ok := ccc.mutation.CreateTime(); !ok {
+		return &ValidationError{Name: "create_time", err: errors.New(`ent: missing required field "CheckConfig.create_time"`)}
+	}
+	if _, ok := ccc.mutation.UpdateTime(); !ok {
+		return &ValidationError{Name: "update_time", err: errors.New(`ent: missing required field "CheckConfig.update_time"`)}
+	}
 	if _, ok := ccc.mutation.Config(); !ok {
 		return &ValidationError{Name: "config", err: errors.New(`ent: missing required field "CheckConfig.config"`)}
 	}
@@ -150,6 +193,14 @@ func (ccc *CheckConfigCreate) createSpec() (*CheckConfig, *sqlgraph.CreateSpec) 
 	if id, ok := ccc.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
+	}
+	if value, ok := ccc.mutation.CreateTime(); ok {
+		_spec.SetField(checkconfig.FieldCreateTime, field.TypeTime, value)
+		_node.CreateTime = value
+	}
+	if value, ok := ccc.mutation.UpdateTime(); ok {
+		_spec.SetField(checkconfig.FieldUpdateTime, field.TypeTime, value)
+		_node.UpdateTime = value
 	}
 	if value, ok := ccc.mutation.Config(); ok {
 		_spec.SetField(checkconfig.FieldConfig, field.TypeJSON, value)
