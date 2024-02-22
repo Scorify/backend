@@ -11,11 +11,8 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/google/uuid"
 	"github.com/scorify/backend/pkg/ent/predicate"
-	"github.com/scorify/backend/pkg/ent/round"
 	"github.com/scorify/backend/pkg/ent/scorecache"
-	"github.com/scorify/backend/pkg/ent/user"
 )
 
 // ScoreCacheUpdate is the builder for updating ScoreCache entities.
@@ -58,43 +55,9 @@ func (scu *ScoreCacheUpdate) AddPoints(i int) *ScoreCacheUpdate {
 	return scu
 }
 
-// SetRoundID sets the "round" edge to the Round entity by ID.
-func (scu *ScoreCacheUpdate) SetRoundID(id uuid.UUID) *ScoreCacheUpdate {
-	scu.mutation.SetRoundID(id)
-	return scu
-}
-
-// SetRound sets the "round" edge to the Round entity.
-func (scu *ScoreCacheUpdate) SetRound(r *Round) *ScoreCacheUpdate {
-	return scu.SetRoundID(r.ID)
-}
-
-// SetUserID sets the "user" edge to the User entity by ID.
-func (scu *ScoreCacheUpdate) SetUserID(id uuid.UUID) *ScoreCacheUpdate {
-	scu.mutation.SetUserID(id)
-	return scu
-}
-
-// SetUser sets the "user" edge to the User entity.
-func (scu *ScoreCacheUpdate) SetUser(u *User) *ScoreCacheUpdate {
-	return scu.SetUserID(u.ID)
-}
-
 // Mutation returns the ScoreCacheMutation object of the builder.
 func (scu *ScoreCacheUpdate) Mutation() *ScoreCacheMutation {
 	return scu.mutation
-}
-
-// ClearRound clears the "round" edge to the Round entity.
-func (scu *ScoreCacheUpdate) ClearRound() *ScoreCacheUpdate {
-	scu.mutation.ClearRound()
-	return scu
-}
-
-// ClearUser clears the "user" edge to the User entity.
-func (scu *ScoreCacheUpdate) ClearUser() *ScoreCacheUpdate {
-	scu.mutation.ClearUser()
-	return scu
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -153,7 +116,7 @@ func (scu *ScoreCacheUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if err := scu.check(); err != nil {
 		return n, err
 	}
-	_spec := sqlgraph.NewUpdateSpec(scorecache.Table, scorecache.Columns, sqlgraph.NewFieldSpec(scorecache.FieldID, field.TypeInt))
+	_spec := sqlgraph.NewUpdateSpec(scorecache.Table, scorecache.Columns, sqlgraph.NewFieldSpec(scorecache.FieldID, field.TypeUUID))
 	if ps := scu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -169,64 +132,6 @@ func (scu *ScoreCacheUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := scu.mutation.AddedPoints(); ok {
 		_spec.AddField(scorecache.FieldPoints, field.TypeInt, value)
-	}
-	if scu.mutation.RoundCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: false,
-			Table:   scorecache.RoundTable,
-			Columns: []string{scorecache.RoundColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(round.FieldID, field.TypeUUID),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := scu.mutation.RoundIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: false,
-			Table:   scorecache.RoundTable,
-			Columns: []string{scorecache.RoundColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(round.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if scu.mutation.UserCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: false,
-			Table:   scorecache.UserTable,
-			Columns: []string{scorecache.UserColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := scu.mutation.UserIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: false,
-			Table:   scorecache.UserTable,
-			Columns: []string{scorecache.UserColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if n, err = sqlgraph.UpdateNodes(ctx, scu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -275,43 +180,9 @@ func (scuo *ScoreCacheUpdateOne) AddPoints(i int) *ScoreCacheUpdateOne {
 	return scuo
 }
 
-// SetRoundID sets the "round" edge to the Round entity by ID.
-func (scuo *ScoreCacheUpdateOne) SetRoundID(id uuid.UUID) *ScoreCacheUpdateOne {
-	scuo.mutation.SetRoundID(id)
-	return scuo
-}
-
-// SetRound sets the "round" edge to the Round entity.
-func (scuo *ScoreCacheUpdateOne) SetRound(r *Round) *ScoreCacheUpdateOne {
-	return scuo.SetRoundID(r.ID)
-}
-
-// SetUserID sets the "user" edge to the User entity by ID.
-func (scuo *ScoreCacheUpdateOne) SetUserID(id uuid.UUID) *ScoreCacheUpdateOne {
-	scuo.mutation.SetUserID(id)
-	return scuo
-}
-
-// SetUser sets the "user" edge to the User entity.
-func (scuo *ScoreCacheUpdateOne) SetUser(u *User) *ScoreCacheUpdateOne {
-	return scuo.SetUserID(u.ID)
-}
-
 // Mutation returns the ScoreCacheMutation object of the builder.
 func (scuo *ScoreCacheUpdateOne) Mutation() *ScoreCacheMutation {
 	return scuo.mutation
-}
-
-// ClearRound clears the "round" edge to the Round entity.
-func (scuo *ScoreCacheUpdateOne) ClearRound() *ScoreCacheUpdateOne {
-	scuo.mutation.ClearRound()
-	return scuo
-}
-
-// ClearUser clears the "user" edge to the User entity.
-func (scuo *ScoreCacheUpdateOne) ClearUser() *ScoreCacheUpdateOne {
-	scuo.mutation.ClearUser()
-	return scuo
 }
 
 // Where appends a list predicates to the ScoreCacheUpdate builder.
@@ -383,7 +254,7 @@ func (scuo *ScoreCacheUpdateOne) sqlSave(ctx context.Context) (_node *ScoreCache
 	if err := scuo.check(); err != nil {
 		return _node, err
 	}
-	_spec := sqlgraph.NewUpdateSpec(scorecache.Table, scorecache.Columns, sqlgraph.NewFieldSpec(scorecache.FieldID, field.TypeInt))
+	_spec := sqlgraph.NewUpdateSpec(scorecache.Table, scorecache.Columns, sqlgraph.NewFieldSpec(scorecache.FieldID, field.TypeUUID))
 	id, ok := scuo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "ScoreCache.id" for update`)}
@@ -416,64 +287,6 @@ func (scuo *ScoreCacheUpdateOne) sqlSave(ctx context.Context) (_node *ScoreCache
 	}
 	if value, ok := scuo.mutation.AddedPoints(); ok {
 		_spec.AddField(scorecache.FieldPoints, field.TypeInt, value)
-	}
-	if scuo.mutation.RoundCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: false,
-			Table:   scorecache.RoundTable,
-			Columns: []string{scorecache.RoundColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(round.FieldID, field.TypeUUID),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := scuo.mutation.RoundIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: false,
-			Table:   scorecache.RoundTable,
-			Columns: []string{scorecache.RoundColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(round.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if scuo.mutation.UserCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: false,
-			Table:   scorecache.UserTable,
-			Columns: []string{scorecache.UserColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := scuo.mutation.UserIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: false,
-			Table:   scorecache.UserTable,
-			Columns: []string{scorecache.UserColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	_node = &ScoreCache{config: scuo.config}
 	_spec.Assign = _node.assignValues

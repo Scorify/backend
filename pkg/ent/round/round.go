@@ -37,14 +37,14 @@ const (
 	// It exists in this package in order to avoid circular dependency with the "status" package.
 	StatusesInverseTable = "status"
 	// StatusesColumn is the table column denoting the statuses relation/edge.
-	StatusesColumn = "status_round"
+	StatusesColumn = "round_id"
 	// ScorecachesTable is the table that holds the scorecaches relation/edge.
 	ScorecachesTable = "score_caches"
 	// ScorecachesInverseTable is the table name for the ScoreCache entity.
 	// It exists in this package in order to avoid circular dependency with the "scorecache" package.
 	ScorecachesInverseTable = "score_caches"
 	// ScorecachesColumn is the table column denoting the scorecaches relation/edge.
-	ScorecachesColumn = "score_cache_round"
+	ScorecachesColumn = "round_id"
 )
 
 // Columns holds all SQL columns for round fields.

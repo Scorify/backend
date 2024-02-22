@@ -28,12 +28,14 @@ type CheckConfig struct {
 	UpdateTime time.Time `json:"update_time,omitempty"`
 	// The configuration of a check
 	Config map[string]interface{} `json:"config"`
+	// The check this configuration belongs to
+	CheckID uuid.UUID `json:"check_id"`
+	// The user this configuration belongs to
+	UserID uuid.UUID `json:"user_id"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the CheckConfigQuery when eager-loading is set.
-	Edges              CheckConfigEdges `json:"edges"`
-	check_config_check *uuid.UUID
-	check_config_user  *uuid.UUID
-	selectValues       sql.SelectValues
+	Edges        CheckConfigEdges `json:"edges"`
+	selectValues sql.SelectValues
 }
 
 // CheckConfigEdges holds the relations/edges for other nodes in the graph.
@@ -82,12 +84,8 @@ func (*CheckConfig) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case checkconfig.FieldCreateTime, checkconfig.FieldUpdateTime:
 			values[i] = new(sql.NullTime)
-		case checkconfig.FieldID:
+		case checkconfig.FieldID, checkconfig.FieldCheckID, checkconfig.FieldUserID:
 			values[i] = new(uuid.UUID)
-		case checkconfig.ForeignKeys[0]: // check_config_check
-			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
-		case checkconfig.ForeignKeys[1]: // check_config_user
-			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -129,19 +127,17 @@ func (cc *CheckConfig) assignValues(columns []string, values []any) error {
 					return fmt.Errorf("unmarshal field config: %w", err)
 				}
 			}
-		case checkconfig.ForeignKeys[0]:
-			if value, ok := values[i].(*sql.NullScanner); !ok {
-				return fmt.Errorf("unexpected type %T for field check_config_check", values[i])
-			} else if value.Valid {
-				cc.check_config_check = new(uuid.UUID)
-				*cc.check_config_check = *value.S.(*uuid.UUID)
+		case checkconfig.FieldCheckID:
+			if value, ok := values[i].(*uuid.UUID); !ok {
+				return fmt.Errorf("unexpected type %T for field check_id", values[i])
+			} else if value != nil {
+				cc.CheckID = *value
 			}
-		case checkconfig.ForeignKeys[1]:
-			if value, ok := values[i].(*sql.NullScanner); !ok {
-				return fmt.Errorf("unexpected type %T for field check_config_user", values[i])
-			} else if value.Valid {
-				cc.check_config_user = new(uuid.UUID)
-				*cc.check_config_user = *value.S.(*uuid.UUID)
+		case checkconfig.FieldUserID:
+			if value, ok := values[i].(*uuid.UUID); !ok {
+				return fmt.Errorf("unexpected type %T for field user_id", values[i])
+			} else if value != nil {
+				cc.UserID = *value
 			}
 		default:
 			cc.selectValues.Set(columns[i], values[i])
@@ -197,6 +193,12 @@ func (cc *CheckConfig) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("config=")
 	builder.WriteString(fmt.Sprintf("%v", cc.Config))
+	builder.WriteString(", ")
+	builder.WriteString("check_id=")
+	builder.WriteString(fmt.Sprintf("%v", cc.CheckID))
+	builder.WriteString(", ")
+	builder.WriteString("user_id=")
+	builder.WriteString(fmt.Sprintf("%v", cc.UserID))
 	builder.WriteByte(')')
 	return builder.String()
 }

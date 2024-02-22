@@ -39,14 +39,14 @@ const (
 	// It exists in this package in order to avoid circular dependency with the "checkconfig" package.
 	ConfigsInverseTable = "check_configs"
 	// ConfigsColumn is the table column denoting the configs relation/edge.
-	ConfigsColumn = "check_config_check"
+	ConfigsColumn = "check_id"
 	// StatusesTable is the table that holds the statuses relation/edge.
 	StatusesTable = "status"
 	// StatusesInverseTable is the table name for the Status entity.
 	// It exists in this package in order to avoid circular dependency with the "status" package.
 	StatusesInverseTable = "status"
 	// StatusesColumn is the table column denoting the statuses relation/edge.
-	StatusesColumn = "status_check"
+	StatusesColumn = "check_id"
 )
 
 // Columns holds all SQL columns for check fields.

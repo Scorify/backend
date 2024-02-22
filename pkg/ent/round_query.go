@@ -457,7 +457,9 @@ func (rq *RoundQuery) loadStatuses(ctx context.Context, query *StatusQuery, node
 			init(nodes[i])
 		}
 	}
-	query.withFKs = true
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(status.FieldRoundID)
+	}
 	query.Where(predicate.Status(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(round.StatusesColumn), fks...))
 	}))
@@ -466,13 +468,10 @@ func (rq *RoundQuery) loadStatuses(ctx context.Context, query *StatusQuery, node
 		return err
 	}
 	for _, n := range neighbors {
-		fk := n.status_round
-		if fk == nil {
-			return fmt.Errorf(`foreign-key "status_round" is nil for node %v`, n.ID)
-		}
-		node, ok := nodeids[*fk]
+		fk := n.RoundID
+		node, ok := nodeids[fk]
 		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "status_round" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "round_id" returned %v for node %v`, fk, n.ID)
 		}
 		assign(node, n)
 	}
@@ -488,7 +487,9 @@ func (rq *RoundQuery) loadScorecaches(ctx context.Context, query *ScoreCacheQuer
 			init(nodes[i])
 		}
 	}
-	query.withFKs = true
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(scorecache.FieldRoundID)
+	}
 	query.Where(predicate.ScoreCache(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(round.ScorecachesColumn), fks...))
 	}))
@@ -497,13 +498,10 @@ func (rq *RoundQuery) loadScorecaches(ctx context.Context, query *ScoreCacheQuer
 		return err
 	}
 	for _, n := range neighbors {
-		fk := n.score_cache_round
-		if fk == nil {
-			return fmt.Errorf(`foreign-key "score_cache_round" is nil for node %v`, n.ID)
-		}
-		node, ok := nodeids[*fk]
+		fk := n.RoundID
+		node, ok := nodeids[fk]
 		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "score_cache_round" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "round_id" returned %v for node %v`, fk, n.ID)
 		}
 		assign(node, n)
 	}

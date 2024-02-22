@@ -28,7 +28,6 @@ type StatusQuery struct {
 	withCheck  *CheckQuery
 	withRound  *RoundQuery
 	withUser   *UserQuery
-	withFKs    bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -442,7 +441,6 @@ func (sq *StatusQuery) prepareQuery(ctx context.Context) error {
 func (sq *StatusQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Status, error) {
 	var (
 		nodes       = []*Status{}
-		withFKs     = sq.withFKs
 		_spec       = sq.querySpec()
 		loadedTypes = [3]bool{
 			sq.withCheck != nil,
@@ -450,12 +448,6 @@ func (sq *StatusQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Statu
 			sq.withUser != nil,
 		}
 	)
-	if sq.withCheck != nil || sq.withRound != nil || sq.withUser != nil {
-		withFKs = true
-	}
-	if withFKs {
-		_spec.Node.Columns = append(_spec.Node.Columns, status.ForeignKeys...)
-	}
 	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*Status).scanValues(nil, columns)
 	}
@@ -499,10 +491,7 @@ func (sq *StatusQuery) loadCheck(ctx context.Context, query *CheckQuery, nodes [
 	ids := make([]uuid.UUID, 0, len(nodes))
 	nodeids := make(map[uuid.UUID][]*Status)
 	for i := range nodes {
-		if nodes[i].status_check == nil {
-			continue
-		}
-		fk := *nodes[i].status_check
+		fk := nodes[i].CheckID
 		if _, ok := nodeids[fk]; !ok {
 			ids = append(ids, fk)
 		}
@@ -519,7 +508,7 @@ func (sq *StatusQuery) loadCheck(ctx context.Context, query *CheckQuery, nodes [
 	for _, n := range neighbors {
 		nodes, ok := nodeids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "status_check" returned %v`, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "check_id" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)
@@ -531,10 +520,7 @@ func (sq *StatusQuery) loadRound(ctx context.Context, query *RoundQuery, nodes [
 	ids := make([]uuid.UUID, 0, len(nodes))
 	nodeids := make(map[uuid.UUID][]*Status)
 	for i := range nodes {
-		if nodes[i].status_round == nil {
-			continue
-		}
-		fk := *nodes[i].status_round
+		fk := nodes[i].RoundID
 		if _, ok := nodeids[fk]; !ok {
 			ids = append(ids, fk)
 		}
@@ -551,7 +537,7 @@ func (sq *StatusQuery) loadRound(ctx context.Context, query *RoundQuery, nodes [
 	for _, n := range neighbors {
 		nodes, ok := nodeids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "status_round" returned %v`, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "round_id" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)
@@ -563,10 +549,7 @@ func (sq *StatusQuery) loadUser(ctx context.Context, query *UserQuery, nodes []*
 	ids := make([]uuid.UUID, 0, len(nodes))
 	nodeids := make(map[uuid.UUID][]*Status)
 	for i := range nodes {
-		if nodes[i].status_user == nil {
-			continue
-		}
-		fk := *nodes[i].status_user
+		fk := nodes[i].UserID
 		if _, ok := nodeids[fk]; !ok {
 			ids = append(ids, fk)
 		}
@@ -583,7 +566,7 @@ func (sq *StatusQuery) loadUser(ctx context.Context, query *UserQuery, nodes []*
 	for _, n := range neighbors {
 		nodes, ok := nodeids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "status_user" returned %v`, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "user_id" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)
@@ -616,6 +599,15 @@ func (sq *StatusQuery) querySpec() *sqlgraph.QuerySpec {
 			if fields[i] != status.FieldID {
 				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 			}
+		}
+		if sq.withCheck != nil {
+			_spec.Node.AddColumnOnce(status.FieldCheckID)
+		}
+		if sq.withRound != nil {
+			_spec.Node.AddColumnOnce(status.FieldRoundID)
+		}
+		if sq.withUser != nil {
+			_spec.Node.AddColumnOnce(status.FieldUserID)
 		}
 	}
 	if ps := sq.predicates; len(ps) > 0 {

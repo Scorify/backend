@@ -21,6 +21,10 @@ const (
 	FieldUpdateTime = "update_time"
 	// FieldConfig holds the string denoting the config field in the database.
 	FieldConfig = "config"
+	// FieldCheckID holds the string denoting the check_id field in the database.
+	FieldCheckID = "check_id"
+	// FieldUserID holds the string denoting the user_id field in the database.
+	FieldUserID = "user_id"
 	// EdgeCheck holds the string denoting the check edge name in mutations.
 	EdgeCheck = "check"
 	// EdgeUser holds the string denoting the user edge name in mutations.
@@ -33,14 +37,14 @@ const (
 	// It exists in this package in order to avoid circular dependency with the "check" package.
 	CheckInverseTable = "checks"
 	// CheckColumn is the table column denoting the check relation/edge.
-	CheckColumn = "check_config_check"
+	CheckColumn = "check_id"
 	// UserTable is the table that holds the user relation/edge.
 	UserTable = "check_configs"
 	// UserInverseTable is the table name for the User entity.
 	// It exists in this package in order to avoid circular dependency with the "user" package.
 	UserInverseTable = "users"
 	// UserColumn is the table column denoting the user relation/edge.
-	UserColumn = "check_config_user"
+	UserColumn = "user_id"
 )
 
 // Columns holds all SQL columns for checkconfig fields.
@@ -49,24 +53,14 @@ var Columns = []string{
 	FieldCreateTime,
 	FieldUpdateTime,
 	FieldConfig,
-}
-
-// ForeignKeys holds the SQL foreign-keys that are owned by the "check_configs"
-// table and are not defined as standalone fields in the schema.
-var ForeignKeys = []string{
-	"check_config_check",
-	"check_config_user",
+	FieldCheckID,
+	FieldUserID,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {
 	for i := range Columns {
 		if column == Columns[i] {
-			return true
-		}
-	}
-	for i := range ForeignKeys {
-		if column == ForeignKeys[i] {
 			return true
 		}
 	}
@@ -100,6 +94,16 @@ func ByCreateTime(opts ...sql.OrderTermOption) OrderOption {
 // ByUpdateTime orders the results by the update_time field.
 func ByUpdateTime(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldUpdateTime, opts...).ToFunc()
+}
+
+// ByCheckID orders the results by the check_id field.
+func ByCheckID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCheckID, opts...).ToFunc()
+}
+
+// ByUserID orders the results by the user_id field.
+func ByUserID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldUserID, opts...).ToFunc()
 }
 
 // ByCheckField orders the results by check field.

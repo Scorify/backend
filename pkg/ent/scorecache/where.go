@@ -7,51 +7,52 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"github.com/google/uuid"
 	"github.com/scorify/backend/pkg/ent/predicate"
 )
 
 // ID filters vertices based on their ID field.
-func ID(id int) predicate.ScoreCache {
+func ID(id uuid.UUID) predicate.ScoreCache {
 	return predicate.ScoreCache(sql.FieldEQ(FieldID, id))
 }
 
 // IDEQ applies the EQ predicate on the ID field.
-func IDEQ(id int) predicate.ScoreCache {
+func IDEQ(id uuid.UUID) predicate.ScoreCache {
 	return predicate.ScoreCache(sql.FieldEQ(FieldID, id))
 }
 
 // IDNEQ applies the NEQ predicate on the ID field.
-func IDNEQ(id int) predicate.ScoreCache {
+func IDNEQ(id uuid.UUID) predicate.ScoreCache {
 	return predicate.ScoreCache(sql.FieldNEQ(FieldID, id))
 }
 
 // IDIn applies the In predicate on the ID field.
-func IDIn(ids ...int) predicate.ScoreCache {
+func IDIn(ids ...uuid.UUID) predicate.ScoreCache {
 	return predicate.ScoreCache(sql.FieldIn(FieldID, ids...))
 }
 
 // IDNotIn applies the NotIn predicate on the ID field.
-func IDNotIn(ids ...int) predicate.ScoreCache {
+func IDNotIn(ids ...uuid.UUID) predicate.ScoreCache {
 	return predicate.ScoreCache(sql.FieldNotIn(FieldID, ids...))
 }
 
 // IDGT applies the GT predicate on the ID field.
-func IDGT(id int) predicate.ScoreCache {
+func IDGT(id uuid.UUID) predicate.ScoreCache {
 	return predicate.ScoreCache(sql.FieldGT(FieldID, id))
 }
 
 // IDGTE applies the GTE predicate on the ID field.
-func IDGTE(id int) predicate.ScoreCache {
+func IDGTE(id uuid.UUID) predicate.ScoreCache {
 	return predicate.ScoreCache(sql.FieldGTE(FieldID, id))
 }
 
 // IDLT applies the LT predicate on the ID field.
-func IDLT(id int) predicate.ScoreCache {
+func IDLT(id uuid.UUID) predicate.ScoreCache {
 	return predicate.ScoreCache(sql.FieldLT(FieldID, id))
 }
 
 // IDLTE applies the LTE predicate on the ID field.
-func IDLTE(id int) predicate.ScoreCache {
+func IDLTE(id uuid.UUID) predicate.ScoreCache {
 	return predicate.ScoreCache(sql.FieldLTE(FieldID, id))
 }
 
@@ -68,6 +69,16 @@ func UpdateTime(v time.Time) predicate.ScoreCache {
 // Points applies equality check predicate on the "points" field. It's identical to PointsEQ.
 func Points(v int) predicate.ScoreCache {
 	return predicate.ScoreCache(sql.FieldEQ(FieldPoints, v))
+}
+
+// RoundID applies equality check predicate on the "round_id" field. It's identical to RoundIDEQ.
+func RoundID(v uuid.UUID) predicate.ScoreCache {
+	return predicate.ScoreCache(sql.FieldEQ(FieldRoundID, v))
+}
+
+// UserID applies equality check predicate on the "user_id" field. It's identical to UserIDEQ.
+func UserID(v uuid.UUID) predicate.ScoreCache {
+	return predicate.ScoreCache(sql.FieldEQ(FieldUserID, v))
 }
 
 // CreateTimeEQ applies the EQ predicate on the "create_time" field.
@@ -188,6 +199,46 @@ func PointsLT(v int) predicate.ScoreCache {
 // PointsLTE applies the LTE predicate on the "points" field.
 func PointsLTE(v int) predicate.ScoreCache {
 	return predicate.ScoreCache(sql.FieldLTE(FieldPoints, v))
+}
+
+// RoundIDEQ applies the EQ predicate on the "round_id" field.
+func RoundIDEQ(v uuid.UUID) predicate.ScoreCache {
+	return predicate.ScoreCache(sql.FieldEQ(FieldRoundID, v))
+}
+
+// RoundIDNEQ applies the NEQ predicate on the "round_id" field.
+func RoundIDNEQ(v uuid.UUID) predicate.ScoreCache {
+	return predicate.ScoreCache(sql.FieldNEQ(FieldRoundID, v))
+}
+
+// RoundIDIn applies the In predicate on the "round_id" field.
+func RoundIDIn(vs ...uuid.UUID) predicate.ScoreCache {
+	return predicate.ScoreCache(sql.FieldIn(FieldRoundID, vs...))
+}
+
+// RoundIDNotIn applies the NotIn predicate on the "round_id" field.
+func RoundIDNotIn(vs ...uuid.UUID) predicate.ScoreCache {
+	return predicate.ScoreCache(sql.FieldNotIn(FieldRoundID, vs...))
+}
+
+// UserIDEQ applies the EQ predicate on the "user_id" field.
+func UserIDEQ(v uuid.UUID) predicate.ScoreCache {
+	return predicate.ScoreCache(sql.FieldEQ(FieldUserID, v))
+}
+
+// UserIDNEQ applies the NEQ predicate on the "user_id" field.
+func UserIDNEQ(v uuid.UUID) predicate.ScoreCache {
+	return predicate.ScoreCache(sql.FieldNEQ(FieldUserID, v))
+}
+
+// UserIDIn applies the In predicate on the "user_id" field.
+func UserIDIn(vs ...uuid.UUID) predicate.ScoreCache {
+	return predicate.ScoreCache(sql.FieldIn(FieldUserID, vs...))
+}
+
+// UserIDNotIn applies the NotIn predicate on the "user_id" field.
+func UserIDNotIn(vs ...uuid.UUID) predicate.ScoreCache {
+	return predicate.ScoreCache(sql.FieldNotIn(FieldUserID, vs...))
 }
 
 // HasRound applies the HasEdge predicate on the "round" edge.

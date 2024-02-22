@@ -501,7 +501,9 @@ func (uq *UserQuery) loadConfigs(ctx context.Context, query *CheckConfigQuery, n
 			init(nodes[i])
 		}
 	}
-	query.withFKs = true
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(checkconfig.FieldUserID)
+	}
 	query.Where(predicate.CheckConfig(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(user.ConfigsColumn), fks...))
 	}))
@@ -510,13 +512,10 @@ func (uq *UserQuery) loadConfigs(ctx context.Context, query *CheckConfigQuery, n
 		return err
 	}
 	for _, n := range neighbors {
-		fk := n.check_config_user
-		if fk == nil {
-			return fmt.Errorf(`foreign-key "check_config_user" is nil for node %v`, n.ID)
-		}
-		node, ok := nodeids[*fk]
+		fk := n.UserID
+		node, ok := nodeids[fk]
 		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "check_config_user" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "user_id" returned %v for node %v`, fk, n.ID)
 		}
 		assign(node, n)
 	}
@@ -532,7 +531,9 @@ func (uq *UserQuery) loadStatus(ctx context.Context, query *StatusQuery, nodes [
 			init(nodes[i])
 		}
 	}
-	query.withFKs = true
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(status.FieldUserID)
+	}
 	query.Where(predicate.Status(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(user.StatusColumn), fks...))
 	}))
@@ -541,13 +542,10 @@ func (uq *UserQuery) loadStatus(ctx context.Context, query *StatusQuery, nodes [
 		return err
 	}
 	for _, n := range neighbors {
-		fk := n.status_user
-		if fk == nil {
-			return fmt.Errorf(`foreign-key "status_user" is nil for node %v`, n.ID)
-		}
-		node, ok := nodeids[*fk]
+		fk := n.UserID
+		node, ok := nodeids[fk]
 		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "status_user" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "user_id" returned %v for node %v`, fk, n.ID)
 		}
 		assign(node, n)
 	}
@@ -563,7 +561,9 @@ func (uq *UserQuery) loadScorecaches(ctx context.Context, query *ScoreCacheQuery
 			init(nodes[i])
 		}
 	}
-	query.withFKs = true
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(scorecache.FieldUserID)
+	}
 	query.Where(predicate.ScoreCache(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(user.ScorecachesColumn), fks...))
 	}))
@@ -572,13 +572,10 @@ func (uq *UserQuery) loadScorecaches(ctx context.Context, query *ScoreCacheQuery
 		return err
 	}
 	for _, n := range neighbors {
-		fk := n.score_cache_user
-		if fk == nil {
-			return fmt.Errorf(`foreign-key "score_cache_user" is nil for node %v`, n.ID)
-		}
-		node, ok := nodeids[*fk]
+		fk := n.UserID
+		node, ok := nodeids[fk]
 		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "score_cache_user" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "user_id" returned %v for node %v`, fk, n.ID)
 		}
 		assign(node, n)
 	}

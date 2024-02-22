@@ -71,9 +71,24 @@ func Error(v string) predicate.Status {
 	return predicate.Status(sql.FieldEQ(FieldError, v))
 }
 
-// Weight applies equality check predicate on the "weight" field. It's identical to WeightEQ.
-func Weight(v int) predicate.Status {
-	return predicate.Status(sql.FieldEQ(FieldWeight, v))
+// Points applies equality check predicate on the "points" field. It's identical to PointsEQ.
+func Points(v int) predicate.Status {
+	return predicate.Status(sql.FieldEQ(FieldPoints, v))
+}
+
+// CheckID applies equality check predicate on the "check_id" field. It's identical to CheckIDEQ.
+func CheckID(v uuid.UUID) predicate.Status {
+	return predicate.Status(sql.FieldEQ(FieldCheckID, v))
+}
+
+// RoundID applies equality check predicate on the "round_id" field. It's identical to RoundIDEQ.
+func RoundID(v uuid.UUID) predicate.Status {
+	return predicate.Status(sql.FieldEQ(FieldRoundID, v))
+}
+
+// UserID applies equality check predicate on the "user_id" field. It's identical to UserIDEQ.
+func UserID(v uuid.UUID) predicate.Status {
+	return predicate.Status(sql.FieldEQ(FieldUserID, v))
 }
 
 // CreateTimeEQ applies the EQ predicate on the "create_time" field.
@@ -251,44 +266,104 @@ func StatusNotIn(vs ...Status) predicate.Status {
 	return predicate.Status(sql.FieldNotIn(FieldStatus, vs...))
 }
 
-// WeightEQ applies the EQ predicate on the "weight" field.
-func WeightEQ(v int) predicate.Status {
-	return predicate.Status(sql.FieldEQ(FieldWeight, v))
+// PointsEQ applies the EQ predicate on the "points" field.
+func PointsEQ(v int) predicate.Status {
+	return predicate.Status(sql.FieldEQ(FieldPoints, v))
 }
 
-// WeightNEQ applies the NEQ predicate on the "weight" field.
-func WeightNEQ(v int) predicate.Status {
-	return predicate.Status(sql.FieldNEQ(FieldWeight, v))
+// PointsNEQ applies the NEQ predicate on the "points" field.
+func PointsNEQ(v int) predicate.Status {
+	return predicate.Status(sql.FieldNEQ(FieldPoints, v))
 }
 
-// WeightIn applies the In predicate on the "weight" field.
-func WeightIn(vs ...int) predicate.Status {
-	return predicate.Status(sql.FieldIn(FieldWeight, vs...))
+// PointsIn applies the In predicate on the "points" field.
+func PointsIn(vs ...int) predicate.Status {
+	return predicate.Status(sql.FieldIn(FieldPoints, vs...))
 }
 
-// WeightNotIn applies the NotIn predicate on the "weight" field.
-func WeightNotIn(vs ...int) predicate.Status {
-	return predicate.Status(sql.FieldNotIn(FieldWeight, vs...))
+// PointsNotIn applies the NotIn predicate on the "points" field.
+func PointsNotIn(vs ...int) predicate.Status {
+	return predicate.Status(sql.FieldNotIn(FieldPoints, vs...))
 }
 
-// WeightGT applies the GT predicate on the "weight" field.
-func WeightGT(v int) predicate.Status {
-	return predicate.Status(sql.FieldGT(FieldWeight, v))
+// PointsGT applies the GT predicate on the "points" field.
+func PointsGT(v int) predicate.Status {
+	return predicate.Status(sql.FieldGT(FieldPoints, v))
 }
 
-// WeightGTE applies the GTE predicate on the "weight" field.
-func WeightGTE(v int) predicate.Status {
-	return predicate.Status(sql.FieldGTE(FieldWeight, v))
+// PointsGTE applies the GTE predicate on the "points" field.
+func PointsGTE(v int) predicate.Status {
+	return predicate.Status(sql.FieldGTE(FieldPoints, v))
 }
 
-// WeightLT applies the LT predicate on the "weight" field.
-func WeightLT(v int) predicate.Status {
-	return predicate.Status(sql.FieldLT(FieldWeight, v))
+// PointsLT applies the LT predicate on the "points" field.
+func PointsLT(v int) predicate.Status {
+	return predicate.Status(sql.FieldLT(FieldPoints, v))
 }
 
-// WeightLTE applies the LTE predicate on the "weight" field.
-func WeightLTE(v int) predicate.Status {
-	return predicate.Status(sql.FieldLTE(FieldWeight, v))
+// PointsLTE applies the LTE predicate on the "points" field.
+func PointsLTE(v int) predicate.Status {
+	return predicate.Status(sql.FieldLTE(FieldPoints, v))
+}
+
+// CheckIDEQ applies the EQ predicate on the "check_id" field.
+func CheckIDEQ(v uuid.UUID) predicate.Status {
+	return predicate.Status(sql.FieldEQ(FieldCheckID, v))
+}
+
+// CheckIDNEQ applies the NEQ predicate on the "check_id" field.
+func CheckIDNEQ(v uuid.UUID) predicate.Status {
+	return predicate.Status(sql.FieldNEQ(FieldCheckID, v))
+}
+
+// CheckIDIn applies the In predicate on the "check_id" field.
+func CheckIDIn(vs ...uuid.UUID) predicate.Status {
+	return predicate.Status(sql.FieldIn(FieldCheckID, vs...))
+}
+
+// CheckIDNotIn applies the NotIn predicate on the "check_id" field.
+func CheckIDNotIn(vs ...uuid.UUID) predicate.Status {
+	return predicate.Status(sql.FieldNotIn(FieldCheckID, vs...))
+}
+
+// RoundIDEQ applies the EQ predicate on the "round_id" field.
+func RoundIDEQ(v uuid.UUID) predicate.Status {
+	return predicate.Status(sql.FieldEQ(FieldRoundID, v))
+}
+
+// RoundIDNEQ applies the NEQ predicate on the "round_id" field.
+func RoundIDNEQ(v uuid.UUID) predicate.Status {
+	return predicate.Status(sql.FieldNEQ(FieldRoundID, v))
+}
+
+// RoundIDIn applies the In predicate on the "round_id" field.
+func RoundIDIn(vs ...uuid.UUID) predicate.Status {
+	return predicate.Status(sql.FieldIn(FieldRoundID, vs...))
+}
+
+// RoundIDNotIn applies the NotIn predicate on the "round_id" field.
+func RoundIDNotIn(vs ...uuid.UUID) predicate.Status {
+	return predicate.Status(sql.FieldNotIn(FieldRoundID, vs...))
+}
+
+// UserIDEQ applies the EQ predicate on the "user_id" field.
+func UserIDEQ(v uuid.UUID) predicate.Status {
+	return predicate.Status(sql.FieldEQ(FieldUserID, v))
+}
+
+// UserIDNEQ applies the NEQ predicate on the "user_id" field.
+func UserIDNEQ(v uuid.UUID) predicate.Status {
+	return predicate.Status(sql.FieldNEQ(FieldUserID, v))
+}
+
+// UserIDIn applies the In predicate on the "user_id" field.
+func UserIDIn(vs ...uuid.UUID) predicate.Status {
+	return predicate.Status(sql.FieldIn(FieldUserID, vs...))
+}
+
+// UserIDNotIn applies the NotIn predicate on the "user_id" field.
+func UserIDNotIn(vs ...uuid.UUID) predicate.Status {
+	return predicate.Status(sql.FieldNotIn(FieldUserID, vs...))
 }
 
 // HasCheck applies the HasEdge predicate on the "check" edge.

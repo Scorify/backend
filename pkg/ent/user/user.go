@@ -42,21 +42,21 @@ const (
 	// It exists in this package in order to avoid circular dependency with the "checkconfig" package.
 	ConfigsInverseTable = "check_configs"
 	// ConfigsColumn is the table column denoting the configs relation/edge.
-	ConfigsColumn = "check_config_user"
+	ConfigsColumn = "user_id"
 	// StatusTable is the table that holds the status relation/edge.
 	StatusTable = "status"
 	// StatusInverseTable is the table name for the Status entity.
 	// It exists in this package in order to avoid circular dependency with the "status" package.
 	StatusInverseTable = "status"
 	// StatusColumn is the table column denoting the status relation/edge.
-	StatusColumn = "status_user"
+	StatusColumn = "user_id"
 	// ScorecachesTable is the table that holds the scorecaches relation/edge.
 	ScorecachesTable = "score_caches"
 	// ScorecachesInverseTable is the table name for the ScoreCache entity.
 	// It exists in this package in order to avoid circular dependency with the "scorecache" package.
 	ScorecachesInverseTable = "score_caches"
 	// ScorecachesColumn is the table column denoting the scorecaches relation/edge.
-	ScorecachesColumn = "score_cache_user"
+	ScorecachesColumn = "user_id"
 )
 
 // Columns holds all SQL columns for user fields.

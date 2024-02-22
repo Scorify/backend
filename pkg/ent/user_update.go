@@ -124,14 +124,14 @@ func (uu *UserUpdate) AddStatus(s ...*Status) *UserUpdate {
 }
 
 // AddScorecachIDs adds the "scorecaches" edge to the ScoreCache entity by IDs.
-func (uu *UserUpdate) AddScorecachIDs(ids ...int) *UserUpdate {
+func (uu *UserUpdate) AddScorecachIDs(ids ...uuid.UUID) *UserUpdate {
 	uu.mutation.AddScorecachIDs(ids...)
 	return uu
 }
 
 // AddScorecaches adds the "scorecaches" edges to the ScoreCache entity.
 func (uu *UserUpdate) AddScorecaches(s ...*ScoreCache) *UserUpdate {
-	ids := make([]int, len(s))
+	ids := make([]uuid.UUID, len(s))
 	for i := range s {
 		ids[i] = s[i].ID
 	}
@@ -192,14 +192,14 @@ func (uu *UserUpdate) ClearScorecaches() *UserUpdate {
 }
 
 // RemoveScorecachIDs removes the "scorecaches" edge to ScoreCache entities by IDs.
-func (uu *UserUpdate) RemoveScorecachIDs(ids ...int) *UserUpdate {
+func (uu *UserUpdate) RemoveScorecachIDs(ids ...uuid.UUID) *UserUpdate {
 	uu.mutation.RemoveScorecachIDs(ids...)
 	return uu
 }
 
 // RemoveScorecaches removes "scorecaches" edges to ScoreCache entities.
 func (uu *UserUpdate) RemoveScorecaches(s ...*ScoreCache) *UserUpdate {
-	ids := make([]int, len(s))
+	ids := make([]uuid.UUID, len(s))
 	for i := range s {
 		ids[i] = s[i].ID
 	}
@@ -390,7 +390,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{user.ScorecachesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(scorecache.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(scorecache.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -403,7 +403,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{user.ScorecachesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(scorecache.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(scorecache.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -419,7 +419,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{user.ScorecachesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(scorecache.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(scorecache.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -539,14 +539,14 @@ func (uuo *UserUpdateOne) AddStatus(s ...*Status) *UserUpdateOne {
 }
 
 // AddScorecachIDs adds the "scorecaches" edge to the ScoreCache entity by IDs.
-func (uuo *UserUpdateOne) AddScorecachIDs(ids ...int) *UserUpdateOne {
+func (uuo *UserUpdateOne) AddScorecachIDs(ids ...uuid.UUID) *UserUpdateOne {
 	uuo.mutation.AddScorecachIDs(ids...)
 	return uuo
 }
 
 // AddScorecaches adds the "scorecaches" edges to the ScoreCache entity.
 func (uuo *UserUpdateOne) AddScorecaches(s ...*ScoreCache) *UserUpdateOne {
-	ids := make([]int, len(s))
+	ids := make([]uuid.UUID, len(s))
 	for i := range s {
 		ids[i] = s[i].ID
 	}
@@ -607,14 +607,14 @@ func (uuo *UserUpdateOne) ClearScorecaches() *UserUpdateOne {
 }
 
 // RemoveScorecachIDs removes the "scorecaches" edge to ScoreCache entities by IDs.
-func (uuo *UserUpdateOne) RemoveScorecachIDs(ids ...int) *UserUpdateOne {
+func (uuo *UserUpdateOne) RemoveScorecachIDs(ids ...uuid.UUID) *UserUpdateOne {
 	uuo.mutation.RemoveScorecachIDs(ids...)
 	return uuo
 }
 
 // RemoveScorecaches removes "scorecaches" edges to ScoreCache entities.
 func (uuo *UserUpdateOne) RemoveScorecaches(s ...*ScoreCache) *UserUpdateOne {
-	ids := make([]int, len(s))
+	ids := make([]uuid.UUID, len(s))
 	for i := range s {
 		ids[i] = s[i].ID
 	}
@@ -835,7 +835,7 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Columns: []string{user.ScorecachesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(scorecache.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(scorecache.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -848,7 +848,7 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Columns: []string{user.ScorecachesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(scorecache.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(scorecache.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -864,7 +864,7 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Columns: []string{user.ScorecachesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(scorecache.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(scorecache.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

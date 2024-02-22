@@ -24,8 +24,14 @@ const (
 	FieldError = "error"
 	// FieldStatus holds the string denoting the status field in the database.
 	FieldStatus = "status"
-	// FieldWeight holds the string denoting the weight field in the database.
-	FieldWeight = "weight"
+	// FieldPoints holds the string denoting the points field in the database.
+	FieldPoints = "points"
+	// FieldCheckID holds the string denoting the check_id field in the database.
+	FieldCheckID = "check_id"
+	// FieldRoundID holds the string denoting the round_id field in the database.
+	FieldRoundID = "round_id"
+	// FieldUserID holds the string denoting the user_id field in the database.
+	FieldUserID = "user_id"
 	// EdgeCheck holds the string denoting the check edge name in mutations.
 	EdgeCheck = "check"
 	// EdgeRound holds the string denoting the round edge name in mutations.
@@ -40,21 +46,21 @@ const (
 	// It exists in this package in order to avoid circular dependency with the "check" package.
 	CheckInverseTable = "checks"
 	// CheckColumn is the table column denoting the check relation/edge.
-	CheckColumn = "status_check"
+	CheckColumn = "check_id"
 	// RoundTable is the table that holds the round relation/edge.
 	RoundTable = "status"
 	// RoundInverseTable is the table name for the Round entity.
 	// It exists in this package in order to avoid circular dependency with the "round" package.
 	RoundInverseTable = "rounds"
 	// RoundColumn is the table column denoting the round relation/edge.
-	RoundColumn = "status_round"
+	RoundColumn = "round_id"
 	// UserTable is the table that holds the user relation/edge.
 	UserTable = "status"
 	// UserInverseTable is the table name for the User entity.
 	// It exists in this package in order to avoid circular dependency with the "user" package.
 	UserInverseTable = "users"
 	// UserColumn is the table column denoting the user relation/edge.
-	UserColumn = "status_user"
+	UserColumn = "user_id"
 )
 
 // Columns holds all SQL columns for status fields.
@@ -64,26 +70,16 @@ var Columns = []string{
 	FieldUpdateTime,
 	FieldError,
 	FieldStatus,
-	FieldWeight,
-}
-
-// ForeignKeys holds the SQL foreign-keys that are owned by the "status"
-// table and are not defined as standalone fields in the schema.
-var ForeignKeys = []string{
-	"status_check",
-	"status_round",
-	"status_user",
+	FieldPoints,
+	FieldCheckID,
+	FieldRoundID,
+	FieldUserID,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {
 	for i := range Columns {
 		if column == Columns[i] {
-			return true
-		}
-	}
-	for i := range ForeignKeys {
-		if column == ForeignKeys[i] {
 			return true
 		}
 	}
@@ -97,6 +93,8 @@ var (
 	DefaultUpdateTime func() time.Time
 	// UpdateDefaultUpdateTime holds the default value on update for the "update_time" field.
 	UpdateDefaultUpdateTime func() time.Time
+	// PointsValidator is a validator for the "points" field. It is called by the builders before save.
+	PointsValidator func(int) error
 	// DefaultID holds the default value on creation for the "id" field.
 	DefaultID func() uuid.UUID
 )
@@ -156,9 +154,24 @@ func ByStatus(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldStatus, opts...).ToFunc()
 }
 
-// ByWeight orders the results by the weight field.
-func ByWeight(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldWeight, opts...).ToFunc()
+// ByPoints orders the results by the points field.
+func ByPoints(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPoints, opts...).ToFunc()
+}
+
+// ByCheckID orders the results by the check_id field.
+func ByCheckID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCheckID, opts...).ToFunc()
+}
+
+// ByRoundID orders the results by the round_id field.
+func ByRoundID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRoundID, opts...).ToFunc()
+}
+
+// ByUserID orders the results by the user_id field.
+func ByUserID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldUserID, opts...).ToFunc()
 }
 
 // ByCheckField orders the results by check field.

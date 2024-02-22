@@ -57,6 +57,18 @@ func (ccc *CheckConfigCreate) SetConfig(m map[string]interface{}) *CheckConfigCr
 	return ccc
 }
 
+// SetCheckID sets the "check_id" field.
+func (ccc *CheckConfigCreate) SetCheckID(u uuid.UUID) *CheckConfigCreate {
+	ccc.mutation.SetCheckID(u)
+	return ccc
+}
+
+// SetUserID sets the "user_id" field.
+func (ccc *CheckConfigCreate) SetUserID(u uuid.UUID) *CheckConfigCreate {
+	ccc.mutation.SetUserID(u)
+	return ccc
+}
+
 // SetID sets the "id" field.
 func (ccc *CheckConfigCreate) SetID(u uuid.UUID) *CheckConfigCreate {
 	ccc.mutation.SetID(u)
@@ -71,21 +83,9 @@ func (ccc *CheckConfigCreate) SetNillableID(u *uuid.UUID) *CheckConfigCreate {
 	return ccc
 }
 
-// SetCheckID sets the "check" edge to the Check entity by ID.
-func (ccc *CheckConfigCreate) SetCheckID(id uuid.UUID) *CheckConfigCreate {
-	ccc.mutation.SetCheckID(id)
-	return ccc
-}
-
 // SetCheck sets the "check" edge to the Check entity.
 func (ccc *CheckConfigCreate) SetCheck(c *Check) *CheckConfigCreate {
 	return ccc.SetCheckID(c.ID)
-}
-
-// SetUserID sets the "user" edge to the User entity by ID.
-func (ccc *CheckConfigCreate) SetUserID(id uuid.UUID) *CheckConfigCreate {
-	ccc.mutation.SetUserID(id)
-	return ccc
 }
 
 // SetUser sets the "user" edge to the User entity.
@@ -154,6 +154,12 @@ func (ccc *CheckConfigCreate) check() error {
 		return &ValidationError{Name: "config", err: errors.New(`ent: missing required field "CheckConfig.config"`)}
 	}
 	if _, ok := ccc.mutation.CheckID(); !ok {
+		return &ValidationError{Name: "check_id", err: errors.New(`ent: missing required field "CheckConfig.check_id"`)}
+	}
+	if _, ok := ccc.mutation.UserID(); !ok {
+		return &ValidationError{Name: "user_id", err: errors.New(`ent: missing required field "CheckConfig.user_id"`)}
+	}
+	if _, ok := ccc.mutation.CheckID(); !ok {
 		return &ValidationError{Name: "check", err: errors.New(`ent: missing required edge "CheckConfig.check"`)}
 	}
 	if _, ok := ccc.mutation.UserID(); !ok {
@@ -220,7 +226,7 @@ func (ccc *CheckConfigCreate) createSpec() (*CheckConfig, *sqlgraph.CreateSpec) 
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.check_config_check = &nodes[0]
+		_node.CheckID = nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := ccc.mutation.UserIDs(); len(nodes) > 0 {
@@ -237,7 +243,7 @@ func (ccc *CheckConfigCreate) createSpec() (*CheckConfig, *sqlgraph.CreateSpec) 
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.check_config_user = &nodes[0]
+		_node.UserID = nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

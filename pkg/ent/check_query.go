@@ -457,7 +457,9 @@ func (cq *CheckQuery) loadConfigs(ctx context.Context, query *CheckConfigQuery, 
 			init(nodes[i])
 		}
 	}
-	query.withFKs = true
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(checkconfig.FieldCheckID)
+	}
 	query.Where(predicate.CheckConfig(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(check.ConfigsColumn), fks...))
 	}))
@@ -466,13 +468,10 @@ func (cq *CheckQuery) loadConfigs(ctx context.Context, query *CheckConfigQuery, 
 		return err
 	}
 	for _, n := range neighbors {
-		fk := n.check_config_check
-		if fk == nil {
-			return fmt.Errorf(`foreign-key "check_config_check" is nil for node %v`, n.ID)
-		}
-		node, ok := nodeids[*fk]
+		fk := n.CheckID
+		node, ok := nodeids[fk]
 		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "check_config_check" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "check_id" returned %v for node %v`, fk, n.ID)
 		}
 		assign(node, n)
 	}
@@ -488,7 +487,9 @@ func (cq *CheckQuery) loadStatuses(ctx context.Context, query *StatusQuery, node
 			init(nodes[i])
 		}
 	}
-	query.withFKs = true
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(status.FieldCheckID)
+	}
 	query.Where(predicate.Status(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(check.StatusesColumn), fks...))
 	}))
@@ -497,13 +498,10 @@ func (cq *CheckQuery) loadStatuses(ctx context.Context, query *StatusQuery, node
 		return err
 	}
 	for _, n := range neighbors {
-		fk := n.status_check
-		if fk == nil {
-			return fmt.Errorf(`foreign-key "status_check" is nil for node %v`, n.ID)
-		}
-		node, ok := nodeids[*fk]
+		fk := n.CheckID
+		node, ok := nodeids[fk]
 		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "status_check" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "check_id" returned %v for node %v`, fk, n.ID)
 		}
 		assign(node, n)
 	}

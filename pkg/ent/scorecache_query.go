@@ -26,7 +26,6 @@ type ScoreCacheQuery struct {
 	predicates []predicate.ScoreCache
 	withRound  *RoundQuery
 	withUser   *UserQuery
-	withFKs    bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -131,8 +130,8 @@ func (scq *ScoreCacheQuery) FirstX(ctx context.Context) *ScoreCache {
 
 // FirstID returns the first ScoreCache ID from the query.
 // Returns a *NotFoundError when no ScoreCache ID was found.
-func (scq *ScoreCacheQuery) FirstID(ctx context.Context) (id int, err error) {
-	var ids []int
+func (scq *ScoreCacheQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
+	var ids []uuid.UUID
 	if ids, err = scq.Limit(1).IDs(setContextOp(ctx, scq.ctx, "FirstID")); err != nil {
 		return
 	}
@@ -144,7 +143,7 @@ func (scq *ScoreCacheQuery) FirstID(ctx context.Context) (id int, err error) {
 }
 
 // FirstIDX is like FirstID, but panics if an error occurs.
-func (scq *ScoreCacheQuery) FirstIDX(ctx context.Context) int {
+func (scq *ScoreCacheQuery) FirstIDX(ctx context.Context) uuid.UUID {
 	id, err := scq.FirstID(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -182,8 +181,8 @@ func (scq *ScoreCacheQuery) OnlyX(ctx context.Context) *ScoreCache {
 // OnlyID is like Only, but returns the only ScoreCache ID in the query.
 // Returns a *NotSingularError when more than one ScoreCache ID is found.
 // Returns a *NotFoundError when no entities are found.
-func (scq *ScoreCacheQuery) OnlyID(ctx context.Context) (id int, err error) {
-	var ids []int
+func (scq *ScoreCacheQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
+	var ids []uuid.UUID
 	if ids, err = scq.Limit(2).IDs(setContextOp(ctx, scq.ctx, "OnlyID")); err != nil {
 		return
 	}
@@ -199,7 +198,7 @@ func (scq *ScoreCacheQuery) OnlyID(ctx context.Context) (id int, err error) {
 }
 
 // OnlyIDX is like OnlyID, but panics if an error occurs.
-func (scq *ScoreCacheQuery) OnlyIDX(ctx context.Context) int {
+func (scq *ScoreCacheQuery) OnlyIDX(ctx context.Context) uuid.UUID {
 	id, err := scq.OnlyID(ctx)
 	if err != nil {
 		panic(err)
@@ -227,7 +226,7 @@ func (scq *ScoreCacheQuery) AllX(ctx context.Context) []*ScoreCache {
 }
 
 // IDs executes the query and returns a list of ScoreCache IDs.
-func (scq *ScoreCacheQuery) IDs(ctx context.Context) (ids []int, err error) {
+func (scq *ScoreCacheQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
 	if scq.ctx.Unique == nil && scq.path != nil {
 		scq.Unique(true)
 	}
@@ -239,7 +238,7 @@ func (scq *ScoreCacheQuery) IDs(ctx context.Context) (ids []int, err error) {
 }
 
 // IDsX is like IDs, but panics if an error occurs.
-func (scq *ScoreCacheQuery) IDsX(ctx context.Context) []int {
+func (scq *ScoreCacheQuery) IDsX(ctx context.Context) []uuid.UUID {
 	ids, err := scq.IDs(ctx)
 	if err != nil {
 		panic(err)
@@ -406,19 +405,12 @@ func (scq *ScoreCacheQuery) prepareQuery(ctx context.Context) error {
 func (scq *ScoreCacheQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*ScoreCache, error) {
 	var (
 		nodes       = []*ScoreCache{}
-		withFKs     = scq.withFKs
 		_spec       = scq.querySpec()
 		loadedTypes = [2]bool{
 			scq.withRound != nil,
 			scq.withUser != nil,
 		}
 	)
-	if scq.withRound != nil || scq.withUser != nil {
-		withFKs = true
-	}
-	if withFKs {
-		_spec.Node.Columns = append(_spec.Node.Columns, scorecache.ForeignKeys...)
-	}
 	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*ScoreCache).scanValues(nil, columns)
 	}
@@ -456,10 +448,7 @@ func (scq *ScoreCacheQuery) loadRound(ctx context.Context, query *RoundQuery, no
 	ids := make([]uuid.UUID, 0, len(nodes))
 	nodeids := make(map[uuid.UUID][]*ScoreCache)
 	for i := range nodes {
-		if nodes[i].score_cache_round == nil {
-			continue
-		}
-		fk := *nodes[i].score_cache_round
+		fk := nodes[i].RoundID
 		if _, ok := nodeids[fk]; !ok {
 			ids = append(ids, fk)
 		}
@@ -476,7 +465,7 @@ func (scq *ScoreCacheQuery) loadRound(ctx context.Context, query *RoundQuery, no
 	for _, n := range neighbors {
 		nodes, ok := nodeids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "score_cache_round" returned %v`, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "round_id" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)
@@ -488,10 +477,7 @@ func (scq *ScoreCacheQuery) loadUser(ctx context.Context, query *UserQuery, node
 	ids := make([]uuid.UUID, 0, len(nodes))
 	nodeids := make(map[uuid.UUID][]*ScoreCache)
 	for i := range nodes {
-		if nodes[i].score_cache_user == nil {
-			continue
-		}
-		fk := *nodes[i].score_cache_user
+		fk := nodes[i].UserID
 		if _, ok := nodeids[fk]; !ok {
 			ids = append(ids, fk)
 		}
@@ -508,7 +494,7 @@ func (scq *ScoreCacheQuery) loadUser(ctx context.Context, query *UserQuery, node
 	for _, n := range neighbors {
 		nodes, ok := nodeids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "score_cache_user" returned %v`, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "user_id" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)
@@ -527,7 +513,7 @@ func (scq *ScoreCacheQuery) sqlCount(ctx context.Context) (int, error) {
 }
 
 func (scq *ScoreCacheQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := sqlgraph.NewQuerySpec(scorecache.Table, scorecache.Columns, sqlgraph.NewFieldSpec(scorecache.FieldID, field.TypeInt))
+	_spec := sqlgraph.NewQuerySpec(scorecache.Table, scorecache.Columns, sqlgraph.NewFieldSpec(scorecache.FieldID, field.TypeUUID))
 	_spec.From = scq.sql
 	if unique := scq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
@@ -541,6 +527,12 @@ func (scq *ScoreCacheQuery) querySpec() *sqlgraph.QuerySpec {
 			if fields[i] != scorecache.FieldID {
 				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 			}
+		}
+		if scq.withRound != nil {
+			_spec.Node.AddColumnOnce(scorecache.FieldRoundID)
+		}
+		if scq.withUser != nil {
+			_spec.Node.AddColumnOnce(scorecache.FieldUserID)
 		}
 	}
 	if ps := scq.predicates; len(ps) > 0 {

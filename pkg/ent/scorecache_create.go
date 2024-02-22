@@ -57,21 +57,35 @@ func (scc *ScoreCacheCreate) SetPoints(i int) *ScoreCacheCreate {
 	return scc
 }
 
-// SetRoundID sets the "round" edge to the Round entity by ID.
-func (scc *ScoreCacheCreate) SetRoundID(id uuid.UUID) *ScoreCacheCreate {
-	scc.mutation.SetRoundID(id)
+// SetRoundID sets the "round_id" field.
+func (scc *ScoreCacheCreate) SetRoundID(u uuid.UUID) *ScoreCacheCreate {
+	scc.mutation.SetRoundID(u)
+	return scc
+}
+
+// SetUserID sets the "user_id" field.
+func (scc *ScoreCacheCreate) SetUserID(u uuid.UUID) *ScoreCacheCreate {
+	scc.mutation.SetUserID(u)
+	return scc
+}
+
+// SetID sets the "id" field.
+func (scc *ScoreCacheCreate) SetID(u uuid.UUID) *ScoreCacheCreate {
+	scc.mutation.SetID(u)
+	return scc
+}
+
+// SetNillableID sets the "id" field if the given value is not nil.
+func (scc *ScoreCacheCreate) SetNillableID(u *uuid.UUID) *ScoreCacheCreate {
+	if u != nil {
+		scc.SetID(*u)
+	}
 	return scc
 }
 
 // SetRound sets the "round" edge to the Round entity.
 func (scc *ScoreCacheCreate) SetRound(r *Round) *ScoreCacheCreate {
 	return scc.SetRoundID(r.ID)
-}
-
-// SetUserID sets the "user" edge to the User entity by ID.
-func (scc *ScoreCacheCreate) SetUserID(id uuid.UUID) *ScoreCacheCreate {
-	scc.mutation.SetUserID(id)
-	return scc
 }
 
 // SetUser sets the "user" edge to the User entity.
@@ -122,6 +136,10 @@ func (scc *ScoreCacheCreate) defaults() {
 		v := scorecache.DefaultUpdateTime()
 		scc.mutation.SetUpdateTime(v)
 	}
+	if _, ok := scc.mutation.ID(); !ok {
+		v := scorecache.DefaultID()
+		scc.mutation.SetID(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -139,6 +157,12 @@ func (scc *ScoreCacheCreate) check() error {
 		if err := scorecache.PointsValidator(v); err != nil {
 			return &ValidationError{Name: "points", err: fmt.Errorf(`ent: validator failed for field "ScoreCache.points": %w`, err)}
 		}
+	}
+	if _, ok := scc.mutation.RoundID(); !ok {
+		return &ValidationError{Name: "round_id", err: errors.New(`ent: missing required field "ScoreCache.round_id"`)}
+	}
+	if _, ok := scc.mutation.UserID(); !ok {
+		return &ValidationError{Name: "user_id", err: errors.New(`ent: missing required field "ScoreCache.user_id"`)}
 	}
 	if _, ok := scc.mutation.RoundID(); !ok {
 		return &ValidationError{Name: "round", err: errors.New(`ent: missing required edge "ScoreCache.round"`)}
@@ -160,8 +184,13 @@ func (scc *ScoreCacheCreate) sqlSave(ctx context.Context) (*ScoreCache, error) {
 		}
 		return nil, err
 	}
-	id := _spec.ID.Value.(int64)
-	_node.ID = int(id)
+	if _spec.ID.Value != nil {
+		if id, ok := _spec.ID.Value.(*uuid.UUID); ok {
+			_node.ID = *id
+		} else if err := _node.ID.Scan(_spec.ID.Value); err != nil {
+			return nil, err
+		}
+	}
 	scc.mutation.id = &_node.ID
 	scc.mutation.done = true
 	return _node, nil
@@ -170,8 +199,12 @@ func (scc *ScoreCacheCreate) sqlSave(ctx context.Context) (*ScoreCache, error) {
 func (scc *ScoreCacheCreate) createSpec() (*ScoreCache, *sqlgraph.CreateSpec) {
 	var (
 		_node = &ScoreCache{config: scc.config}
-		_spec = sqlgraph.NewCreateSpec(scorecache.Table, sqlgraph.NewFieldSpec(scorecache.FieldID, field.TypeInt))
+		_spec = sqlgraph.NewCreateSpec(scorecache.Table, sqlgraph.NewFieldSpec(scorecache.FieldID, field.TypeUUID))
 	)
+	if id, ok := scc.mutation.ID(); ok {
+		_node.ID = id
+		_spec.ID.Value = &id
+	}
 	if value, ok := scc.mutation.CreateTime(); ok {
 		_spec.SetField(scorecache.FieldCreateTime, field.TypeTime, value)
 		_node.CreateTime = value
@@ -198,7 +231,7 @@ func (scc *ScoreCacheCreate) createSpec() (*ScoreCache, *sqlgraph.CreateSpec) {
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.score_cache_round = &nodes[0]
+		_node.RoundID = nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := scc.mutation.UserIDs(); len(nodes) > 0 {
@@ -215,7 +248,7 @@ func (scc *ScoreCacheCreate) createSpec() (*ScoreCache, *sqlgraph.CreateSpec) {
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.score_cache_user = &nodes[0]
+		_node.UserID = nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
@@ -266,10 +299,6 @@ func (sccb *ScoreCacheCreateBulk) Save(ctx context.Context) ([]*ScoreCache, erro
 					return nil, err
 				}
 				mutation.id = &nodes[i].ID
-				if specs[i].ID.Value != nil {
-					id := specs[i].ID.Value.(int64)
-					nodes[i].ID = int(id)
-				}
 				mutation.done = true
 				return nodes[i], nil
 			})

@@ -19,19 +19,22 @@ import (
 type ScoreCache struct {
 	config `json:"-"`
 	// ID of the ent.
-	ID int `json:"id,omitempty"`
+	// The uuid of a score cache
+	ID uuid.UUID `json:"id"`
 	// CreateTime holds the value of the "create_time" field.
 	CreateTime time.Time `json:"create_time,omitempty"`
 	// UpdateTime holds the value of the "update_time" field.
 	UpdateTime time.Time `json:"update_time,omitempty"`
 	// The points of the round
 	Points int `json:"points"`
+	// The uuid of a round
+	RoundID uuid.UUID `json:"round_id"`
+	// The uuid of a user
+	UserID uuid.UUID `json:"user_id"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the ScoreCacheQuery when eager-loading is set.
-	Edges             ScoreCacheEdges `json:"edges"`
-	score_cache_round *uuid.UUID
-	score_cache_user  *uuid.UUID
-	selectValues      sql.SelectValues
+	Edges        ScoreCacheEdges `json:"edges"`
+	selectValues sql.SelectValues
 }
 
 // ScoreCacheEdges holds the relations/edges for other nodes in the graph.
@@ -76,14 +79,12 @@ func (*ScoreCache) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case scorecache.FieldID, scorecache.FieldPoints:
+		case scorecache.FieldPoints:
 			values[i] = new(sql.NullInt64)
 		case scorecache.FieldCreateTime, scorecache.FieldUpdateTime:
 			values[i] = new(sql.NullTime)
-		case scorecache.ForeignKeys[0]: // score_cache_round
-			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
-		case scorecache.ForeignKeys[1]: // score_cache_user
-			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
+		case scorecache.FieldID, scorecache.FieldRoundID, scorecache.FieldUserID:
+			values[i] = new(uuid.UUID)
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -100,11 +101,11 @@ func (sc *ScoreCache) assignValues(columns []string, values []any) error {
 	for i := range columns {
 		switch columns[i] {
 		case scorecache.FieldID:
-			value, ok := values[i].(*sql.NullInt64)
-			if !ok {
-				return fmt.Errorf("unexpected type %T for field id", value)
+			if value, ok := values[i].(*uuid.UUID); !ok {
+				return fmt.Errorf("unexpected type %T for field id", values[i])
+			} else if value != nil {
+				sc.ID = *value
 			}
-			sc.ID = int(value.Int64)
 		case scorecache.FieldCreateTime:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field create_time", values[i])
@@ -123,19 +124,17 @@ func (sc *ScoreCache) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				sc.Points = int(value.Int64)
 			}
-		case scorecache.ForeignKeys[0]:
-			if value, ok := values[i].(*sql.NullScanner); !ok {
-				return fmt.Errorf("unexpected type %T for field score_cache_round", values[i])
-			} else if value.Valid {
-				sc.score_cache_round = new(uuid.UUID)
-				*sc.score_cache_round = *value.S.(*uuid.UUID)
+		case scorecache.FieldRoundID:
+			if value, ok := values[i].(*uuid.UUID); !ok {
+				return fmt.Errorf("unexpected type %T for field round_id", values[i])
+			} else if value != nil {
+				sc.RoundID = *value
 			}
-		case scorecache.ForeignKeys[1]:
-			if value, ok := values[i].(*sql.NullScanner); !ok {
-				return fmt.Errorf("unexpected type %T for field score_cache_user", values[i])
-			} else if value.Valid {
-				sc.score_cache_user = new(uuid.UUID)
-				*sc.score_cache_user = *value.S.(*uuid.UUID)
+		case scorecache.FieldUserID:
+			if value, ok := values[i].(*uuid.UUID); !ok {
+				return fmt.Errorf("unexpected type %T for field user_id", values[i])
+			} else if value != nil {
+				sc.UserID = *value
 			}
 		default:
 			sc.selectValues.Set(columns[i], values[i])
@@ -191,6 +190,12 @@ func (sc *ScoreCache) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("points=")
 	builder.WriteString(fmt.Sprintf("%v", sc.Points))
+	builder.WriteString(", ")
+	builder.WriteString("round_id=")
+	builder.WriteString(fmt.Sprintf("%v", sc.RoundID))
+	builder.WriteString(", ")
+	builder.WriteString("user_id=")
+	builder.WriteString(fmt.Sprintf("%v", sc.UserID))
 	builder.WriteByte(')')
 	return builder.String()
 }

@@ -116,9 +116,13 @@ func init() {
 	// scorecache.UpdateDefaultUpdateTime holds the default value on update for the update_time field.
 	scorecache.UpdateDefaultUpdateTime = scorecacheDescUpdateTime.UpdateDefault.(func() time.Time)
 	// scorecacheDescPoints is the schema descriptor for points field.
-	scorecacheDescPoints := scorecacheFields[0].Descriptor()
+	scorecacheDescPoints := scorecacheFields[1].Descriptor()
 	// scorecache.PointsValidator is a validator for the "points" field. It is called by the builders before save.
 	scorecache.PointsValidator = scorecacheDescPoints.Validators[0].(func(int) error)
+	// scorecacheDescID is the schema descriptor for id field.
+	scorecacheDescID := scorecacheFields[0].Descriptor()
+	// scorecache.DefaultID holds the default value on creation for the id field.
+	scorecache.DefaultID = scorecacheDescID.Default.(func() uuid.UUID)
 	statusMixin := schema.Status{}.Mixin()
 	statusMixinFields0 := statusMixin[0].Fields()
 	_ = statusMixinFields0
@@ -134,6 +138,10 @@ func init() {
 	status.DefaultUpdateTime = statusDescUpdateTime.Default.(func() time.Time)
 	// status.UpdateDefaultUpdateTime holds the default value on update for the update_time field.
 	status.UpdateDefaultUpdateTime = statusDescUpdateTime.UpdateDefault.(func() time.Time)
+	// statusDescPoints is the schema descriptor for points field.
+	statusDescPoints := statusFields[3].Descriptor()
+	// status.PointsValidator is a validator for the "points" field. It is called by the builders before save.
+	status.PointsValidator = statusDescPoints.Validators[0].(func(int) error)
 	// statusDescID is the schema descriptor for id field.
 	statusDescID := statusFields[0].Descriptor()
 	// status.DefaultID holds the default value on creation for the id field.

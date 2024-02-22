@@ -802,7 +802,7 @@ func (c *ScoreCacheClient) UpdateOne(sc *ScoreCache) *ScoreCacheUpdateOne {
 }
 
 // UpdateOneID returns an update builder for the given id.
-func (c *ScoreCacheClient) UpdateOneID(id int) *ScoreCacheUpdateOne {
+func (c *ScoreCacheClient) UpdateOneID(id uuid.UUID) *ScoreCacheUpdateOne {
 	mutation := newScoreCacheMutation(c.config, OpUpdateOne, withScoreCacheID(id))
 	return &ScoreCacheUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
@@ -819,7 +819,7 @@ func (c *ScoreCacheClient) DeleteOne(sc *ScoreCache) *ScoreCacheDeleteOne {
 }
 
 // DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *ScoreCacheClient) DeleteOneID(id int) *ScoreCacheDeleteOne {
+func (c *ScoreCacheClient) DeleteOneID(id uuid.UUID) *ScoreCacheDeleteOne {
 	builder := c.Delete().Where(scorecache.ID(id))
 	builder.mutation.id = &id
 	builder.mutation.op = OpDeleteOne
@@ -836,12 +836,12 @@ func (c *ScoreCacheClient) Query() *ScoreCacheQuery {
 }
 
 // Get returns a ScoreCache entity by its id.
-func (c *ScoreCacheClient) Get(ctx context.Context, id int) (*ScoreCache, error) {
+func (c *ScoreCacheClient) Get(ctx context.Context, id uuid.UUID) (*ScoreCache, error) {
 	return c.Query().Where(scorecache.ID(id)).Only(ctx)
 }
 
 // GetX is like Get, but panics if an error occurs.
-func (c *ScoreCacheClient) GetX(ctx context.Context, id int) *ScoreCache {
+func (c *ScoreCacheClient) GetX(ctx context.Context, id uuid.UUID) *ScoreCache {
 	obj, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)

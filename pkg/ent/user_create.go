@@ -137,14 +137,14 @@ func (uc *UserCreate) AddStatus(s ...*Status) *UserCreate {
 }
 
 // AddScorecachIDs adds the "scorecaches" edge to the ScoreCache entity by IDs.
-func (uc *UserCreate) AddScorecachIDs(ids ...int) *UserCreate {
+func (uc *UserCreate) AddScorecachIDs(ids ...uuid.UUID) *UserCreate {
 	uc.mutation.AddScorecachIDs(ids...)
 	return uc
 }
 
 // AddScorecaches adds the "scorecaches" edges to the ScoreCache entity.
 func (uc *UserCreate) AddScorecaches(s ...*ScoreCache) *UserCreate {
-	ids := make([]int, len(s))
+	ids := make([]uuid.UUID, len(s))
 	for i := range s {
 		ids[i] = s[i].ID
 	}
@@ -340,7 +340,7 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 			Columns: []string{user.ScorecachesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(scorecache.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(scorecache.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

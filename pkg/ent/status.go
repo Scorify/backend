@@ -30,14 +30,17 @@ type Status struct {
 	Error string `json:"error"`
 	// The status of the status
 	Status status.Status `json:"status"`
-	// Weight holds the value of the "weight" field.
-	Weight int `json:"weight,omitempty"`
+	// The points of the status
+	Points int `json:"points"`
+	// The uuid of a check
+	CheckID uuid.UUID `json:"check_id"`
+	// The uuid of a round
+	RoundID uuid.UUID `json:"round_id"`
+	// The uuid of a user
+	UserID uuid.UUID `json:"user_id"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the StatusQuery when eager-loading is set.
 	Edges        StatusEdges `json:"edges"`
-	status_check *uuid.UUID
-	status_round *uuid.UUID
-	status_user  *uuid.UUID
 	selectValues sql.SelectValues
 }
 
@@ -98,20 +101,14 @@ func (*Status) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case status.FieldWeight:
+		case status.FieldPoints:
 			values[i] = new(sql.NullInt64)
 		case status.FieldError, status.FieldStatus:
 			values[i] = new(sql.NullString)
 		case status.FieldCreateTime, status.FieldUpdateTime:
 			values[i] = new(sql.NullTime)
-		case status.FieldID:
+		case status.FieldID, status.FieldCheckID, status.FieldRoundID, status.FieldUserID:
 			values[i] = new(uuid.UUID)
-		case status.ForeignKeys[0]: // status_check
-			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
-		case status.ForeignKeys[1]: // status_round
-			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
-		case status.ForeignKeys[2]: // status_user
-			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -157,32 +154,29 @@ func (s *Status) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				s.Status = status.Status(value.String)
 			}
-		case status.FieldWeight:
+		case status.FieldPoints:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field weight", values[i])
+				return fmt.Errorf("unexpected type %T for field points", values[i])
 			} else if value.Valid {
-				s.Weight = int(value.Int64)
+				s.Points = int(value.Int64)
 			}
-		case status.ForeignKeys[0]:
-			if value, ok := values[i].(*sql.NullScanner); !ok {
-				return fmt.Errorf("unexpected type %T for field status_check", values[i])
-			} else if value.Valid {
-				s.status_check = new(uuid.UUID)
-				*s.status_check = *value.S.(*uuid.UUID)
+		case status.FieldCheckID:
+			if value, ok := values[i].(*uuid.UUID); !ok {
+				return fmt.Errorf("unexpected type %T for field check_id", values[i])
+			} else if value != nil {
+				s.CheckID = *value
 			}
-		case status.ForeignKeys[1]:
-			if value, ok := values[i].(*sql.NullScanner); !ok {
-				return fmt.Errorf("unexpected type %T for field status_round", values[i])
-			} else if value.Valid {
-				s.status_round = new(uuid.UUID)
-				*s.status_round = *value.S.(*uuid.UUID)
+		case status.FieldRoundID:
+			if value, ok := values[i].(*uuid.UUID); !ok {
+				return fmt.Errorf("unexpected type %T for field round_id", values[i])
+			} else if value != nil {
+				s.RoundID = *value
 			}
-		case status.ForeignKeys[2]:
-			if value, ok := values[i].(*sql.NullScanner); !ok {
-				return fmt.Errorf("unexpected type %T for field status_user", values[i])
-			} else if value.Valid {
-				s.status_user = new(uuid.UUID)
-				*s.status_user = *value.S.(*uuid.UUID)
+		case status.FieldUserID:
+			if value, ok := values[i].(*uuid.UUID); !ok {
+				return fmt.Errorf("unexpected type %T for field user_id", values[i])
+			} else if value != nil {
+				s.UserID = *value
 			}
 		default:
 			s.selectValues.Set(columns[i], values[i])
@@ -247,8 +241,17 @@ func (s *Status) String() string {
 	builder.WriteString("status=")
 	builder.WriteString(fmt.Sprintf("%v", s.Status))
 	builder.WriteString(", ")
-	builder.WriteString("weight=")
-	builder.WriteString(fmt.Sprintf("%v", s.Weight))
+	builder.WriteString("points=")
+	builder.WriteString(fmt.Sprintf("%v", s.Points))
+	builder.WriteString(", ")
+	builder.WriteString("check_id=")
+	builder.WriteString(fmt.Sprintf("%v", s.CheckID))
+	builder.WriteString(", ")
+	builder.WriteString("round_id=")
+	builder.WriteString(fmt.Sprintf("%v", s.RoundID))
+	builder.WriteString(", ")
+	builder.WriteString("user_id=")
+	builder.WriteString(fmt.Sprintf("%v", s.UserID))
 	builder.WriteByte(')')
 	return builder.String()
 }

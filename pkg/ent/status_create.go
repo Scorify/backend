@@ -80,9 +80,27 @@ func (sc *StatusCreate) SetNillableStatus(s *status.Status) *StatusCreate {
 	return sc
 }
 
-// SetWeight sets the "weight" field.
-func (sc *StatusCreate) SetWeight(i int) *StatusCreate {
-	sc.mutation.SetWeight(i)
+// SetPoints sets the "points" field.
+func (sc *StatusCreate) SetPoints(i int) *StatusCreate {
+	sc.mutation.SetPoints(i)
+	return sc
+}
+
+// SetCheckID sets the "check_id" field.
+func (sc *StatusCreate) SetCheckID(u uuid.UUID) *StatusCreate {
+	sc.mutation.SetCheckID(u)
+	return sc
+}
+
+// SetRoundID sets the "round_id" field.
+func (sc *StatusCreate) SetRoundID(u uuid.UUID) *StatusCreate {
+	sc.mutation.SetRoundID(u)
+	return sc
+}
+
+// SetUserID sets the "user_id" field.
+func (sc *StatusCreate) SetUserID(u uuid.UUID) *StatusCreate {
+	sc.mutation.SetUserID(u)
 	return sc
 }
 
@@ -100,32 +118,14 @@ func (sc *StatusCreate) SetNillableID(u *uuid.UUID) *StatusCreate {
 	return sc
 }
 
-// SetCheckID sets the "check" edge to the Check entity by ID.
-func (sc *StatusCreate) SetCheckID(id uuid.UUID) *StatusCreate {
-	sc.mutation.SetCheckID(id)
-	return sc
-}
-
 // SetCheck sets the "check" edge to the Check entity.
 func (sc *StatusCreate) SetCheck(c *Check) *StatusCreate {
 	return sc.SetCheckID(c.ID)
 }
 
-// SetRoundID sets the "round" edge to the Round entity by ID.
-func (sc *StatusCreate) SetRoundID(id uuid.UUID) *StatusCreate {
-	sc.mutation.SetRoundID(id)
-	return sc
-}
-
 // SetRound sets the "round" edge to the Round entity.
 func (sc *StatusCreate) SetRound(r *Round) *StatusCreate {
 	return sc.SetRoundID(r.ID)
-}
-
-// SetUserID sets the "user" edge to the User entity by ID.
-func (sc *StatusCreate) SetUserID(id uuid.UUID) *StatusCreate {
-	sc.mutation.SetUserID(id)
-	return sc
 }
 
 // SetUser sets the "user" edge to the User entity.
@@ -202,8 +202,22 @@ func (sc *StatusCreate) check() error {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Status.status": %w`, err)}
 		}
 	}
-	if _, ok := sc.mutation.Weight(); !ok {
-		return &ValidationError{Name: "weight", err: errors.New(`ent: missing required field "Status.weight"`)}
+	if _, ok := sc.mutation.Points(); !ok {
+		return &ValidationError{Name: "points", err: errors.New(`ent: missing required field "Status.points"`)}
+	}
+	if v, ok := sc.mutation.Points(); ok {
+		if err := status.PointsValidator(v); err != nil {
+			return &ValidationError{Name: "points", err: fmt.Errorf(`ent: validator failed for field "Status.points": %w`, err)}
+		}
+	}
+	if _, ok := sc.mutation.CheckID(); !ok {
+		return &ValidationError{Name: "check_id", err: errors.New(`ent: missing required field "Status.check_id"`)}
+	}
+	if _, ok := sc.mutation.RoundID(); !ok {
+		return &ValidationError{Name: "round_id", err: errors.New(`ent: missing required field "Status.round_id"`)}
+	}
+	if _, ok := sc.mutation.UserID(); !ok {
+		return &ValidationError{Name: "user_id", err: errors.New(`ent: missing required field "Status.user_id"`)}
 	}
 	if _, ok := sc.mutation.CheckID(); !ok {
 		return &ValidationError{Name: "check", err: errors.New(`ent: missing required edge "Status.check"`)}
@@ -265,9 +279,9 @@ func (sc *StatusCreate) createSpec() (*Status, *sqlgraph.CreateSpec) {
 		_spec.SetField(status.FieldStatus, field.TypeEnum, value)
 		_node.Status = value
 	}
-	if value, ok := sc.mutation.Weight(); ok {
-		_spec.SetField(status.FieldWeight, field.TypeInt, value)
-		_node.Weight = value
+	if value, ok := sc.mutation.Points(); ok {
+		_spec.SetField(status.FieldPoints, field.TypeInt, value)
+		_node.Points = value
 	}
 	if nodes := sc.mutation.CheckIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -283,7 +297,7 @@ func (sc *StatusCreate) createSpec() (*Status, *sqlgraph.CreateSpec) {
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.status_check = &nodes[0]
+		_node.CheckID = nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := sc.mutation.RoundIDs(); len(nodes) > 0 {
@@ -300,7 +314,7 @@ func (sc *StatusCreate) createSpec() (*Status, *sqlgraph.CreateSpec) {
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.status_round = &nodes[0]
+		_node.RoundID = nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := sc.mutation.UserIDs(); len(nodes) > 0 {
@@ -317,7 +331,7 @@ func (sc *StatusCreate) createSpec() (*Status, *sqlgraph.CreateSpec) {
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.status_user = &nodes[0]
+		_node.UserID = nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

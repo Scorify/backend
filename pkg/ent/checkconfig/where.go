@@ -66,6 +66,16 @@ func UpdateTime(v time.Time) predicate.CheckConfig {
 	return predicate.CheckConfig(sql.FieldEQ(FieldUpdateTime, v))
 }
 
+// CheckID applies equality check predicate on the "check_id" field. It's identical to CheckIDEQ.
+func CheckID(v uuid.UUID) predicate.CheckConfig {
+	return predicate.CheckConfig(sql.FieldEQ(FieldCheckID, v))
+}
+
+// UserID applies equality check predicate on the "user_id" field. It's identical to UserIDEQ.
+func UserID(v uuid.UUID) predicate.CheckConfig {
+	return predicate.CheckConfig(sql.FieldEQ(FieldUserID, v))
+}
+
 // CreateTimeEQ applies the EQ predicate on the "create_time" field.
 func CreateTimeEQ(v time.Time) predicate.CheckConfig {
 	return predicate.CheckConfig(sql.FieldEQ(FieldCreateTime, v))
@@ -144,6 +154,46 @@ func UpdateTimeLT(v time.Time) predicate.CheckConfig {
 // UpdateTimeLTE applies the LTE predicate on the "update_time" field.
 func UpdateTimeLTE(v time.Time) predicate.CheckConfig {
 	return predicate.CheckConfig(sql.FieldLTE(FieldUpdateTime, v))
+}
+
+// CheckIDEQ applies the EQ predicate on the "check_id" field.
+func CheckIDEQ(v uuid.UUID) predicate.CheckConfig {
+	return predicate.CheckConfig(sql.FieldEQ(FieldCheckID, v))
+}
+
+// CheckIDNEQ applies the NEQ predicate on the "check_id" field.
+func CheckIDNEQ(v uuid.UUID) predicate.CheckConfig {
+	return predicate.CheckConfig(sql.FieldNEQ(FieldCheckID, v))
+}
+
+// CheckIDIn applies the In predicate on the "check_id" field.
+func CheckIDIn(vs ...uuid.UUID) predicate.CheckConfig {
+	return predicate.CheckConfig(sql.FieldIn(FieldCheckID, vs...))
+}
+
+// CheckIDNotIn applies the NotIn predicate on the "check_id" field.
+func CheckIDNotIn(vs ...uuid.UUID) predicate.CheckConfig {
+	return predicate.CheckConfig(sql.FieldNotIn(FieldCheckID, vs...))
+}
+
+// UserIDEQ applies the EQ predicate on the "user_id" field.
+func UserIDEQ(v uuid.UUID) predicate.CheckConfig {
+	return predicate.CheckConfig(sql.FieldEQ(FieldUserID, v))
+}
+
+// UserIDNEQ applies the NEQ predicate on the "user_id" field.
+func UserIDNEQ(v uuid.UUID) predicate.CheckConfig {
+	return predicate.CheckConfig(sql.FieldNEQ(FieldUserID, v))
+}
+
+// UserIDIn applies the In predicate on the "user_id" field.
+func UserIDIn(vs ...uuid.UUID) predicate.CheckConfig {
+	return predicate.CheckConfig(sql.FieldIn(FieldUserID, vs...))
+}
+
+// UserIDNotIn applies the NotIn predicate on the "user_id" field.
+func UserIDNotIn(vs ...uuid.UUID) predicate.CheckConfig {
+	return predicate.CheckConfig(sql.FieldNotIn(FieldUserID, vs...))
 }
 
 // HasCheck applies the HasEdge predicate on the "check" edge.

@@ -107,14 +107,14 @@ func (rc *RoundCreate) AddStatuses(s ...*Status) *RoundCreate {
 }
 
 // AddScorecachIDs adds the "scorecaches" edge to the ScoreCache entity by IDs.
-func (rc *RoundCreate) AddScorecachIDs(ids ...int) *RoundCreate {
+func (rc *RoundCreate) AddScorecachIDs(ids ...uuid.UUID) *RoundCreate {
 	rc.mutation.AddScorecachIDs(ids...)
 	return rc
 }
 
 // AddScorecaches adds the "scorecaches" edges to the ScoreCache entity.
 func (rc *RoundCreate) AddScorecaches(s ...*ScoreCache) *RoundCreate {
-	ids := make([]int, len(s))
+	ids := make([]uuid.UUID, len(s))
 	for i := range s {
 		ids[i] = s[i].ID
 	}
@@ -280,7 +280,7 @@ func (rc *RoundCreate) createSpec() (*Round, *sqlgraph.CreateSpec) {
 			Columns: []string{round.ScorecachesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(scorecache.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(scorecache.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

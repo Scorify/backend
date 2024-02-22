@@ -26,7 +26,6 @@ type CheckConfigQuery struct {
 	predicates []predicate.CheckConfig
 	withCheck  *CheckQuery
 	withUser   *UserQuery
-	withFKs    bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -406,19 +405,12 @@ func (ccq *CheckConfigQuery) prepareQuery(ctx context.Context) error {
 func (ccq *CheckConfigQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*CheckConfig, error) {
 	var (
 		nodes       = []*CheckConfig{}
-		withFKs     = ccq.withFKs
 		_spec       = ccq.querySpec()
 		loadedTypes = [2]bool{
 			ccq.withCheck != nil,
 			ccq.withUser != nil,
 		}
 	)
-	if ccq.withCheck != nil || ccq.withUser != nil {
-		withFKs = true
-	}
-	if withFKs {
-		_spec.Node.Columns = append(_spec.Node.Columns, checkconfig.ForeignKeys...)
-	}
 	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*CheckConfig).scanValues(nil, columns)
 	}
@@ -456,10 +448,7 @@ func (ccq *CheckConfigQuery) loadCheck(ctx context.Context, query *CheckQuery, n
 	ids := make([]uuid.UUID, 0, len(nodes))
 	nodeids := make(map[uuid.UUID][]*CheckConfig)
 	for i := range nodes {
-		if nodes[i].check_config_check == nil {
-			continue
-		}
-		fk := *nodes[i].check_config_check
+		fk := nodes[i].CheckID
 		if _, ok := nodeids[fk]; !ok {
 			ids = append(ids, fk)
 		}
@@ -476,7 +465,7 @@ func (ccq *CheckConfigQuery) loadCheck(ctx context.Context, query *CheckQuery, n
 	for _, n := range neighbors {
 		nodes, ok := nodeids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "check_config_check" returned %v`, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "check_id" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)
@@ -488,10 +477,7 @@ func (ccq *CheckConfigQuery) loadUser(ctx context.Context, query *UserQuery, nod
 	ids := make([]uuid.UUID, 0, len(nodes))
 	nodeids := make(map[uuid.UUID][]*CheckConfig)
 	for i := range nodes {
-		if nodes[i].check_config_user == nil {
-			continue
-		}
-		fk := *nodes[i].check_config_user
+		fk := nodes[i].UserID
 		if _, ok := nodeids[fk]; !ok {
 			ids = append(ids, fk)
 		}
@@ -508,7 +494,7 @@ func (ccq *CheckConfigQuery) loadUser(ctx context.Context, query *UserQuery, nod
 	for _, n := range neighbors {
 		nodes, ok := nodeids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "check_config_user" returned %v`, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "user_id" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)
@@ -541,6 +527,12 @@ func (ccq *CheckConfigQuery) querySpec() *sqlgraph.QuerySpec {
 			if fields[i] != checkconfig.FieldID {
 				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 			}
+		}
+		if ccq.withCheck != nil {
+			_spec.Node.AddColumnOnce(checkconfig.FieldCheckID)
+		}
+		if ccq.withUser != nil {
+			_spec.Node.AddColumnOnce(checkconfig.FieldUserID)
 		}
 	}
 	if ps := ccq.predicates; len(ps) > 0 {
