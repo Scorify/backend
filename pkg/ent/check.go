@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
@@ -20,6 +21,10 @@ type Check struct {
 	// ID of the ent.
 	// The uuid of a check
 	ID uuid.UUID `json:"id"`
+	// CreateTime holds the value of the "create_time" field.
+	CreateTime time.Time `json:"create_time,omitempty"`
+	// UpdateTime holds the value of the "update_time" field.
+	UpdateTime time.Time `json:"update_time,omitempty"`
 	// The name of the check
 	Name string `json:"name"`
 	// The source of the check
@@ -38,9 +43,11 @@ type Check struct {
 type CheckEdges struct {
 	// The configuration of a check
 	Configs []*CheckConfig `json:"config"`
+	// The statuses of a check
+	Statuses []*Status `json:"statuses"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [2]bool
 }
 
 // ConfigsOrErr returns the Configs value or an error if the edge
@@ -50,6 +57,15 @@ func (e CheckEdges) ConfigsOrErr() ([]*CheckConfig, error) {
 		return e.Configs, nil
 	}
 	return nil, &NotLoadedError{edge: "configs"}
+}
+
+// StatusesOrErr returns the Statuses value or an error if the edge
+// was not loaded in eager-loading.
+func (e CheckEdges) StatusesOrErr() ([]*Status, error) {
+	if e.loadedTypes[1] {
+		return e.Statuses, nil
+	}
+	return nil, &NotLoadedError{edge: "statuses"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -63,6 +79,8 @@ func (*Check) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullInt64)
 		case check.FieldName, check.FieldSource:
 			values[i] = new(sql.NullString)
+		case check.FieldCreateTime, check.FieldUpdateTime:
+			values[i] = new(sql.NullTime)
 		case check.FieldID:
 			values[i] = new(uuid.UUID)
 		default:
@@ -85,6 +103,18 @@ func (c *Check) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field id", values[i])
 			} else if value != nil {
 				c.ID = *value
+			}
+		case check.FieldCreateTime:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field create_time", values[i])
+			} else if value.Valid {
+				c.CreateTime = value.Time
+			}
+		case check.FieldUpdateTime:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field update_time", values[i])
+			} else if value.Valid {
+				c.UpdateTime = value.Time
 			}
 		case check.FieldName:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -130,6 +160,11 @@ func (c *Check) QueryConfigs() *CheckConfigQuery {
 	return NewCheckClient(c.config).QueryConfigs(c)
 }
 
+// QueryStatuses queries the "statuses" edge of the Check entity.
+func (c *Check) QueryStatuses() *StatusQuery {
+	return NewCheckClient(c.config).QueryStatuses(c)
+}
+
 // Update returns a builder for updating this Check.
 // Note that you need to call Check.Unwrap() before calling this method if this Check
 // was returned from a transaction, and the transaction was committed or rolled back.
@@ -153,6 +188,12 @@ func (c *Check) String() string {
 	var builder strings.Builder
 	builder.WriteString("Check(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", c.ID))
+	builder.WriteString("create_time=")
+	builder.WriteString(c.CreateTime.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("update_time=")
+	builder.WriteString(c.UpdateTime.Format(time.ANSIC))
+	builder.WriteString(", ")
 	builder.WriteString("name=")
 	builder.WriteString(c.Name)
 	builder.WriteString(", ")

@@ -18,10 +18,9 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/scorify/backend/pkg/ent/check"
 	"github.com/scorify/backend/pkg/ent/checkconfig"
-	"github.com/scorify/backend/pkg/ent/credential"
 	"github.com/scorify/backend/pkg/ent/round"
+	"github.com/scorify/backend/pkg/ent/scorecache"
 	"github.com/scorify/backend/pkg/ent/status"
-	"github.com/scorify/backend/pkg/ent/team"
 	"github.com/scorify/backend/pkg/ent/user"
 )
 
@@ -34,14 +33,12 @@ type Client struct {
 	Check *CheckClient
 	// CheckConfig is the client for interacting with the CheckConfig builders.
 	CheckConfig *CheckConfigClient
-	// Credential is the client for interacting with the Credential builders.
-	Credential *CredentialClient
 	// Round is the client for interacting with the Round builders.
 	Round *RoundClient
+	// ScoreCache is the client for interacting with the ScoreCache builders.
+	ScoreCache *ScoreCacheClient
 	// Status is the client for interacting with the Status builders.
 	Status *StatusClient
-	// Team is the client for interacting with the Team builders.
-	Team *TeamClient
 	// User is the client for interacting with the User builders.
 	User *UserClient
 }
@@ -57,10 +54,9 @@ func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
 	c.Check = NewCheckClient(c.config)
 	c.CheckConfig = NewCheckConfigClient(c.config)
-	c.Credential = NewCredentialClient(c.config)
 	c.Round = NewRoundClient(c.config)
+	c.ScoreCache = NewScoreCacheClient(c.config)
 	c.Status = NewStatusClient(c.config)
-	c.Team = NewTeamClient(c.config)
 	c.User = NewUserClient(c.config)
 }
 
@@ -156,10 +152,9 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		config:      cfg,
 		Check:       NewCheckClient(cfg),
 		CheckConfig: NewCheckConfigClient(cfg),
-		Credential:  NewCredentialClient(cfg),
 		Round:       NewRoundClient(cfg),
+		ScoreCache:  NewScoreCacheClient(cfg),
 		Status:      NewStatusClient(cfg),
-		Team:        NewTeamClient(cfg),
 		User:        NewUserClient(cfg),
 	}, nil
 }
@@ -182,10 +177,9 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		config:      cfg,
 		Check:       NewCheckClient(cfg),
 		CheckConfig: NewCheckConfigClient(cfg),
-		Credential:  NewCredentialClient(cfg),
 		Round:       NewRoundClient(cfg),
+		ScoreCache:  NewScoreCacheClient(cfg),
 		Status:      NewStatusClient(cfg),
-		Team:        NewTeamClient(cfg),
 		User:        NewUserClient(cfg),
 	}, nil
 }
@@ -216,7 +210,7 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
-		c.Check, c.CheckConfig, c.Credential, c.Round, c.Status, c.Team, c.User,
+		c.Check, c.CheckConfig, c.Round, c.ScoreCache, c.Status, c.User,
 	} {
 		n.Use(hooks...)
 	}
@@ -226,7 +220,7 @@ func (c *Client) Use(hooks ...Hook) {
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
-		c.Check, c.CheckConfig, c.Credential, c.Round, c.Status, c.Team, c.User,
+		c.Check, c.CheckConfig, c.Round, c.ScoreCache, c.Status, c.User,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -239,14 +233,12 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Check.mutate(ctx, m)
 	case *CheckConfigMutation:
 		return c.CheckConfig.mutate(ctx, m)
-	case *CredentialMutation:
-		return c.Credential.mutate(ctx, m)
 	case *RoundMutation:
 		return c.Round.mutate(ctx, m)
+	case *ScoreCacheMutation:
+		return c.ScoreCache.mutate(ctx, m)
 	case *StatusMutation:
 		return c.Status.mutate(ctx, m)
-	case *TeamMutation:
-		return c.Team.mutate(ctx, m)
 	case *UserMutation:
 		return c.User.mutate(ctx, m)
 	default:
@@ -371,6 +363,22 @@ func (c *CheckClient) QueryConfigs(ch *Check) *CheckConfigQuery {
 			sqlgraph.From(check.Table, check.FieldID, id),
 			sqlgraph.To(checkconfig.Table, checkconfig.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, true, check.ConfigsTable, check.ConfigsColumn),
+		)
+		fromV = sqlgraph.Neighbors(ch.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryStatuses queries the statuses edge of a Check.
+func (c *CheckClient) QueryStatuses(ch *Check) *StatusQuery {
+	query := (&StatusClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := ch.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(check.Table, check.FieldID, id),
+			sqlgraph.To(status.Table, status.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, check.StatusesTable, check.StatusesColumn),
 		)
 		fromV = sqlgraph.Neighbors(ch.driver.Dialect(), step)
 		return fromV, nil
@@ -568,139 +576,6 @@ func (c *CheckConfigClient) mutate(ctx context.Context, m *CheckConfigMutation) 
 	}
 }
 
-// CredentialClient is a client for the Credential schema.
-type CredentialClient struct {
-	config
-}
-
-// NewCredentialClient returns a client for the Credential from the given config.
-func NewCredentialClient(c config) *CredentialClient {
-	return &CredentialClient{config: c}
-}
-
-// Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `credential.Hooks(f(g(h())))`.
-func (c *CredentialClient) Use(hooks ...Hook) {
-	c.hooks.Credential = append(c.hooks.Credential, hooks...)
-}
-
-// Intercept adds a list of query interceptors to the interceptors stack.
-// A call to `Intercept(f, g, h)` equals to `credential.Intercept(f(g(h())))`.
-func (c *CredentialClient) Intercept(interceptors ...Interceptor) {
-	c.inters.Credential = append(c.inters.Credential, interceptors...)
-}
-
-// Create returns a builder for creating a Credential entity.
-func (c *CredentialClient) Create() *CredentialCreate {
-	mutation := newCredentialMutation(c.config, OpCreate)
-	return &CredentialCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// CreateBulk returns a builder for creating a bulk of Credential entities.
-func (c *CredentialClient) CreateBulk(builders ...*CredentialCreate) *CredentialCreateBulk {
-	return &CredentialCreateBulk{config: c.config, builders: builders}
-}
-
-// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
-// a builder and applies setFunc on it.
-func (c *CredentialClient) MapCreateBulk(slice any, setFunc func(*CredentialCreate, int)) *CredentialCreateBulk {
-	rv := reflect.ValueOf(slice)
-	if rv.Kind() != reflect.Slice {
-		return &CredentialCreateBulk{err: fmt.Errorf("calling to CredentialClient.MapCreateBulk with wrong type %T, need slice", slice)}
-	}
-	builders := make([]*CredentialCreate, rv.Len())
-	for i := 0; i < rv.Len(); i++ {
-		builders[i] = c.Create()
-		setFunc(builders[i], i)
-	}
-	return &CredentialCreateBulk{config: c.config, builders: builders}
-}
-
-// Update returns an update builder for Credential.
-func (c *CredentialClient) Update() *CredentialUpdate {
-	mutation := newCredentialMutation(c.config, OpUpdate)
-	return &CredentialUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOne returns an update builder for the given entity.
-func (c *CredentialClient) UpdateOne(cr *Credential) *CredentialUpdateOne {
-	mutation := newCredentialMutation(c.config, OpUpdateOne, withCredential(cr))
-	return &CredentialUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOneID returns an update builder for the given id.
-func (c *CredentialClient) UpdateOneID(id int) *CredentialUpdateOne {
-	mutation := newCredentialMutation(c.config, OpUpdateOne, withCredentialID(id))
-	return &CredentialUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// Delete returns a delete builder for Credential.
-func (c *CredentialClient) Delete() *CredentialDelete {
-	mutation := newCredentialMutation(c.config, OpDelete)
-	return &CredentialDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// DeleteOne returns a builder for deleting the given entity.
-func (c *CredentialClient) DeleteOne(cr *Credential) *CredentialDeleteOne {
-	return c.DeleteOneID(cr.ID)
-}
-
-// DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *CredentialClient) DeleteOneID(id int) *CredentialDeleteOne {
-	builder := c.Delete().Where(credential.ID(id))
-	builder.mutation.id = &id
-	builder.mutation.op = OpDeleteOne
-	return &CredentialDeleteOne{builder}
-}
-
-// Query returns a query builder for Credential.
-func (c *CredentialClient) Query() *CredentialQuery {
-	return &CredentialQuery{
-		config: c.config,
-		ctx:    &QueryContext{Type: TypeCredential},
-		inters: c.Interceptors(),
-	}
-}
-
-// Get returns a Credential entity by its id.
-func (c *CredentialClient) Get(ctx context.Context, id int) (*Credential, error) {
-	return c.Query().Where(credential.ID(id)).Only(ctx)
-}
-
-// GetX is like Get, but panics if an error occurs.
-func (c *CredentialClient) GetX(ctx context.Context, id int) *Credential {
-	obj, err := c.Get(ctx, id)
-	if err != nil {
-		panic(err)
-	}
-	return obj
-}
-
-// Hooks returns the client hooks.
-func (c *CredentialClient) Hooks() []Hook {
-	return c.hooks.Credential
-}
-
-// Interceptors returns the client interceptors.
-func (c *CredentialClient) Interceptors() []Interceptor {
-	return c.inters.Credential
-}
-
-func (c *CredentialClient) mutate(ctx context.Context, m *CredentialMutation) (Value, error) {
-	switch m.Op() {
-	case OpCreate:
-		return (&CredentialCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdate:
-		return (&CredentialUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdateOne:
-		return (&CredentialUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpDelete, OpDeleteOne:
-		return (&CredentialDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
-	default:
-		return nil, fmt.Errorf("ent: unknown Credential mutation op: %q", m.Op())
-	}
-}
-
 // RoundClient is a client for the Round schema.
 type RoundClient struct {
 	config
@@ -762,7 +637,7 @@ func (c *RoundClient) UpdateOne(r *Round) *RoundUpdateOne {
 }
 
 // UpdateOneID returns an update builder for the given id.
-func (c *RoundClient) UpdateOneID(id int) *RoundUpdateOne {
+func (c *RoundClient) UpdateOneID(id uuid.UUID) *RoundUpdateOne {
 	mutation := newRoundMutation(c.config, OpUpdateOne, withRoundID(id))
 	return &RoundUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
@@ -779,7 +654,7 @@ func (c *RoundClient) DeleteOne(r *Round) *RoundDeleteOne {
 }
 
 // DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *RoundClient) DeleteOneID(id int) *RoundDeleteOne {
+func (c *RoundClient) DeleteOneID(id uuid.UUID) *RoundDeleteOne {
 	builder := c.Delete().Where(round.ID(id))
 	builder.mutation.id = &id
 	builder.mutation.op = OpDeleteOne
@@ -796,17 +671,49 @@ func (c *RoundClient) Query() *RoundQuery {
 }
 
 // Get returns a Round entity by its id.
-func (c *RoundClient) Get(ctx context.Context, id int) (*Round, error) {
+func (c *RoundClient) Get(ctx context.Context, id uuid.UUID) (*Round, error) {
 	return c.Query().Where(round.ID(id)).Only(ctx)
 }
 
 // GetX is like Get, but panics if an error occurs.
-func (c *RoundClient) GetX(ctx context.Context, id int) *Round {
+func (c *RoundClient) GetX(ctx context.Context, id uuid.UUID) *Round {
 	obj, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)
 	}
 	return obj
+}
+
+// QueryStatuses queries the statuses edge of a Round.
+func (c *RoundClient) QueryStatuses(r *Round) *StatusQuery {
+	query := (&StatusClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := r.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(round.Table, round.FieldID, id),
+			sqlgraph.To(status.Table, status.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, round.StatusesTable, round.StatusesColumn),
+		)
+		fromV = sqlgraph.Neighbors(r.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryScorecaches queries the scorecaches edge of a Round.
+func (c *RoundClient) QueryScorecaches(r *Round) *ScoreCacheQuery {
+	query := (&ScoreCacheClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := r.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(round.Table, round.FieldID, id),
+			sqlgraph.To(scorecache.Table, scorecache.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, round.ScorecachesTable, round.ScorecachesColumn),
+		)
+		fromV = sqlgraph.Neighbors(r.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
 }
 
 // Hooks returns the client hooks.
@@ -831,6 +738,171 @@ func (c *RoundClient) mutate(ctx context.Context, m *RoundMutation) (Value, erro
 		return (&RoundDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown Round mutation op: %q", m.Op())
+	}
+}
+
+// ScoreCacheClient is a client for the ScoreCache schema.
+type ScoreCacheClient struct {
+	config
+}
+
+// NewScoreCacheClient returns a client for the ScoreCache from the given config.
+func NewScoreCacheClient(c config) *ScoreCacheClient {
+	return &ScoreCacheClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `scorecache.Hooks(f(g(h())))`.
+func (c *ScoreCacheClient) Use(hooks ...Hook) {
+	c.hooks.ScoreCache = append(c.hooks.ScoreCache, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `scorecache.Intercept(f(g(h())))`.
+func (c *ScoreCacheClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ScoreCache = append(c.inters.ScoreCache, interceptors...)
+}
+
+// Create returns a builder for creating a ScoreCache entity.
+func (c *ScoreCacheClient) Create() *ScoreCacheCreate {
+	mutation := newScoreCacheMutation(c.config, OpCreate)
+	return &ScoreCacheCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ScoreCache entities.
+func (c *ScoreCacheClient) CreateBulk(builders ...*ScoreCacheCreate) *ScoreCacheCreateBulk {
+	return &ScoreCacheCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ScoreCacheClient) MapCreateBulk(slice any, setFunc func(*ScoreCacheCreate, int)) *ScoreCacheCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ScoreCacheCreateBulk{err: fmt.Errorf("calling to ScoreCacheClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ScoreCacheCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ScoreCacheCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ScoreCache.
+func (c *ScoreCacheClient) Update() *ScoreCacheUpdate {
+	mutation := newScoreCacheMutation(c.config, OpUpdate)
+	return &ScoreCacheUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ScoreCacheClient) UpdateOne(sc *ScoreCache) *ScoreCacheUpdateOne {
+	mutation := newScoreCacheMutation(c.config, OpUpdateOne, withScoreCache(sc))
+	return &ScoreCacheUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ScoreCacheClient) UpdateOneID(id uuid.UUID) *ScoreCacheUpdateOne {
+	mutation := newScoreCacheMutation(c.config, OpUpdateOne, withScoreCacheID(id))
+	return &ScoreCacheUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ScoreCache.
+func (c *ScoreCacheClient) Delete() *ScoreCacheDelete {
+	mutation := newScoreCacheMutation(c.config, OpDelete)
+	return &ScoreCacheDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ScoreCacheClient) DeleteOne(sc *ScoreCache) *ScoreCacheDeleteOne {
+	return c.DeleteOneID(sc.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ScoreCacheClient) DeleteOneID(id uuid.UUID) *ScoreCacheDeleteOne {
+	builder := c.Delete().Where(scorecache.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ScoreCacheDeleteOne{builder}
+}
+
+// Query returns a query builder for ScoreCache.
+func (c *ScoreCacheClient) Query() *ScoreCacheQuery {
+	return &ScoreCacheQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeScoreCache},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a ScoreCache entity by its id.
+func (c *ScoreCacheClient) Get(ctx context.Context, id uuid.UUID) (*ScoreCache, error) {
+	return c.Query().Where(scorecache.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ScoreCacheClient) GetX(ctx context.Context, id uuid.UUID) *ScoreCache {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryRound queries the round edge of a ScoreCache.
+func (c *ScoreCacheClient) QueryRound(sc *ScoreCache) *RoundQuery {
+	query := (&RoundClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := sc.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(scorecache.Table, scorecache.FieldID, id),
+			sqlgraph.To(round.Table, round.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, scorecache.RoundTable, scorecache.RoundColumn),
+		)
+		fromV = sqlgraph.Neighbors(sc.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryUser queries the user edge of a ScoreCache.
+func (c *ScoreCacheClient) QueryUser(sc *ScoreCache) *UserQuery {
+	query := (&UserClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := sc.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(scorecache.Table, scorecache.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, scorecache.UserTable, scorecache.UserColumn),
+		)
+		fromV = sqlgraph.Neighbors(sc.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *ScoreCacheClient) Hooks() []Hook {
+	return c.hooks.ScoreCache
+}
+
+// Interceptors returns the client interceptors.
+func (c *ScoreCacheClient) Interceptors() []Interceptor {
+	return c.inters.ScoreCache
+}
+
+func (c *ScoreCacheClient) mutate(ctx context.Context, m *ScoreCacheMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ScoreCacheCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ScoreCacheUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ScoreCacheUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ScoreCacheDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown ScoreCache mutation op: %q", m.Op())
 	}
 }
 
@@ -895,7 +967,7 @@ func (c *StatusClient) UpdateOne(s *Status) *StatusUpdateOne {
 }
 
 // UpdateOneID returns an update builder for the given id.
-func (c *StatusClient) UpdateOneID(id int) *StatusUpdateOne {
+func (c *StatusClient) UpdateOneID(id uuid.UUID) *StatusUpdateOne {
 	mutation := newStatusMutation(c.config, OpUpdateOne, withStatusID(id))
 	return &StatusUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
@@ -912,7 +984,7 @@ func (c *StatusClient) DeleteOne(s *Status) *StatusDeleteOne {
 }
 
 // DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *StatusClient) DeleteOneID(id int) *StatusDeleteOne {
+func (c *StatusClient) DeleteOneID(id uuid.UUID) *StatusDeleteOne {
 	builder := c.Delete().Where(status.ID(id))
 	builder.mutation.id = &id
 	builder.mutation.op = OpDeleteOne
@@ -929,17 +1001,65 @@ func (c *StatusClient) Query() *StatusQuery {
 }
 
 // Get returns a Status entity by its id.
-func (c *StatusClient) Get(ctx context.Context, id int) (*Status, error) {
+func (c *StatusClient) Get(ctx context.Context, id uuid.UUID) (*Status, error) {
 	return c.Query().Where(status.ID(id)).Only(ctx)
 }
 
 // GetX is like Get, but panics if an error occurs.
-func (c *StatusClient) GetX(ctx context.Context, id int) *Status {
+func (c *StatusClient) GetX(ctx context.Context, id uuid.UUID) *Status {
 	obj, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)
 	}
 	return obj
+}
+
+// QueryCheck queries the check edge of a Status.
+func (c *StatusClient) QueryCheck(s *Status) *CheckQuery {
+	query := (&CheckClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := s.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(status.Table, status.FieldID, id),
+			sqlgraph.To(check.Table, check.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, status.CheckTable, status.CheckColumn),
+		)
+		fromV = sqlgraph.Neighbors(s.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryRound queries the round edge of a Status.
+func (c *StatusClient) QueryRound(s *Status) *RoundQuery {
+	query := (&RoundClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := s.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(status.Table, status.FieldID, id),
+			sqlgraph.To(round.Table, round.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, status.RoundTable, status.RoundColumn),
+		)
+		fromV = sqlgraph.Neighbors(s.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryUser queries the user edge of a Status.
+func (c *StatusClient) QueryUser(s *Status) *UserQuery {
+	query := (&UserClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := s.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(status.Table, status.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, status.UserTable, status.UserColumn),
+		)
+		fromV = sqlgraph.Neighbors(s.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
 }
 
 // Hooks returns the client hooks.
@@ -964,139 +1084,6 @@ func (c *StatusClient) mutate(ctx context.Context, m *StatusMutation) (Value, er
 		return (&StatusDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown Status mutation op: %q", m.Op())
-	}
-}
-
-// TeamClient is a client for the Team schema.
-type TeamClient struct {
-	config
-}
-
-// NewTeamClient returns a client for the Team from the given config.
-func NewTeamClient(c config) *TeamClient {
-	return &TeamClient{config: c}
-}
-
-// Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `team.Hooks(f(g(h())))`.
-func (c *TeamClient) Use(hooks ...Hook) {
-	c.hooks.Team = append(c.hooks.Team, hooks...)
-}
-
-// Intercept adds a list of query interceptors to the interceptors stack.
-// A call to `Intercept(f, g, h)` equals to `team.Intercept(f(g(h())))`.
-func (c *TeamClient) Intercept(interceptors ...Interceptor) {
-	c.inters.Team = append(c.inters.Team, interceptors...)
-}
-
-// Create returns a builder for creating a Team entity.
-func (c *TeamClient) Create() *TeamCreate {
-	mutation := newTeamMutation(c.config, OpCreate)
-	return &TeamCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// CreateBulk returns a builder for creating a bulk of Team entities.
-func (c *TeamClient) CreateBulk(builders ...*TeamCreate) *TeamCreateBulk {
-	return &TeamCreateBulk{config: c.config, builders: builders}
-}
-
-// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
-// a builder and applies setFunc on it.
-func (c *TeamClient) MapCreateBulk(slice any, setFunc func(*TeamCreate, int)) *TeamCreateBulk {
-	rv := reflect.ValueOf(slice)
-	if rv.Kind() != reflect.Slice {
-		return &TeamCreateBulk{err: fmt.Errorf("calling to TeamClient.MapCreateBulk with wrong type %T, need slice", slice)}
-	}
-	builders := make([]*TeamCreate, rv.Len())
-	for i := 0; i < rv.Len(); i++ {
-		builders[i] = c.Create()
-		setFunc(builders[i], i)
-	}
-	return &TeamCreateBulk{config: c.config, builders: builders}
-}
-
-// Update returns an update builder for Team.
-func (c *TeamClient) Update() *TeamUpdate {
-	mutation := newTeamMutation(c.config, OpUpdate)
-	return &TeamUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOne returns an update builder for the given entity.
-func (c *TeamClient) UpdateOne(t *Team) *TeamUpdateOne {
-	mutation := newTeamMutation(c.config, OpUpdateOne, withTeam(t))
-	return &TeamUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOneID returns an update builder for the given id.
-func (c *TeamClient) UpdateOneID(id int) *TeamUpdateOne {
-	mutation := newTeamMutation(c.config, OpUpdateOne, withTeamID(id))
-	return &TeamUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// Delete returns a delete builder for Team.
-func (c *TeamClient) Delete() *TeamDelete {
-	mutation := newTeamMutation(c.config, OpDelete)
-	return &TeamDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// DeleteOne returns a builder for deleting the given entity.
-func (c *TeamClient) DeleteOne(t *Team) *TeamDeleteOne {
-	return c.DeleteOneID(t.ID)
-}
-
-// DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *TeamClient) DeleteOneID(id int) *TeamDeleteOne {
-	builder := c.Delete().Where(team.ID(id))
-	builder.mutation.id = &id
-	builder.mutation.op = OpDeleteOne
-	return &TeamDeleteOne{builder}
-}
-
-// Query returns a query builder for Team.
-func (c *TeamClient) Query() *TeamQuery {
-	return &TeamQuery{
-		config: c.config,
-		ctx:    &QueryContext{Type: TypeTeam},
-		inters: c.Interceptors(),
-	}
-}
-
-// Get returns a Team entity by its id.
-func (c *TeamClient) Get(ctx context.Context, id int) (*Team, error) {
-	return c.Query().Where(team.ID(id)).Only(ctx)
-}
-
-// GetX is like Get, but panics if an error occurs.
-func (c *TeamClient) GetX(ctx context.Context, id int) *Team {
-	obj, err := c.Get(ctx, id)
-	if err != nil {
-		panic(err)
-	}
-	return obj
-}
-
-// Hooks returns the client hooks.
-func (c *TeamClient) Hooks() []Hook {
-	return c.hooks.Team
-}
-
-// Interceptors returns the client interceptors.
-func (c *TeamClient) Interceptors() []Interceptor {
-	return c.inters.Team
-}
-
-func (c *TeamClient) mutate(ctx context.Context, m *TeamMutation) (Value, error) {
-	switch m.Op() {
-	case OpCreate:
-		return (&TeamCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdate:
-		return (&TeamUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdateOne:
-		return (&TeamUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpDelete, OpDeleteOne:
-		return (&TeamDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
-	default:
-		return nil, fmt.Errorf("ent: unknown Team mutation op: %q", m.Op())
 	}
 }
 
@@ -1224,6 +1211,38 @@ func (c *UserClient) QueryConfigs(u *User) *CheckConfigQuery {
 	return query
 }
 
+// QueryStatus queries the status edge of a User.
+func (c *UserClient) QueryStatus(u *User) *StatusQuery {
+	query := (&StatusClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := u.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, id),
+			sqlgraph.To(status.Table, status.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, user.StatusTable, user.StatusColumn),
+		)
+		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryScorecaches queries the scorecaches edge of a User.
+func (c *UserClient) QueryScorecaches(u *User) *ScoreCacheQuery {
+	query := (&ScoreCacheClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := u.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, id),
+			sqlgraph.To(scorecache.Table, scorecache.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, user.ScorecachesTable, user.ScorecachesColumn),
+		)
+		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *UserClient) Hooks() []Hook {
 	return c.hooks.User
@@ -1252,9 +1271,9 @@ func (c *UserClient) mutate(ctx context.Context, m *UserMutation) (Value, error)
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		Check, CheckConfig, Credential, Round, Status, Team, User []ent.Hook
+		Check, CheckConfig, Round, ScoreCache, Status, User []ent.Hook
 	}
 	inters struct {
-		Check, CheckConfig, Credential, Round, Status, Team, User []ent.Interceptor
+		Check, CheckConfig, Round, ScoreCache, Status, User []ent.Interceptor
 	}
 )

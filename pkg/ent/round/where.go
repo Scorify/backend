@@ -3,53 +3,298 @@
 package round
 
 import (
+	"time"
+
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
+	"github.com/google/uuid"
 	"github.com/scorify/backend/pkg/ent/predicate"
 )
 
 // ID filters vertices based on their ID field.
-func ID(id int) predicate.Round {
+func ID(id uuid.UUID) predicate.Round {
 	return predicate.Round(sql.FieldEQ(FieldID, id))
 }
 
 // IDEQ applies the EQ predicate on the ID field.
-func IDEQ(id int) predicate.Round {
+func IDEQ(id uuid.UUID) predicate.Round {
 	return predicate.Round(sql.FieldEQ(FieldID, id))
 }
 
 // IDNEQ applies the NEQ predicate on the ID field.
-func IDNEQ(id int) predicate.Round {
+func IDNEQ(id uuid.UUID) predicate.Round {
 	return predicate.Round(sql.FieldNEQ(FieldID, id))
 }
 
 // IDIn applies the In predicate on the ID field.
-func IDIn(ids ...int) predicate.Round {
+func IDIn(ids ...uuid.UUID) predicate.Round {
 	return predicate.Round(sql.FieldIn(FieldID, ids...))
 }
 
 // IDNotIn applies the NotIn predicate on the ID field.
-func IDNotIn(ids ...int) predicate.Round {
+func IDNotIn(ids ...uuid.UUID) predicate.Round {
 	return predicate.Round(sql.FieldNotIn(FieldID, ids...))
 }
 
 // IDGT applies the GT predicate on the ID field.
-func IDGT(id int) predicate.Round {
+func IDGT(id uuid.UUID) predicate.Round {
 	return predicate.Round(sql.FieldGT(FieldID, id))
 }
 
 // IDGTE applies the GTE predicate on the ID field.
-func IDGTE(id int) predicate.Round {
+func IDGTE(id uuid.UUID) predicate.Round {
 	return predicate.Round(sql.FieldGTE(FieldID, id))
 }
 
 // IDLT applies the LT predicate on the ID field.
-func IDLT(id int) predicate.Round {
+func IDLT(id uuid.UUID) predicate.Round {
 	return predicate.Round(sql.FieldLT(FieldID, id))
 }
 
 // IDLTE applies the LTE predicate on the ID field.
-func IDLTE(id int) predicate.Round {
+func IDLTE(id uuid.UUID) predicate.Round {
 	return predicate.Round(sql.FieldLTE(FieldID, id))
+}
+
+// CreateTime applies equality check predicate on the "create_time" field. It's identical to CreateTimeEQ.
+func CreateTime(v time.Time) predicate.Round {
+	return predicate.Round(sql.FieldEQ(FieldCreateTime, v))
+}
+
+// UpdateTime applies equality check predicate on the "update_time" field. It's identical to UpdateTimeEQ.
+func UpdateTime(v time.Time) predicate.Round {
+	return predicate.Round(sql.FieldEQ(FieldUpdateTime, v))
+}
+
+// Number applies equality check predicate on the "number" field. It's identical to NumberEQ.
+func Number(v int) predicate.Round {
+	return predicate.Round(sql.FieldEQ(FieldNumber, v))
+}
+
+// Complete applies equality check predicate on the "complete" field. It's identical to CompleteEQ.
+func Complete(v bool) predicate.Round {
+	return predicate.Round(sql.FieldEQ(FieldComplete, v))
+}
+
+// Points applies equality check predicate on the "points" field. It's identical to PointsEQ.
+func Points(v int) predicate.Round {
+	return predicate.Round(sql.FieldEQ(FieldPoints, v))
+}
+
+// CreateTimeEQ applies the EQ predicate on the "create_time" field.
+func CreateTimeEQ(v time.Time) predicate.Round {
+	return predicate.Round(sql.FieldEQ(FieldCreateTime, v))
+}
+
+// CreateTimeNEQ applies the NEQ predicate on the "create_time" field.
+func CreateTimeNEQ(v time.Time) predicate.Round {
+	return predicate.Round(sql.FieldNEQ(FieldCreateTime, v))
+}
+
+// CreateTimeIn applies the In predicate on the "create_time" field.
+func CreateTimeIn(vs ...time.Time) predicate.Round {
+	return predicate.Round(sql.FieldIn(FieldCreateTime, vs...))
+}
+
+// CreateTimeNotIn applies the NotIn predicate on the "create_time" field.
+func CreateTimeNotIn(vs ...time.Time) predicate.Round {
+	return predicate.Round(sql.FieldNotIn(FieldCreateTime, vs...))
+}
+
+// CreateTimeGT applies the GT predicate on the "create_time" field.
+func CreateTimeGT(v time.Time) predicate.Round {
+	return predicate.Round(sql.FieldGT(FieldCreateTime, v))
+}
+
+// CreateTimeGTE applies the GTE predicate on the "create_time" field.
+func CreateTimeGTE(v time.Time) predicate.Round {
+	return predicate.Round(sql.FieldGTE(FieldCreateTime, v))
+}
+
+// CreateTimeLT applies the LT predicate on the "create_time" field.
+func CreateTimeLT(v time.Time) predicate.Round {
+	return predicate.Round(sql.FieldLT(FieldCreateTime, v))
+}
+
+// CreateTimeLTE applies the LTE predicate on the "create_time" field.
+func CreateTimeLTE(v time.Time) predicate.Round {
+	return predicate.Round(sql.FieldLTE(FieldCreateTime, v))
+}
+
+// UpdateTimeEQ applies the EQ predicate on the "update_time" field.
+func UpdateTimeEQ(v time.Time) predicate.Round {
+	return predicate.Round(sql.FieldEQ(FieldUpdateTime, v))
+}
+
+// UpdateTimeNEQ applies the NEQ predicate on the "update_time" field.
+func UpdateTimeNEQ(v time.Time) predicate.Round {
+	return predicate.Round(sql.FieldNEQ(FieldUpdateTime, v))
+}
+
+// UpdateTimeIn applies the In predicate on the "update_time" field.
+func UpdateTimeIn(vs ...time.Time) predicate.Round {
+	return predicate.Round(sql.FieldIn(FieldUpdateTime, vs...))
+}
+
+// UpdateTimeNotIn applies the NotIn predicate on the "update_time" field.
+func UpdateTimeNotIn(vs ...time.Time) predicate.Round {
+	return predicate.Round(sql.FieldNotIn(FieldUpdateTime, vs...))
+}
+
+// UpdateTimeGT applies the GT predicate on the "update_time" field.
+func UpdateTimeGT(v time.Time) predicate.Round {
+	return predicate.Round(sql.FieldGT(FieldUpdateTime, v))
+}
+
+// UpdateTimeGTE applies the GTE predicate on the "update_time" field.
+func UpdateTimeGTE(v time.Time) predicate.Round {
+	return predicate.Round(sql.FieldGTE(FieldUpdateTime, v))
+}
+
+// UpdateTimeLT applies the LT predicate on the "update_time" field.
+func UpdateTimeLT(v time.Time) predicate.Round {
+	return predicate.Round(sql.FieldLT(FieldUpdateTime, v))
+}
+
+// UpdateTimeLTE applies the LTE predicate on the "update_time" field.
+func UpdateTimeLTE(v time.Time) predicate.Round {
+	return predicate.Round(sql.FieldLTE(FieldUpdateTime, v))
+}
+
+// NumberEQ applies the EQ predicate on the "number" field.
+func NumberEQ(v int) predicate.Round {
+	return predicate.Round(sql.FieldEQ(FieldNumber, v))
+}
+
+// NumberNEQ applies the NEQ predicate on the "number" field.
+func NumberNEQ(v int) predicate.Round {
+	return predicate.Round(sql.FieldNEQ(FieldNumber, v))
+}
+
+// NumberIn applies the In predicate on the "number" field.
+func NumberIn(vs ...int) predicate.Round {
+	return predicate.Round(sql.FieldIn(FieldNumber, vs...))
+}
+
+// NumberNotIn applies the NotIn predicate on the "number" field.
+func NumberNotIn(vs ...int) predicate.Round {
+	return predicate.Round(sql.FieldNotIn(FieldNumber, vs...))
+}
+
+// NumberGT applies the GT predicate on the "number" field.
+func NumberGT(v int) predicate.Round {
+	return predicate.Round(sql.FieldGT(FieldNumber, v))
+}
+
+// NumberGTE applies the GTE predicate on the "number" field.
+func NumberGTE(v int) predicate.Round {
+	return predicate.Round(sql.FieldGTE(FieldNumber, v))
+}
+
+// NumberLT applies the LT predicate on the "number" field.
+func NumberLT(v int) predicate.Round {
+	return predicate.Round(sql.FieldLT(FieldNumber, v))
+}
+
+// NumberLTE applies the LTE predicate on the "number" field.
+func NumberLTE(v int) predicate.Round {
+	return predicate.Round(sql.FieldLTE(FieldNumber, v))
+}
+
+// CompleteEQ applies the EQ predicate on the "complete" field.
+func CompleteEQ(v bool) predicate.Round {
+	return predicate.Round(sql.FieldEQ(FieldComplete, v))
+}
+
+// CompleteNEQ applies the NEQ predicate on the "complete" field.
+func CompleteNEQ(v bool) predicate.Round {
+	return predicate.Round(sql.FieldNEQ(FieldComplete, v))
+}
+
+// PointsEQ applies the EQ predicate on the "points" field.
+func PointsEQ(v int) predicate.Round {
+	return predicate.Round(sql.FieldEQ(FieldPoints, v))
+}
+
+// PointsNEQ applies the NEQ predicate on the "points" field.
+func PointsNEQ(v int) predicate.Round {
+	return predicate.Round(sql.FieldNEQ(FieldPoints, v))
+}
+
+// PointsIn applies the In predicate on the "points" field.
+func PointsIn(vs ...int) predicate.Round {
+	return predicate.Round(sql.FieldIn(FieldPoints, vs...))
+}
+
+// PointsNotIn applies the NotIn predicate on the "points" field.
+func PointsNotIn(vs ...int) predicate.Round {
+	return predicate.Round(sql.FieldNotIn(FieldPoints, vs...))
+}
+
+// PointsGT applies the GT predicate on the "points" field.
+func PointsGT(v int) predicate.Round {
+	return predicate.Round(sql.FieldGT(FieldPoints, v))
+}
+
+// PointsGTE applies the GTE predicate on the "points" field.
+func PointsGTE(v int) predicate.Round {
+	return predicate.Round(sql.FieldGTE(FieldPoints, v))
+}
+
+// PointsLT applies the LT predicate on the "points" field.
+func PointsLT(v int) predicate.Round {
+	return predicate.Round(sql.FieldLT(FieldPoints, v))
+}
+
+// PointsLTE applies the LTE predicate on the "points" field.
+func PointsLTE(v int) predicate.Round {
+	return predicate.Round(sql.FieldLTE(FieldPoints, v))
+}
+
+// HasStatuses applies the HasEdge predicate on the "statuses" edge.
+func HasStatuses() predicate.Round {
+	return predicate.Round(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, StatusesTable, StatusesColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasStatusesWith applies the HasEdge predicate on the "statuses" edge with a given conditions (other predicates).
+func HasStatusesWith(preds ...predicate.Status) predicate.Round {
+	return predicate.Round(func(s *sql.Selector) {
+		step := newStatusesStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasScorecaches applies the HasEdge predicate on the "scorecaches" edge.
+func HasScorecaches() predicate.Round {
+	return predicate.Round(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, ScorecachesTable, ScorecachesColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasScorecachesWith applies the HasEdge predicate on the "scorecaches" edge with a given conditions (other predicates).
+func HasScorecachesWith(preds ...predicate.ScoreCache) predicate.Round {
+	return predicate.Round(func(s *sql.Selector) {
+		step := newScorecachesStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
 }
 
 // And groups predicates with the AND operator between them.

@@ -6,15 +6,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/google/uuid"
-	"github.com/scorify/backend/pkg/ent/check"
 	"github.com/scorify/backend/pkg/ent/checkconfig"
 	"github.com/scorify/backend/pkg/ent/predicate"
-	"github.com/scorify/backend/pkg/ent/user"
 )
 
 // CheckConfigUpdate is the builder for updating CheckConfig entities.
@@ -30,32 +28,16 @@ func (ccu *CheckConfigUpdate) Where(ps ...predicate.CheckConfig) *CheckConfigUpd
 	return ccu
 }
 
+// SetUpdateTime sets the "update_time" field.
+func (ccu *CheckConfigUpdate) SetUpdateTime(t time.Time) *CheckConfigUpdate {
+	ccu.mutation.SetUpdateTime(t)
+	return ccu
+}
+
 // SetConfig sets the "config" field.
 func (ccu *CheckConfigUpdate) SetConfig(m map[string]interface{}) *CheckConfigUpdate {
 	ccu.mutation.SetConfig(m)
 	return ccu
-}
-
-// SetCheckID sets the "check" edge to the Check entity by ID.
-func (ccu *CheckConfigUpdate) SetCheckID(id uuid.UUID) *CheckConfigUpdate {
-	ccu.mutation.SetCheckID(id)
-	return ccu
-}
-
-// SetCheck sets the "check" edge to the Check entity.
-func (ccu *CheckConfigUpdate) SetCheck(c *Check) *CheckConfigUpdate {
-	return ccu.SetCheckID(c.ID)
-}
-
-// SetUserID sets the "user" edge to the User entity by ID.
-func (ccu *CheckConfigUpdate) SetUserID(id uuid.UUID) *CheckConfigUpdate {
-	ccu.mutation.SetUserID(id)
-	return ccu
-}
-
-// SetUser sets the "user" edge to the User entity.
-func (ccu *CheckConfigUpdate) SetUser(u *User) *CheckConfigUpdate {
-	return ccu.SetUserID(u.ID)
 }
 
 // Mutation returns the CheckConfigMutation object of the builder.
@@ -63,20 +45,9 @@ func (ccu *CheckConfigUpdate) Mutation() *CheckConfigMutation {
 	return ccu.mutation
 }
 
-// ClearCheck clears the "check" edge to the Check entity.
-func (ccu *CheckConfigUpdate) ClearCheck() *CheckConfigUpdate {
-	ccu.mutation.ClearCheck()
-	return ccu
-}
-
-// ClearUser clears the "user" edge to the User entity.
-func (ccu *CheckConfigUpdate) ClearUser() *CheckConfigUpdate {
-	ccu.mutation.ClearUser()
-	return ccu
-}
-
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (ccu *CheckConfigUpdate) Save(ctx context.Context) (int, error) {
+	ccu.defaults()
 	return withHooks(ctx, ccu.sqlSave, ccu.mutation, ccu.hooks)
 }
 
@@ -99,6 +70,14 @@ func (ccu *CheckConfigUpdate) Exec(ctx context.Context) error {
 func (ccu *CheckConfigUpdate) ExecX(ctx context.Context) {
 	if err := ccu.Exec(ctx); err != nil {
 		panic(err)
+	}
+}
+
+// defaults sets the default values of the builder before save.
+func (ccu *CheckConfigUpdate) defaults() {
+	if _, ok := ccu.mutation.UpdateTime(); !ok {
+		v := checkconfig.UpdateDefaultUpdateTime()
+		ccu.mutation.SetUpdateTime(v)
 	}
 }
 
@@ -125,66 +104,11 @@ func (ccu *CheckConfigUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			}
 		}
 	}
+	if value, ok := ccu.mutation.UpdateTime(); ok {
+		_spec.SetField(checkconfig.FieldUpdateTime, field.TypeTime, value)
+	}
 	if value, ok := ccu.mutation.Config(); ok {
 		_spec.SetField(checkconfig.FieldConfig, field.TypeJSON, value)
-	}
-	if ccu.mutation.CheckCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: false,
-			Table:   checkconfig.CheckTable,
-			Columns: []string{checkconfig.CheckColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(check.FieldID, field.TypeUUID),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := ccu.mutation.CheckIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: false,
-			Table:   checkconfig.CheckTable,
-			Columns: []string{checkconfig.CheckColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(check.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if ccu.mutation.UserCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: false,
-			Table:   checkconfig.UserTable,
-			Columns: []string{checkconfig.UserColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := ccu.mutation.UserIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: false,
-			Table:   checkconfig.UserTable,
-			Columns: []string{checkconfig.UserColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if n, err = sqlgraph.UpdateNodes(ctx, ccu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -206,49 +130,21 @@ type CheckConfigUpdateOne struct {
 	mutation *CheckConfigMutation
 }
 
+// SetUpdateTime sets the "update_time" field.
+func (ccuo *CheckConfigUpdateOne) SetUpdateTime(t time.Time) *CheckConfigUpdateOne {
+	ccuo.mutation.SetUpdateTime(t)
+	return ccuo
+}
+
 // SetConfig sets the "config" field.
 func (ccuo *CheckConfigUpdateOne) SetConfig(m map[string]interface{}) *CheckConfigUpdateOne {
 	ccuo.mutation.SetConfig(m)
 	return ccuo
 }
 
-// SetCheckID sets the "check" edge to the Check entity by ID.
-func (ccuo *CheckConfigUpdateOne) SetCheckID(id uuid.UUID) *CheckConfigUpdateOne {
-	ccuo.mutation.SetCheckID(id)
-	return ccuo
-}
-
-// SetCheck sets the "check" edge to the Check entity.
-func (ccuo *CheckConfigUpdateOne) SetCheck(c *Check) *CheckConfigUpdateOne {
-	return ccuo.SetCheckID(c.ID)
-}
-
-// SetUserID sets the "user" edge to the User entity by ID.
-func (ccuo *CheckConfigUpdateOne) SetUserID(id uuid.UUID) *CheckConfigUpdateOne {
-	ccuo.mutation.SetUserID(id)
-	return ccuo
-}
-
-// SetUser sets the "user" edge to the User entity.
-func (ccuo *CheckConfigUpdateOne) SetUser(u *User) *CheckConfigUpdateOne {
-	return ccuo.SetUserID(u.ID)
-}
-
 // Mutation returns the CheckConfigMutation object of the builder.
 func (ccuo *CheckConfigUpdateOne) Mutation() *CheckConfigMutation {
 	return ccuo.mutation
-}
-
-// ClearCheck clears the "check" edge to the Check entity.
-func (ccuo *CheckConfigUpdateOne) ClearCheck() *CheckConfigUpdateOne {
-	ccuo.mutation.ClearCheck()
-	return ccuo
-}
-
-// ClearUser clears the "user" edge to the User entity.
-func (ccuo *CheckConfigUpdateOne) ClearUser() *CheckConfigUpdateOne {
-	ccuo.mutation.ClearUser()
-	return ccuo
 }
 
 // Where appends a list predicates to the CheckConfigUpdate builder.
@@ -266,6 +162,7 @@ func (ccuo *CheckConfigUpdateOne) Select(field string, fields ...string) *CheckC
 
 // Save executes the query and returns the updated CheckConfig entity.
 func (ccuo *CheckConfigUpdateOne) Save(ctx context.Context) (*CheckConfig, error) {
+	ccuo.defaults()
 	return withHooks(ctx, ccuo.sqlSave, ccuo.mutation, ccuo.hooks)
 }
 
@@ -288,6 +185,14 @@ func (ccuo *CheckConfigUpdateOne) Exec(ctx context.Context) error {
 func (ccuo *CheckConfigUpdateOne) ExecX(ctx context.Context) {
 	if err := ccuo.Exec(ctx); err != nil {
 		panic(err)
+	}
+}
+
+// defaults sets the default values of the builder before save.
+func (ccuo *CheckConfigUpdateOne) defaults() {
+	if _, ok := ccuo.mutation.UpdateTime(); !ok {
+		v := checkconfig.UpdateDefaultUpdateTime()
+		ccuo.mutation.SetUpdateTime(v)
 	}
 }
 
@@ -331,66 +236,11 @@ func (ccuo *CheckConfigUpdateOne) sqlSave(ctx context.Context) (_node *CheckConf
 			}
 		}
 	}
+	if value, ok := ccuo.mutation.UpdateTime(); ok {
+		_spec.SetField(checkconfig.FieldUpdateTime, field.TypeTime, value)
+	}
 	if value, ok := ccuo.mutation.Config(); ok {
 		_spec.SetField(checkconfig.FieldConfig, field.TypeJSON, value)
-	}
-	if ccuo.mutation.CheckCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: false,
-			Table:   checkconfig.CheckTable,
-			Columns: []string{checkconfig.CheckColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(check.FieldID, field.TypeUUID),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := ccuo.mutation.CheckIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: false,
-			Table:   checkconfig.CheckTable,
-			Columns: []string{checkconfig.CheckColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(check.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if ccuo.mutation.UserCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: false,
-			Table:   checkconfig.UserTable,
-			Columns: []string{checkconfig.UserColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := ccuo.mutation.UserIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: false,
-			Table:   checkconfig.UserTable,
-			Columns: []string{checkconfig.UserColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	_node = &CheckConfig{config: ccuo.config}
 	_spec.Assign = _node.assignValues

@@ -12,17 +12,14 @@ type Check func(*sql.Selector)
 // CheckConfig is the predicate function for checkconfig builders.
 type CheckConfig func(*sql.Selector)
 
-// Credential is the predicate function for credential builders.
-type Credential func(*sql.Selector)
-
 // Round is the predicate function for round builders.
 type Round func(*sql.Selector)
 
+// ScoreCache is the predicate function for scorecache builders.
+type ScoreCache func(*sql.Selector)
+
 // Status is the predicate function for status builders.
 type Status func(*sql.Selector)
-
-// Team is the predicate function for team builders.
-type Team func(*sql.Selector)
 
 // User is the predicate function for user builders.
 type User func(*sql.Selector)

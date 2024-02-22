@@ -5,6 +5,8 @@ import (
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+	"entgo.io/ent/schema/index"
+	"entgo.io/ent/schema/mixin"
 	"github.com/google/uuid"
 	"github.com/scorify/backend/pkg/structs"
 )
@@ -42,17 +44,40 @@ func (Check) Fields() []ent.Field {
 	}
 }
 
+// Indexes of the Check.
+func (Check) Indexes() []ent.Index {
+	return []ent.Index{
+		index.Fields("name"),
+	}
+}
+
+// Mixins of the Check.
+func (Check) Mixin() []ent.Mixin {
+	return []ent.Mixin{
+		mixin.Time{},
+	}
+}
+
 // Edges of the Check.
 func (Check) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.From("configs", CheckConfig.Type).
+			StructTag(`json:"config"`).
+			Comment("The configuration of a check").
 			Annotations(
 				entsql.Annotation{
 					OnDelete: entsql.Cascade,
 				},
 			).
-			StructTag(`json:"config"`).
-			Comment("The configuration of a check").
+			Ref("check"),
+		edge.From("statuses", Status.Type).
+			StructTag(`json:"statuses"`).
+			Comment("The statuses of a check").
+			Annotations(
+				entsql.Annotation{
+					OnDelete: entsql.Cascade,
+				},
+			).
 			Ref("check"),
 	}
 }

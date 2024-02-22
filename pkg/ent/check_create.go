@@ -6,12 +6,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
 	"github.com/scorify/backend/pkg/ent/check"
 	"github.com/scorify/backend/pkg/ent/checkconfig"
+	"github.com/scorify/backend/pkg/ent/status"
 	"github.com/scorify/backend/pkg/structs"
 )
 
@@ -20,6 +22,34 @@ type CheckCreate struct {
 	config
 	mutation *CheckMutation
 	hooks    []Hook
+}
+
+// SetCreateTime sets the "create_time" field.
+func (cc *CheckCreate) SetCreateTime(t time.Time) *CheckCreate {
+	cc.mutation.SetCreateTime(t)
+	return cc
+}
+
+// SetNillableCreateTime sets the "create_time" field if the given value is not nil.
+func (cc *CheckCreate) SetNillableCreateTime(t *time.Time) *CheckCreate {
+	if t != nil {
+		cc.SetCreateTime(*t)
+	}
+	return cc
+}
+
+// SetUpdateTime sets the "update_time" field.
+func (cc *CheckCreate) SetUpdateTime(t time.Time) *CheckCreate {
+	cc.mutation.SetUpdateTime(t)
+	return cc
+}
+
+// SetNillableUpdateTime sets the "update_time" field if the given value is not nil.
+func (cc *CheckCreate) SetNillableUpdateTime(t *time.Time) *CheckCreate {
+	if t != nil {
+		cc.SetUpdateTime(*t)
+	}
+	return cc
 }
 
 // SetName sets the "name" field.
@@ -75,6 +105,21 @@ func (cc *CheckCreate) AddConfigs(c ...*CheckConfig) *CheckCreate {
 	return cc.AddConfigIDs(ids...)
 }
 
+// AddStatusIDs adds the "statuses" edge to the Status entity by IDs.
+func (cc *CheckCreate) AddStatusIDs(ids ...uuid.UUID) *CheckCreate {
+	cc.mutation.AddStatusIDs(ids...)
+	return cc
+}
+
+// AddStatuses adds the "statuses" edges to the Status entity.
+func (cc *CheckCreate) AddStatuses(s ...*Status) *CheckCreate {
+	ids := make([]uuid.UUID, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return cc.AddStatusIDs(ids...)
+}
+
 // Mutation returns the CheckMutation object of the builder.
 func (cc *CheckCreate) Mutation() *CheckMutation {
 	return cc.mutation
@@ -110,6 +155,14 @@ func (cc *CheckCreate) ExecX(ctx context.Context) {
 
 // defaults sets the default values of the builder before save.
 func (cc *CheckCreate) defaults() {
+	if _, ok := cc.mutation.CreateTime(); !ok {
+		v := check.DefaultCreateTime()
+		cc.mutation.SetCreateTime(v)
+	}
+	if _, ok := cc.mutation.UpdateTime(); !ok {
+		v := check.DefaultUpdateTime()
+		cc.mutation.SetUpdateTime(v)
+	}
 	if _, ok := cc.mutation.ID(); !ok {
 		v := check.DefaultID()
 		cc.mutation.SetID(v)
@@ -118,6 +171,12 @@ func (cc *CheckCreate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (cc *CheckCreate) check() error {
+	if _, ok := cc.mutation.CreateTime(); !ok {
+		return &ValidationError{Name: "create_time", err: errors.New(`ent: missing required field "Check.create_time"`)}
+	}
+	if _, ok := cc.mutation.UpdateTime(); !ok {
+		return &ValidationError{Name: "update_time", err: errors.New(`ent: missing required field "Check.update_time"`)}
+	}
 	if _, ok := cc.mutation.Name(); !ok {
 		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "Check.name"`)}
 	}
@@ -180,6 +239,14 @@ func (cc *CheckCreate) createSpec() (*Check, *sqlgraph.CreateSpec) {
 		_node.ID = id
 		_spec.ID.Value = &id
 	}
+	if value, ok := cc.mutation.CreateTime(); ok {
+		_spec.SetField(check.FieldCreateTime, field.TypeTime, value)
+		_node.CreateTime = value
+	}
+	if value, ok := cc.mutation.UpdateTime(); ok {
+		_spec.SetField(check.FieldUpdateTime, field.TypeTime, value)
+		_node.UpdateTime = value
+	}
 	if value, ok := cc.mutation.Name(); ok {
 		_spec.SetField(check.FieldName, field.TypeString, value)
 		_node.Name = value
@@ -205,6 +272,22 @@ func (cc *CheckCreate) createSpec() (*Check, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(checkconfig.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := cc.mutation.StatusesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   check.StatusesTable,
+			Columns: []string{check.StatusesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(status.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

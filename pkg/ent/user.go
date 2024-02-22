@@ -5,6 +5,7 @@ package ent
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
@@ -18,6 +19,10 @@ type User struct {
 	// ID of the ent.
 	// The uuid of the user
 	ID uuid.UUID `json:"id"`
+	// CreateTime holds the value of the "create_time" field.
+	CreateTime time.Time `json:"create_time,omitempty"`
+	// UpdateTime holds the value of the "update_time" field.
+	UpdateTime time.Time `json:"update_time,omitempty"`
 	// The username of the user
 	Username string `json:"username"`
 	// The password hash of user password
@@ -36,9 +41,13 @@ type User struct {
 type UserEdges struct {
 	// The configuration of a check
 	Configs []*CheckConfig `json:"config"`
+	// The status of a user
+	Status []*Status `json:"status"`
+	// The score caches of a user
+	Scorecaches []*ScoreCache `json:"scorecaches"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [3]bool
 }
 
 // ConfigsOrErr returns the Configs value or an error if the edge
@@ -50,6 +59,24 @@ func (e UserEdges) ConfigsOrErr() ([]*CheckConfig, error) {
 	return nil, &NotLoadedError{edge: "configs"}
 }
 
+// StatusOrErr returns the Status value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) StatusOrErr() ([]*Status, error) {
+	if e.loadedTypes[1] {
+		return e.Status, nil
+	}
+	return nil, &NotLoadedError{edge: "status"}
+}
+
+// ScorecachesOrErr returns the Scorecaches value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) ScorecachesOrErr() ([]*ScoreCache, error) {
+	if e.loadedTypes[2] {
+		return e.Scorecaches, nil
+	}
+	return nil, &NotLoadedError{edge: "scorecaches"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*User) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
@@ -59,6 +86,8 @@ func (*User) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullInt64)
 		case user.FieldUsername, user.FieldPassword, user.FieldRole:
 			values[i] = new(sql.NullString)
+		case user.FieldCreateTime, user.FieldUpdateTime:
+			values[i] = new(sql.NullTime)
 		case user.FieldID:
 			values[i] = new(uuid.UUID)
 		default:
@@ -81,6 +110,18 @@ func (u *User) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field id", values[i])
 			} else if value != nil {
 				u.ID = *value
+			}
+		case user.FieldCreateTime:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field create_time", values[i])
+			} else if value.Valid {
+				u.CreateTime = value.Time
+			}
+		case user.FieldUpdateTime:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field update_time", values[i])
+			} else if value.Valid {
+				u.UpdateTime = value.Time
 			}
 		case user.FieldUsername:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -124,6 +165,16 @@ func (u *User) QueryConfigs() *CheckConfigQuery {
 	return NewUserClient(u.config).QueryConfigs(u)
 }
 
+// QueryStatus queries the "status" edge of the User entity.
+func (u *User) QueryStatus() *StatusQuery {
+	return NewUserClient(u.config).QueryStatus(u)
+}
+
+// QueryScorecaches queries the "scorecaches" edge of the User entity.
+func (u *User) QueryScorecaches() *ScoreCacheQuery {
+	return NewUserClient(u.config).QueryScorecaches(u)
+}
+
 // Update returns a builder for updating this User.
 // Note that you need to call User.Unwrap() before calling this method if this User
 // was returned from a transaction, and the transaction was committed or rolled back.
@@ -147,6 +198,12 @@ func (u *User) String() string {
 	var builder strings.Builder
 	builder.WriteString("User(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", u.ID))
+	builder.WriteString("create_time=")
+	builder.WriteString(u.CreateTime.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("update_time=")
+	builder.WriteString(u.UpdateTime.Format(time.ANSIC))
+	builder.WriteString(", ")
 	builder.WriteString("username=")
 	builder.WriteString(u.Username)
 	builder.WriteString(", ")

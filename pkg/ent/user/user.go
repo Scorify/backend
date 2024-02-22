@@ -4,6 +4,7 @@ package user
 
 import (
 	"fmt"
+	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -15,6 +16,10 @@ const (
 	Label = "user"
 	// FieldID holds the string denoting the id field in the database.
 	FieldID = "id"
+	// FieldCreateTime holds the string denoting the create_time field in the database.
+	FieldCreateTime = "create_time"
+	// FieldUpdateTime holds the string denoting the update_time field in the database.
+	FieldUpdateTime = "update_time"
 	// FieldUsername holds the string denoting the username field in the database.
 	FieldUsername = "username"
 	// FieldPassword holds the string denoting the password field in the database.
@@ -25,6 +30,10 @@ const (
 	FieldNumber = "number"
 	// EdgeConfigs holds the string denoting the configs edge name in mutations.
 	EdgeConfigs = "configs"
+	// EdgeStatus holds the string denoting the status edge name in mutations.
+	EdgeStatus = "status"
+	// EdgeScorecaches holds the string denoting the scorecaches edge name in mutations.
+	EdgeScorecaches = "scorecaches"
 	// Table holds the table name of the user in the database.
 	Table = "users"
 	// ConfigsTable is the table that holds the configs relation/edge.
@@ -33,12 +42,28 @@ const (
 	// It exists in this package in order to avoid circular dependency with the "checkconfig" package.
 	ConfigsInverseTable = "check_configs"
 	// ConfigsColumn is the table column denoting the configs relation/edge.
-	ConfigsColumn = "check_config_user"
+	ConfigsColumn = "user_id"
+	// StatusTable is the table that holds the status relation/edge.
+	StatusTable = "status"
+	// StatusInverseTable is the table name for the Status entity.
+	// It exists in this package in order to avoid circular dependency with the "status" package.
+	StatusInverseTable = "status"
+	// StatusColumn is the table column denoting the status relation/edge.
+	StatusColumn = "user_id"
+	// ScorecachesTable is the table that holds the scorecaches relation/edge.
+	ScorecachesTable = "score_caches"
+	// ScorecachesInverseTable is the table name for the ScoreCache entity.
+	// It exists in this package in order to avoid circular dependency with the "scorecache" package.
+	ScorecachesInverseTable = "score_caches"
+	// ScorecachesColumn is the table column denoting the scorecaches relation/edge.
+	ScorecachesColumn = "user_id"
 )
 
 // Columns holds all SQL columns for user fields.
 var Columns = []string{
 	FieldID,
+	FieldCreateTime,
+	FieldUpdateTime,
 	FieldUsername,
 	FieldPassword,
 	FieldRole,
@@ -56,6 +81,12 @@ func ValidColumn(column string) bool {
 }
 
 var (
+	// DefaultCreateTime holds the default value on creation for the "create_time" field.
+	DefaultCreateTime func() time.Time
+	// DefaultUpdateTime holds the default value on creation for the "update_time" field.
+	DefaultUpdateTime func() time.Time
+	// UpdateDefaultUpdateTime holds the default value on update for the "update_time" field.
+	UpdateDefaultUpdateTime func() time.Time
 	// UsernameValidator is a validator for the "username" field. It is called by the builders before save.
 	UsernameValidator func(string) error
 	// PasswordValidator is a validator for the "password" field. It is called by the builders before save.
@@ -100,6 +131,16 @@ func ByID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldID, opts...).ToFunc()
 }
 
+// ByCreateTime orders the results by the create_time field.
+func ByCreateTime(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCreateTime, opts...).ToFunc()
+}
+
+// ByUpdateTime orders the results by the update_time field.
+func ByUpdateTime(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldUpdateTime, opts...).ToFunc()
+}
+
 // ByUsername orders the results by the username field.
 func ByUsername(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldUsername, opts...).ToFunc()
@@ -133,10 +174,52 @@ func ByConfigs(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newConfigsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByStatusCount orders the results by status count.
+func ByStatusCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newStatusStep(), opts...)
+	}
+}
+
+// ByStatus orders the results by status terms.
+func ByStatus(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newStatusStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByScorecachesCount orders the results by scorecaches count.
+func ByScorecachesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newScorecachesStep(), opts...)
+	}
+}
+
+// ByScorecaches orders the results by scorecaches terms.
+func ByScorecaches(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newScorecachesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newConfigsStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(ConfigsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, true, ConfigsTable, ConfigsColumn),
+	)
+}
+func newStatusStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(StatusInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, true, StatusTable, StatusColumn),
+	)
+}
+func newScorecachesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ScorecachesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, true, ScorecachesTable, ScorecachesColumn),
 	)
 }

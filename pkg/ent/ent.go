@@ -14,10 +14,9 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/scorify/backend/pkg/ent/check"
 	"github.com/scorify/backend/pkg/ent/checkconfig"
-	"github.com/scorify/backend/pkg/ent/credential"
 	"github.com/scorify/backend/pkg/ent/round"
+	"github.com/scorify/backend/pkg/ent/scorecache"
 	"github.com/scorify/backend/pkg/ent/status"
-	"github.com/scorify/backend/pkg/ent/team"
 	"github.com/scorify/backend/pkg/ent/user"
 )
 
@@ -81,10 +80,9 @@ func checkColumn(table, column string) error {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
 			check.Table:       check.ValidColumn,
 			checkconfig.Table: checkconfig.ValidColumn,
-			credential.Table:  credential.ValidColumn,
 			round.Table:       round.ValidColumn,
+			scorecache.Table:  scorecache.ValidColumn,
 			status.Table:      status.ValidColumn,
-			team.Table:        team.ValidColumn,
 			user.Table:        user.ValidColumn,
 		})
 	})

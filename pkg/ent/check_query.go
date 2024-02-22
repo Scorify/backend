@@ -15,16 +15,18 @@ import (
 	"github.com/scorify/backend/pkg/ent/check"
 	"github.com/scorify/backend/pkg/ent/checkconfig"
 	"github.com/scorify/backend/pkg/ent/predicate"
+	"github.com/scorify/backend/pkg/ent/status"
 )
 
 // CheckQuery is the builder for querying Check entities.
 type CheckQuery struct {
 	config
-	ctx         *QueryContext
-	order       []check.OrderOption
-	inters      []Interceptor
-	predicates  []predicate.Check
-	withConfigs *CheckConfigQuery
+	ctx          *QueryContext
+	order        []check.OrderOption
+	inters       []Interceptor
+	predicates   []predicate.Check
+	withConfigs  *CheckConfigQuery
+	withStatuses *StatusQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -76,6 +78,28 @@ func (cq *CheckQuery) QueryConfigs() *CheckConfigQuery {
 			sqlgraph.From(check.Table, check.FieldID, selector),
 			sqlgraph.To(checkconfig.Table, checkconfig.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, true, check.ConfigsTable, check.ConfigsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(cq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryStatuses chains the current query on the "statuses" edge.
+func (cq *CheckQuery) QueryStatuses() *StatusQuery {
+	query := (&StatusClient{config: cq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := cq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := cq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(check.Table, check.FieldID, selector),
+			sqlgraph.To(status.Table, status.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, check.StatusesTable, check.StatusesColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(cq.driver.Dialect(), step)
 		return fromU, nil
@@ -270,12 +294,13 @@ func (cq *CheckQuery) Clone() *CheckQuery {
 		return nil
 	}
 	return &CheckQuery{
-		config:      cq.config,
-		ctx:         cq.ctx.Clone(),
-		order:       append([]check.OrderOption{}, cq.order...),
-		inters:      append([]Interceptor{}, cq.inters...),
-		predicates:  append([]predicate.Check{}, cq.predicates...),
-		withConfigs: cq.withConfigs.Clone(),
+		config:       cq.config,
+		ctx:          cq.ctx.Clone(),
+		order:        append([]check.OrderOption{}, cq.order...),
+		inters:       append([]Interceptor{}, cq.inters...),
+		predicates:   append([]predicate.Check{}, cq.predicates...),
+		withConfigs:  cq.withConfigs.Clone(),
+		withStatuses: cq.withStatuses.Clone(),
 		// clone intermediate query.
 		sql:  cq.sql.Clone(),
 		path: cq.path,
@@ -293,18 +318,29 @@ func (cq *CheckQuery) WithConfigs(opts ...func(*CheckConfigQuery)) *CheckQuery {
 	return cq
 }
 
+// WithStatuses tells the query-builder to eager-load the nodes that are connected to
+// the "statuses" edge. The optional arguments are used to configure the query builder of the edge.
+func (cq *CheckQuery) WithStatuses(opts ...func(*StatusQuery)) *CheckQuery {
+	query := (&StatusClient{config: cq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	cq.withStatuses = query
+	return cq
+}
+
 // GroupBy is used to group vertices by one or more fields/columns.
 // It is often used with aggregate functions, like: count, max, mean, min, sum.
 //
 // Example:
 //
 //	var v []struct {
-//		Name string `json:"name"`
+//		CreateTime time.Time `json:"create_time,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
 //	client.Check.Query().
-//		GroupBy(check.FieldName).
+//		GroupBy(check.FieldCreateTime).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 func (cq *CheckQuery) GroupBy(field string, fields ...string) *CheckGroupBy {
@@ -322,11 +358,11 @@ func (cq *CheckQuery) GroupBy(field string, fields ...string) *CheckGroupBy {
 // Example:
 //
 //	var v []struct {
-//		Name string `json:"name"`
+//		CreateTime time.Time `json:"create_time,omitempty"`
 //	}
 //
 //	client.Check.Query().
-//		Select(check.FieldName).
+//		Select(check.FieldCreateTime).
 //		Scan(ctx, &v)
 func (cq *CheckQuery) Select(fields ...string) *CheckSelect {
 	cq.ctx.Fields = append(cq.ctx.Fields, fields...)
@@ -371,8 +407,9 @@ func (cq *CheckQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Check,
 	var (
 		nodes       = []*Check{}
 		_spec       = cq.querySpec()
-		loadedTypes = [1]bool{
+		loadedTypes = [2]bool{
 			cq.withConfigs != nil,
+			cq.withStatuses != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -400,6 +437,13 @@ func (cq *CheckQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Check,
 			return nil, err
 		}
 	}
+	if query := cq.withStatuses; query != nil {
+		if err := cq.loadStatuses(ctx, query, nodes,
+			func(n *Check) { n.Edges.Statuses = []*Status{} },
+			func(n *Check, e *Status) { n.Edges.Statuses = append(n.Edges.Statuses, e) }); err != nil {
+			return nil, err
+		}
+	}
 	return nodes, nil
 }
 
@@ -413,7 +457,9 @@ func (cq *CheckQuery) loadConfigs(ctx context.Context, query *CheckConfigQuery, 
 			init(nodes[i])
 		}
 	}
-	query.withFKs = true
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(checkconfig.FieldCheckID)
+	}
 	query.Where(predicate.CheckConfig(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(check.ConfigsColumn), fks...))
 	}))
@@ -422,13 +468,40 @@ func (cq *CheckQuery) loadConfigs(ctx context.Context, query *CheckConfigQuery, 
 		return err
 	}
 	for _, n := range neighbors {
-		fk := n.check_config_check
-		if fk == nil {
-			return fmt.Errorf(`foreign-key "check_config_check" is nil for node %v`, n.ID)
-		}
-		node, ok := nodeids[*fk]
+		fk := n.CheckID
+		node, ok := nodeids[fk]
 		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "check_config_check" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "check_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (cq *CheckQuery) loadStatuses(ctx context.Context, query *StatusQuery, nodes []*Check, init func(*Check), assign func(*Check, *Status)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Check)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(status.FieldCheckID)
+	}
+	query.Where(predicate.Status(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(check.StatusesColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.CheckID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "check_id" returned %v for node %v`, fk, n.ID)
 		}
 		assign(node, n)
 	}

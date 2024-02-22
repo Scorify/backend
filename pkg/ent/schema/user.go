@@ -5,6 +5,8 @@ import (
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+	"entgo.io/ent/schema/index"
+	"entgo.io/ent/schema/mixin"
 	"github.com/google/uuid"
 )
 
@@ -46,17 +48,49 @@ func (User) Fields() []ent.Field {
 	}
 }
 
+// Indexes of the User.
+func (User) Indexes() []ent.Index {
+	return []ent.Index{
+		index.Fields("username"),
+	}
+}
+
+// Mixins of the User.
+func (User) Mixin() []ent.Mixin {
+	return []ent.Mixin{
+		mixin.Time{},
+	}
+}
+
 // Edges of the User.
 func (User) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.From("configs", CheckConfig.Type).
+			StructTag(`json:"config"`).
+			Comment("The configuration of a check").
 			Annotations(
 				entsql.Annotation{
 					OnDelete: entsql.Cascade,
 				},
 			).
-			StructTag(`json:"config"`).
-			Comment("The configuration of a check").
+			Ref("user"),
+		edge.From("status", Status.Type).
+			StructTag(`json:"status"`).
+			Comment("The status of a user").
+			Annotations(
+				entsql.Annotation{
+					OnDelete: entsql.Cascade,
+				},
+			).
+			Ref("user"),
+		edge.From("scorecaches", ScoreCache.Type).
+			StructTag(`json:"scorecaches"`).
+			Comment("The score caches of a user").
+			Annotations(
+				entsql.Annotation{
+					OnDelete: entsql.Cascade,
+				},
+			).
 			Ref("user"),
 	}
 }
