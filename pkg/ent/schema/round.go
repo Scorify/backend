@@ -5,6 +5,7 @@ import (
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+	"entgo.io/ent/schema/index"
 	"entgo.io/ent/schema/mixin"
 	"github.com/google/uuid"
 )
@@ -26,6 +27,7 @@ func (Round) Fields() []ent.Field {
 		field.Int("number").
 			StructTag(`json:"number"`).
 			Comment("The number of the round").
+			Unique().
 			NonNegative(),
 		field.Bool("complete").
 			StructTag(`json:"complete"`).
@@ -35,6 +37,13 @@ func (Round) Fields() []ent.Field {
 			StructTag(`json:"points"`).
 			Comment("The points of the round").
 			NonNegative(),
+	}
+}
+
+// Indexes of the Round.
+func (Round) Indexes() []ent.Index {
+	return []ent.Index{
+		index.Fields("number"),
 	}
 }
 

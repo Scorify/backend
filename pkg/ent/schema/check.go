@@ -5,6 +5,7 @@ import (
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+	"entgo.io/ent/schema/index"
 	"entgo.io/ent/schema/mixin"
 	"github.com/google/uuid"
 	"github.com/scorify/backend/pkg/structs"
@@ -40,6 +41,13 @@ func (Check) Fields() []ent.Field {
 		field.JSON("default_config", structs.CheckConfiguration{}).
 			StructTag(`json:"default_config"`).
 			Comment("The default configuration of a check"),
+	}
+}
+
+// Indexes of the Check.
+func (Check) Indexes() []ent.Index {
+	return []ent.Index{
+		index.Fields("name"),
 	}
 }
 

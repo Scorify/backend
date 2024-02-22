@@ -4,6 +4,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+	"entgo.io/ent/schema/index"
 	"entgo.io/ent/schema/mixin"
 	"github.com/google/uuid"
 )
@@ -25,6 +26,21 @@ func (CheckConfig) Fields() []ent.Field {
 		field.JSON("config", map[string]interface{}{}).
 			StructTag(`json:"config"`).
 			Comment("The configuration of a check"),
+		field.UUID("check_id", uuid.UUID{}).
+			StructTag(`json:"check_id"`).
+			Comment("The check this configuration belongs to").
+			Immutable(),
+		field.UUID("user_id", uuid.UUID{}).
+			StructTag(`json:"user_id"`).
+			Comment("The user this configuration belongs to").
+			Immutable(),
+	}
+}
+
+// Indexes of the CheckConfig.
+func (CheckConfig) Indexes() []ent.Index {
+	return []ent.Index{
+		index.Fields("check_id", "user_id"),
 	}
 }
 
@@ -41,11 +57,15 @@ func (CheckConfig) Edges() []ent.Edge {
 		edge.To("check", Check.Type).
 			StructTag(`json:"check"`).
 			Comment("The check this configuration belongs to").
+			Field("check_id").
+			Immutable().
 			Required().
 			Unique(),
 		edge.To("user", User.Type).
 			StructTag(`json:"user"`).
 			Comment("The user this configuration belongs to").
+			Field("user_id").
+			Immutable().
 			Required().
 			Unique(),
 	}
