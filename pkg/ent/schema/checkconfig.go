@@ -4,6 +4,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+	"entgo.io/ent/schema/mixin"
 	"github.com/google/uuid"
 )
 
@@ -24,6 +25,13 @@ func (CheckConfig) Fields() []ent.Field {
 		field.JSON("config", map[string]interface{}{}).
 			StructTag(`json:"config"`).
 			Comment("The configuration of a check"),
+	}
+}
+
+// Mixins of the CheckConfig.
+func (CheckConfig) Mixin() []ent.Mixin {
+	return []ent.Mixin{
+		mixin.Time{},
 	}
 }
 

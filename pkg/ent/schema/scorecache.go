@@ -4,6 +4,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+	"entgo.io/ent/schema/mixin"
 )
 
 // ScoreCache holds the schema definition for the ScoreCache entity.
@@ -18,6 +19,13 @@ func (ScoreCache) Fields() []ent.Field {
 			StructTag(`json:"points"`).
 			Comment("The points of the round").
 			NonNegative(),
+	}
+}
+
+// Mixins of the ScoreCache.
+func (ScoreCache) Mixin() []ent.Mixin {
+	return []ent.Mixin{
+		mixin.Time{},
 	}
 }
 

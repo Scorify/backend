@@ -4,6 +4,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+	"entgo.io/ent/schema/mixin"
 	"github.com/google/uuid"
 )
 
@@ -30,11 +31,14 @@ func (Status) Fields() []ent.Field {
 			Comment("The status of the status").
 			Values("up", "down", "unknown").
 			Default("unknown"),
-		field.Time("updated_at").
-			StructTag(`json:"updated_at"`).
-			Comment("The update time of the status").
-			Optional(),
 		field.Int("weight"),
+	}
+}
+
+// Mixins of the Status.
+func (Status) Mixin() []ent.Mixin {
+	return []ent.Mixin{
+		mixin.Time{},
 	}
 }
 

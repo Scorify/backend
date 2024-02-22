@@ -5,6 +5,7 @@ import (
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+	"entgo.io/ent/schema/mixin"
 	"github.com/google/uuid"
 )
 
@@ -30,18 +31,17 @@ func (Round) Fields() []ent.Field {
 			StructTag(`json:"complete"`).
 			Comment("The completion status of the round").
 			Default(false),
-		field.Time("started_at").
-			StructTag(`json:"started_at"`).
-			Comment("The start time of the round").
-			Optional(),
-		field.Time("ended_at").
-			StructTag(`json:"ended_at"`).
-			Comment("The end time of the round").
-			Optional(),
 		field.Int("points").
 			StructTag(`json:"points"`).
 			Comment("The points of the round").
 			NonNegative(),
+	}
+}
+
+// Mixins of the Round.
+func (Round) Mixin() []ent.Mixin {
+	return []ent.Mixin{
+		mixin.Time{},
 	}
 }
 
