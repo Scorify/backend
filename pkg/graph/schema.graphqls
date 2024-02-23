@@ -53,7 +53,6 @@ type Source {
 type CheckConfig {
   id: ID!
   config: JSON!
-  editable_fields: [String!]!
   create_time: Time!
   update_time: Time!
   check_id: ID!

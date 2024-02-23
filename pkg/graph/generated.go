@@ -75,15 +75,14 @@ type ComplexityRoot struct {
 	}
 
 	CheckConfig struct {
-		Check          func(childComplexity int) int
-		CheckID        func(childComplexity int) int
-		Config         func(childComplexity int) int
-		CreateTime     func(childComplexity int) int
-		EditableFields func(childComplexity int) int
-		ID             func(childComplexity int) int
-		UpdateTime     func(childComplexity int) int
-		User           func(childComplexity int) int
-		UserID         func(childComplexity int) int
+		Check      func(childComplexity int) int
+		CheckID    func(childComplexity int) int
+		Config     func(childComplexity int) int
+		CreateTime func(childComplexity int) int
+		ID         func(childComplexity int) int
+		UpdateTime func(childComplexity int) int
+		User       func(childComplexity int) int
+		UserID     func(childComplexity int) int
 	}
 
 	Config struct {
@@ -198,7 +197,6 @@ type CheckResolver interface {
 	Source(ctx context.Context, obj *ent.Check) (*model.Source, error)
 
 	Config(ctx context.Context, obj *ent.Check) (string, error)
-	EditableFields(ctx context.Context, obj *ent.Check) ([]string, error)
 
 	Configs(ctx context.Context, obj *ent.Check) ([]*ent.CheckConfig, error)
 	Statuses(ctx context.Context, obj *ent.Check) ([]*ent.Status, error)
@@ -206,7 +204,6 @@ type CheckResolver interface {
 type CheckConfigResolver interface {
 	ID(ctx context.Context, obj *ent.CheckConfig) (string, error)
 	Config(ctx context.Context, obj *ent.CheckConfig) (string, error)
-	EditableFields(ctx context.Context, obj *ent.CheckConfig) ([]string, error)
 
 	CheckID(ctx context.Context, obj *ent.CheckConfig) (string, error)
 	UserID(ctx context.Context, obj *ent.CheckConfig) (string, error)
@@ -399,13 +396,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.CheckConfig.CreateTime(childComplexity), true
-
-	case "CheckConfig.editable_fields":
-		if e.complexity.CheckConfig.EditableFields == nil {
-			break
-		}
-
-		return e.complexity.CheckConfig.EditableFields(childComplexity), true
 
 	case "CheckConfig.id":
 		if e.complexity.CheckConfig.ID == nil {
@@ -1863,7 +1853,7 @@ func (ec *executionContext) _Check_editable_fields(ctx context.Context, field gr
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Check().EditableFields(rctx, obj)
+			return obj.EditableFields, nil
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			roles, err := ec.unmarshalORole2ᚕᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚋuserᚐRole(ctx, []interface{}{"admin"})
@@ -1907,8 +1897,8 @@ func (ec *executionContext) fieldContext_Check_editable_fields(ctx context.Conte
 	fc = &graphql.FieldContext{
 		Object:     "Check",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
 		},
@@ -2047,8 +2037,6 @@ func (ec *executionContext) fieldContext_Check_configs(ctx context.Context, fiel
 				return ec.fieldContext_CheckConfig_id(ctx, field)
 			case "config":
 				return ec.fieldContext_CheckConfig_config(ctx, field)
-			case "editable_fields":
-				return ec.fieldContext_CheckConfig_editable_fields(ctx, field)
 			case "create_time":
 				return ec.fieldContext_CheckConfig_create_time(ctx, field)
 			case "update_time":
@@ -2221,50 +2209,6 @@ func (ec *executionContext) fieldContext_CheckConfig_config(ctx context.Context,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type JSON does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _CheckConfig_editable_fields(ctx context.Context, field graphql.CollectedField, obj *ent.CheckConfig) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_CheckConfig_editable_fields(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.CheckConfig().EditableFields(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]string)
-	fc.Result = res
-	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_CheckConfig_editable_fields(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "CheckConfig",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -8812,41 +8756,10 @@ func (ec *executionContext) _Check(ctx context.Context, sel ast.SelectionSet, ob
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "editable_fields":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Check_editable_fields(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
+			out.Values[i] = ec._Check_editable_fields(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
 			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "create_time":
 			out.Values[i] = ec._Check_create_time(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -9009,42 +8922,6 @@ func (ec *executionContext) _CheckConfig(ctx context.Context, sel ast.SelectionS
 					}
 				}()
 				res = ec._CheckConfig_config(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
-			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-		case "editable_fields":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._CheckConfig_editable_fields(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
