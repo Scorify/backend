@@ -8,7 +8,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/scorify/backend/pkg/auth"
@@ -21,7 +20,6 @@ import (
 	"github.com/scorify/backend/pkg/ent/user"
 	"github.com/scorify/backend/pkg/graph/model"
 	"github.com/scorify/backend/pkg/helpers"
-	"github.com/scorify/backend/pkg/structs"
 	"github.com/sirupsen/logrus"
 )
 
@@ -44,12 +42,17 @@ func (r *checkResolver) Source(ctx context.Context, obj *ent.Check) (*model.Sour
 }
 
 // Config is the resolver for the config field.
-func (r *checkResolver) Config(ctx context.Context, obj *ent.Check) (*structs.CheckConfiguration, error) {
-	return &obj.DefaultConfig, nil
+func (r *checkResolver) Config(ctx context.Context, obj *ent.Check) (string, error) {
+	panic(fmt.Errorf("not implemented: Config - config"))
+}
+
+// EditableFields is the resolver for the editable_fields field.
+func (r *checkResolver) EditableFields(ctx context.Context, obj *ent.Check) ([]string, error) {
+	panic(fmt.Errorf("not implemented: EditableFields - editable_fields"))
 }
 
 // Configs is the resolver for the configs field.
-func (r *checkResolver) Configs(ctx context.Context, obj *ent.Check) ([]*structs.CheckConfiguration, error) {
+func (r *checkResolver) Configs(ctx context.Context, obj *ent.Check) ([]*ent.CheckConfig, error) {
 	panic(fmt.Errorf("not implemented: Configs - configs"))
 }
 
@@ -59,44 +62,37 @@ func (r *checkResolver) Statuses(ctx context.Context, obj *ent.Check) ([]*ent.St
 }
 
 // ID is the resolver for the id field.
-func (r *checkConfigurationResolver) ID(ctx context.Context, obj *structs.CheckConfiguration) (string, error) {
+func (r *checkConfigResolver) ID(ctx context.Context, obj *ent.CheckConfig) (string, error) {
 	panic(fmt.Errorf("not implemented: ID - id"))
 }
 
 // Config is the resolver for the config field.
-func (r *checkConfigurationResolver) Config(ctx context.Context, obj *structs.CheckConfiguration) (string, error) {
-	out, err := json.Marshal(obj.Config)
-
-	return string(out), err
+func (r *checkConfigResolver) Config(ctx context.Context, obj *ent.CheckConfig) (string, error) {
+	panic(fmt.Errorf("not implemented: Config - config"))
 }
 
-// CreateTime is the resolver for the create_time field.
-func (r *checkConfigurationResolver) CreateTime(ctx context.Context, obj *structs.CheckConfiguration) (*time.Time, error) {
-	panic(fmt.Errorf("not implemented: CreateTime - create_time"))
-}
-
-// UpdateTime is the resolver for the update_time field.
-func (r *checkConfigurationResolver) UpdateTime(ctx context.Context, obj *structs.CheckConfiguration) (*time.Time, error) {
-	panic(fmt.Errorf("not implemented: UpdateTime - update_time"))
+// EditableFields is the resolver for the editable_fields field.
+func (r *checkConfigResolver) EditableFields(ctx context.Context, obj *ent.CheckConfig) ([]string, error) {
+	panic(fmt.Errorf("not implemented: EditableFields - editable_fields"))
 }
 
 // CheckID is the resolver for the check_id field.
-func (r *checkConfigurationResolver) CheckID(ctx context.Context, obj *structs.CheckConfiguration) (string, error) {
+func (r *checkConfigResolver) CheckID(ctx context.Context, obj *ent.CheckConfig) (string, error) {
 	panic(fmt.Errorf("not implemented: CheckID - check_id"))
 }
 
 // UserID is the resolver for the user_id field.
-func (r *checkConfigurationResolver) UserID(ctx context.Context, obj *structs.CheckConfiguration) (string, error) {
+func (r *checkConfigResolver) UserID(ctx context.Context, obj *ent.CheckConfig) (string, error) {
 	panic(fmt.Errorf("not implemented: UserID - user_id"))
 }
 
 // Check is the resolver for the check field.
-func (r *checkConfigurationResolver) Check(ctx context.Context, obj *structs.CheckConfiguration) (*ent.Check, error) {
+func (r *checkConfigResolver) Check(ctx context.Context, obj *ent.CheckConfig) (*ent.Check, error) {
 	panic(fmt.Errorf("not implemented: Check - check"))
 }
 
 // User is the resolver for the user field.
-func (r *checkConfigurationResolver) User(ctx context.Context, obj *structs.CheckConfiguration) (*ent.User, error) {
+func (r *checkConfigResolver) User(ctx context.Context, obj *ent.CheckConfig) (*ent.User, error) {
 	panic(fmt.Errorf("not implemented: User - user"))
 }
 
@@ -113,7 +109,7 @@ func (r *configResolver) Config(ctx context.Context, obj *ent.CheckConfig) (stri
 	}
 
 	outConfig := make(map[string]interface{})
-	for _, key := range entCheck.DefaultConfig.EditableFields {
+	for _, key := range entCheck.EdittableFields {
 		outConfig[key] = obj.Config[key]
 	}
 
@@ -242,10 +238,9 @@ func (r *mutationResolver) CreateCheck(ctx context.Context, name string, source 
 		return nil, fmt.Errorf("failed to unmarshal config: %v", err)
 	}
 
-	defaultConfig := structs.CheckConfiguration{
-		Config:         make(map[string]interface{}),
-		EditableFields: []string{},
-	}
+	defaultConfig := make(map[string]interface{})
+	defaultEditableFields := []string{}
+
 	for key, value := range schemaMap {
 		switch value {
 		case "string":
@@ -259,7 +254,7 @@ func (r *mutationResolver) CreateCheck(ctx context.Context, name string, source 
 				return nil, fmt.Errorf("invalid config, key \"%s\" is not a string", key)
 			}
 
-			defaultConfig.Config[key] = configString
+			defaultConfig[key] = configString
 		case "int":
 			configValue, ok := configMap[key]
 			if !ok {
@@ -271,7 +266,7 @@ func (r *mutationResolver) CreateCheck(ctx context.Context, name string, source 
 				return nil, fmt.Errorf("invalid config, key \"%s\" is not an int", key)
 			}
 
-			defaultConfig.Config[key] = int(configFloat)
+			defaultConfig[key] = int(configFloat)
 		case "bool":
 			configValue, ok := configMap[key]
 			if !ok {
@@ -283,7 +278,7 @@ func (r *mutationResolver) CreateCheck(ctx context.Context, name string, source 
 				return nil, fmt.Errorf("invalid config, key \"%s\" is not a boolean", key)
 			}
 
-			defaultConfig.Config[key] = configBool
+			defaultConfig[key] = configBool
 		default:
 			return nil, fmt.Errorf("invalid schema, unknown type \"%s\" for key \"%s\"", value, key)
 		}
@@ -295,14 +290,15 @@ func (r *mutationResolver) CreateCheck(ctx context.Context, name string, source 
 	}
 
 	if editableFields != nil {
-		defaultConfig.EditableFields = editableFields
+		defaultEditableFields = editableFields
 	}
 
 	entCheck, err := tx.Check.Create().
 		SetName(name).
 		SetWeight(weight).
 		SetSource(source).
-		SetDefaultConfig(defaultConfig).
+		SetConfig(defaultConfig).
+		SetEdittableFields(defaultEditableFields).
 		Save(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create check: %v", err)
@@ -320,7 +316,7 @@ func (r *mutationResolver) CreateCheck(ctx context.Context, name string, source 
 
 	for _, entUser := range entUsers {
 		templateConfig := make(map[string]interface{})
-		for key, value := range defaultConfig.Config {
+		for key, value := range defaultConfig {
 			switch val := value.(type) {
 			case string:
 				templateConfig[key] = helpers.ConfigTemplate(
@@ -387,12 +383,11 @@ func (r *mutationResolver) UpdateCheck(ctx context.Context, id string, name *str
 	}
 
 	if config != nil || editableFields != nil {
-		defaultConfig := structs.CheckConfiguration{
-			Config:         make(map[string]interface{}),
-			EditableFields: entCheck.DefaultConfig.EditableFields,
-		}
-		for key, value := range entCheck.DefaultConfig.Config {
-			defaultConfig.Config[key] = value
+		defaultConfig := make(map[string]interface{})
+		defaultEditableFields := entCheck.EdittableFields
+
+		for key, value := range entCheck.Config {
+			defaultConfig[key] = value
 		}
 
 		if config != nil {
@@ -426,7 +421,7 @@ func (r *mutationResolver) UpdateCheck(ctx context.Context, id string, name *str
 						return nil, fmt.Errorf("invalid config, key \"%s\" is not a string", key)
 					}
 
-					defaultConfig.Config[key] = configString
+					defaultConfig[key] = configString
 				case "int":
 					configValue, ok := configMap[key]
 					if !ok {
@@ -438,7 +433,7 @@ func (r *mutationResolver) UpdateCheck(ctx context.Context, id string, name *str
 						return nil, fmt.Errorf("invalid config, key \"%s\" is not an int", key)
 					}
 
-					defaultConfig.Config[key] = int(configFloat)
+					defaultConfig[key] = int(configFloat)
 				case "bool":
 					configValue, ok := configMap[key]
 					if !ok {
@@ -450,7 +445,7 @@ func (r *mutationResolver) UpdateCheck(ctx context.Context, id string, name *str
 						return nil, fmt.Errorf("invalid config, key \"%s\" is not a boolean", key)
 					}
 
-					defaultConfig.Config[key] = configBool
+					defaultConfig[key] = configBool
 				default:
 					return nil, fmt.Errorf("invalid schema, unknown type \"%s\" for key \"%s\"", value, key)
 				}
@@ -458,10 +453,11 @@ func (r *mutationResolver) UpdateCheck(ctx context.Context, id string, name *str
 		}
 
 		if editableFields != nil {
-			defaultConfig.EditableFields = editableFields
+			defaultEditableFields = editableFields
 		}
 
-		checkUpdate.SetDefaultConfig(defaultConfig)
+		checkUpdate.SetConfig(defaultConfig)
+		checkUpdate.SetEdittableFields(defaultEditableFields)
 
 		checkUpdateResult, err := checkUpdate.Save(ctx)
 		if err != nil {
@@ -470,8 +466,8 @@ func (r *mutationResolver) UpdateCheck(ctx context.Context, id string, name *str
 
 		// generate map of fields and value that were changes
 		patchFields := make(map[string]interface{})
-		for key, value := range defaultConfig.Config {
-			if value != entCheck.DefaultConfig.Config[key] {
+		for key, value := range defaultConfig {
+			if value != entCheck.Config[key] {
 				patchFields[key] = value
 			}
 		}
@@ -582,7 +578,7 @@ func (r *mutationResolver) CreateUser(ctx context.Context, username string, pass
 	for _, entCheck := range entChecks {
 		_, err := tx.CheckConfig.Create().
 			SetCheck(entCheck).
-			SetConfig(entCheck.DefaultConfig.Config).
+			SetConfig(entCheck.Config).
 			SetUser(entUser).
 			Save(ctx)
 		if err != nil {
@@ -933,10 +929,8 @@ func (r *userResolver) Scorecaches(ctx context.Context, obj *ent.User) ([]*ent.S
 // Check returns CheckResolver implementation.
 func (r *Resolver) Check() CheckResolver { return &checkResolver{r} }
 
-// CheckConfiguration returns CheckConfigurationResolver implementation.
-func (r *Resolver) CheckConfiguration() CheckConfigurationResolver {
-	return &checkConfigurationResolver{r}
-}
+// CheckConfig returns CheckConfigResolver implementation.
+func (r *Resolver) CheckConfig() CheckConfigResolver { return &checkConfigResolver{r} }
 
 // Config returns ConfigResolver implementation.
 func (r *Resolver) Config() ConfigResolver { return &configResolver{r} }
@@ -963,7 +957,7 @@ func (r *Resolver) Subscription() SubscriptionResolver { return &subscriptionRes
 func (r *Resolver) User() UserResolver { return &userResolver{r} }
 
 type checkResolver struct{ *Resolver }
-type checkConfigurationResolver struct{ *Resolver }
+type checkConfigResolver struct{ *Resolver }
 type configResolver struct{ *Resolver }
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }

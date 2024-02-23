@@ -19,7 +19,6 @@ import (
 	"github.com/scorify/backend/pkg/ent"
 	"github.com/scorify/backend/pkg/ent/user"
 	"github.com/scorify/backend/pkg/graph/model"
-	"github.com/scorify/backend/pkg/structs"
 	gqlparser "github.com/vektah/gqlparser/v2"
 	"github.com/vektah/gqlparser/v2/ast"
 )
@@ -45,7 +44,7 @@ type Config struct {
 
 type ResolverRoot interface {
 	Check() CheckResolver
-	CheckConfiguration() CheckConfigurationResolver
+	CheckConfig() CheckConfigResolver
 	Config() ConfigResolver
 	Mutation() MutationResolver
 	Query() QueryResolver
@@ -63,18 +62,19 @@ type DirectiveRoot struct {
 
 type ComplexityRoot struct {
 	Check struct {
-		Config     func(childComplexity int) int
-		Configs    func(childComplexity int) int
-		CreateTime func(childComplexity int) int
-		ID         func(childComplexity int) int
-		Name       func(childComplexity int) int
-		Source     func(childComplexity int) int
-		Statuses   func(childComplexity int) int
-		UpdateTime func(childComplexity int) int
-		Weight     func(childComplexity int) int
+		Config         func(childComplexity int) int
+		Configs        func(childComplexity int) int
+		CreateTime     func(childComplexity int) int
+		EditableFields func(childComplexity int) int
+		ID             func(childComplexity int) int
+		Name           func(childComplexity int) int
+		Source         func(childComplexity int) int
+		Statuses       func(childComplexity int) int
+		UpdateTime     func(childComplexity int) int
+		Weight         func(childComplexity int) int
 	}
 
-	CheckConfiguration struct {
+	CheckConfig struct {
 		Check          func(childComplexity int) int
 		CheckID        func(childComplexity int) int
 		Config         func(childComplexity int) int
@@ -197,21 +197,21 @@ type CheckResolver interface {
 
 	Source(ctx context.Context, obj *ent.Check) (*model.Source, error)
 
-	Config(ctx context.Context, obj *ent.Check) (*structs.CheckConfiguration, error)
+	Config(ctx context.Context, obj *ent.Check) (string, error)
+	EditableFields(ctx context.Context, obj *ent.Check) ([]string, error)
 
-	Configs(ctx context.Context, obj *ent.Check) ([]*structs.CheckConfiguration, error)
+	Configs(ctx context.Context, obj *ent.Check) ([]*ent.CheckConfig, error)
 	Statuses(ctx context.Context, obj *ent.Check) ([]*ent.Status, error)
 }
-type CheckConfigurationResolver interface {
-	ID(ctx context.Context, obj *structs.CheckConfiguration) (string, error)
-	Config(ctx context.Context, obj *structs.CheckConfiguration) (string, error)
+type CheckConfigResolver interface {
+	ID(ctx context.Context, obj *ent.CheckConfig) (string, error)
+	Config(ctx context.Context, obj *ent.CheckConfig) (string, error)
+	EditableFields(ctx context.Context, obj *ent.CheckConfig) ([]string, error)
 
-	CreateTime(ctx context.Context, obj *structs.CheckConfiguration) (*time.Time, error)
-	UpdateTime(ctx context.Context, obj *structs.CheckConfiguration) (*time.Time, error)
-	CheckID(ctx context.Context, obj *structs.CheckConfiguration) (string, error)
-	UserID(ctx context.Context, obj *structs.CheckConfiguration) (string, error)
-	Check(ctx context.Context, obj *structs.CheckConfiguration) (*ent.Check, error)
-	User(ctx context.Context, obj *structs.CheckConfiguration) (*ent.User, error)
+	CheckID(ctx context.Context, obj *ent.CheckConfig) (string, error)
+	UserID(ctx context.Context, obj *ent.CheckConfig) (string, error)
+	Check(ctx context.Context, obj *ent.CheckConfig) (*ent.Check, error)
+	User(ctx context.Context, obj *ent.CheckConfig) (*ent.User, error)
 }
 type ConfigResolver interface {
 	ID(ctx context.Context, obj *ent.CheckConfig) (string, error)
@@ -323,6 +323,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Check.CreateTime(childComplexity), true
 
+	case "Check.editable_fields":
+		if e.complexity.Check.EditableFields == nil {
+			break
+		}
+
+		return e.complexity.Check.EditableFields(childComplexity), true
+
 	case "Check.id":
 		if e.complexity.Check.ID == nil {
 			break
@@ -365,68 +372,68 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Check.Weight(childComplexity), true
 
-	case "CheckConfiguration.check":
-		if e.complexity.CheckConfiguration.Check == nil {
+	case "CheckConfig.check":
+		if e.complexity.CheckConfig.Check == nil {
 			break
 		}
 
-		return e.complexity.CheckConfiguration.Check(childComplexity), true
+		return e.complexity.CheckConfig.Check(childComplexity), true
 
-	case "CheckConfiguration.check_id":
-		if e.complexity.CheckConfiguration.CheckID == nil {
+	case "CheckConfig.check_id":
+		if e.complexity.CheckConfig.CheckID == nil {
 			break
 		}
 
-		return e.complexity.CheckConfiguration.CheckID(childComplexity), true
+		return e.complexity.CheckConfig.CheckID(childComplexity), true
 
-	case "CheckConfiguration.config":
-		if e.complexity.CheckConfiguration.Config == nil {
+	case "CheckConfig.config":
+		if e.complexity.CheckConfig.Config == nil {
 			break
 		}
 
-		return e.complexity.CheckConfiguration.Config(childComplexity), true
+		return e.complexity.CheckConfig.Config(childComplexity), true
 
-	case "CheckConfiguration.create_time":
-		if e.complexity.CheckConfiguration.CreateTime == nil {
+	case "CheckConfig.create_time":
+		if e.complexity.CheckConfig.CreateTime == nil {
 			break
 		}
 
-		return e.complexity.CheckConfiguration.CreateTime(childComplexity), true
+		return e.complexity.CheckConfig.CreateTime(childComplexity), true
 
-	case "CheckConfiguration.editable_fields":
-		if e.complexity.CheckConfiguration.EditableFields == nil {
+	case "CheckConfig.editable_fields":
+		if e.complexity.CheckConfig.EditableFields == nil {
 			break
 		}
 
-		return e.complexity.CheckConfiguration.EditableFields(childComplexity), true
+		return e.complexity.CheckConfig.EditableFields(childComplexity), true
 
-	case "CheckConfiguration.id":
-		if e.complexity.CheckConfiguration.ID == nil {
+	case "CheckConfig.id":
+		if e.complexity.CheckConfig.ID == nil {
 			break
 		}
 
-		return e.complexity.CheckConfiguration.ID(childComplexity), true
+		return e.complexity.CheckConfig.ID(childComplexity), true
 
-	case "CheckConfiguration.update_time":
-		if e.complexity.CheckConfiguration.UpdateTime == nil {
+	case "CheckConfig.update_time":
+		if e.complexity.CheckConfig.UpdateTime == nil {
 			break
 		}
 
-		return e.complexity.CheckConfiguration.UpdateTime(childComplexity), true
+		return e.complexity.CheckConfig.UpdateTime(childComplexity), true
 
-	case "CheckConfiguration.user":
-		if e.complexity.CheckConfiguration.User == nil {
+	case "CheckConfig.user":
+		if e.complexity.CheckConfig.User == nil {
 			break
 		}
 
-		return e.complexity.CheckConfiguration.User(childComplexity), true
+		return e.complexity.CheckConfig.User(childComplexity), true
 
-	case "CheckConfiguration.user_id":
-		if e.complexity.CheckConfiguration.UserID == nil {
+	case "CheckConfig.user_id":
+		if e.complexity.CheckConfig.UserID == nil {
 			break
 		}
 
-		return e.complexity.CheckConfiguration.UserID(childComplexity), true
+		return e.complexity.CheckConfig.UserID(childComplexity), true
 
 	case "Config.check":
 		if e.complexity.Config.Check == nil {
@@ -1808,10 +1815,10 @@ func (ec *executionContext) _Check_config(ctx context.Context, field graphql.Col
 		if tmp == nil {
 			return nil, nil
 		}
-		if data, ok := tmp.(*structs.CheckConfiguration); ok {
+		if data, ok := tmp.(string); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/scorify/backend/pkg/structs.CheckConfiguration`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be string`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1823,9 +1830,9 @@ func (ec *executionContext) _Check_config(ctx context.Context, field graphql.Col
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*structs.CheckConfiguration)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNCheckConfiguration2ᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋstructsᚐCheckConfiguration(ctx, field.Selections, res)
+	return ec.marshalNJSON2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Check_config(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1835,27 +1842,75 @@ func (ec *executionContext) fieldContext_Check_config(ctx context.Context, field
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_CheckConfiguration_id(ctx, field)
-			case "config":
-				return ec.fieldContext_CheckConfiguration_config(ctx, field)
-			case "editable_fields":
-				return ec.fieldContext_CheckConfiguration_editable_fields(ctx, field)
-			case "create_time":
-				return ec.fieldContext_CheckConfiguration_create_time(ctx, field)
-			case "update_time":
-				return ec.fieldContext_CheckConfiguration_update_time(ctx, field)
-			case "check_id":
-				return ec.fieldContext_CheckConfiguration_check_id(ctx, field)
-			case "user_id":
-				return ec.fieldContext_CheckConfiguration_user_id(ctx, field)
-			case "check":
-				return ec.fieldContext_CheckConfiguration_check(ctx, field)
-			case "user":
-				return ec.fieldContext_CheckConfiguration_user(ctx, field)
+			return nil, errors.New("field of type JSON does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Check_editable_fields(ctx context.Context, field graphql.CollectedField, obj *ent.Check) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Check_editable_fields(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Check().EditableFields(rctx, obj)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			roles, err := ec.unmarshalORole2ᚕᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚋuserᚐRole(ctx, []interface{}{"admin"})
+			if err != nil {
+				return nil, err
 			}
-			return nil, fmt.Errorf("no field named %q was found under type CheckConfiguration", field.Name)
+			if ec.directives.HasRole == nil {
+				return nil, errors.New("directive hasRole is not implemented")
+			}
+			return ec.directives.HasRole(ctx, obj, directive0, roles)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.([]string); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be []string`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Check_editable_fields(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Check",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -1975,9 +2030,9 @@ func (ec *executionContext) _Check_configs(ctx context.Context, field graphql.Co
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*structs.CheckConfiguration)
+	res := resTmp.([]*ent.CheckConfig)
 	fc.Result = res
-	return ec.marshalNCheckConfiguration2ᚕᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋstructsᚐCheckConfigurationᚄ(ctx, field.Selections, res)
+	return ec.marshalNCheckConfig2ᚕᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚐCheckConfigᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Check_configs(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1989,25 +2044,25 @@ func (ec *executionContext) fieldContext_Check_configs(ctx context.Context, fiel
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "id":
-				return ec.fieldContext_CheckConfiguration_id(ctx, field)
+				return ec.fieldContext_CheckConfig_id(ctx, field)
 			case "config":
-				return ec.fieldContext_CheckConfiguration_config(ctx, field)
+				return ec.fieldContext_CheckConfig_config(ctx, field)
 			case "editable_fields":
-				return ec.fieldContext_CheckConfiguration_editable_fields(ctx, field)
+				return ec.fieldContext_CheckConfig_editable_fields(ctx, field)
 			case "create_time":
-				return ec.fieldContext_CheckConfiguration_create_time(ctx, field)
+				return ec.fieldContext_CheckConfig_create_time(ctx, field)
 			case "update_time":
-				return ec.fieldContext_CheckConfiguration_update_time(ctx, field)
+				return ec.fieldContext_CheckConfig_update_time(ctx, field)
 			case "check_id":
-				return ec.fieldContext_CheckConfiguration_check_id(ctx, field)
+				return ec.fieldContext_CheckConfig_check_id(ctx, field)
 			case "user_id":
-				return ec.fieldContext_CheckConfiguration_user_id(ctx, field)
+				return ec.fieldContext_CheckConfig_user_id(ctx, field)
 			case "check":
-				return ec.fieldContext_CheckConfiguration_check(ctx, field)
+				return ec.fieldContext_CheckConfig_check(ctx, field)
 			case "user":
-				return ec.fieldContext_CheckConfiguration_user(ctx, field)
+				return ec.fieldContext_CheckConfig_user(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type CheckConfiguration", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type CheckConfig", field.Name)
 		},
 	}
 	return fc, nil
@@ -2083,8 +2138,8 @@ func (ec *executionContext) fieldContext_Check_statuses(ctx context.Context, fie
 	return fc, nil
 }
 
-func (ec *executionContext) _CheckConfiguration_id(ctx context.Context, field graphql.CollectedField, obj *structs.CheckConfiguration) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_CheckConfiguration_id(ctx, field)
+func (ec *executionContext) _CheckConfig_id(ctx context.Context, field graphql.CollectedField, obj *ent.CheckConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CheckConfig_id(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -2097,7 +2152,7 @@ func (ec *executionContext) _CheckConfiguration_id(ctx context.Context, field gr
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.CheckConfiguration().ID(rctx, obj)
+		return ec.resolvers.CheckConfig().ID(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2114,9 +2169,9 @@ func (ec *executionContext) _CheckConfiguration_id(ctx context.Context, field gr
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_CheckConfiguration_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_CheckConfig_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "CheckConfiguration",
+		Object:     "CheckConfig",
 		Field:      field,
 		IsMethod:   true,
 		IsResolver: true,
@@ -2127,8 +2182,8 @@ func (ec *executionContext) fieldContext_CheckConfiguration_id(ctx context.Conte
 	return fc, nil
 }
 
-func (ec *executionContext) _CheckConfiguration_config(ctx context.Context, field graphql.CollectedField, obj *structs.CheckConfiguration) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_CheckConfiguration_config(ctx, field)
+func (ec *executionContext) _CheckConfig_config(ctx context.Context, field graphql.CollectedField, obj *ent.CheckConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CheckConfig_config(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -2141,7 +2196,7 @@ func (ec *executionContext) _CheckConfiguration_config(ctx context.Context, fiel
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.CheckConfiguration().Config(rctx, obj)
+		return ec.resolvers.CheckConfig().Config(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2158,9 +2213,9 @@ func (ec *executionContext) _CheckConfiguration_config(ctx context.Context, fiel
 	return ec.marshalNJSON2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_CheckConfiguration_config(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_CheckConfig_config(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "CheckConfiguration",
+		Object:     "CheckConfig",
 		Field:      field,
 		IsMethod:   true,
 		IsResolver: true,
@@ -2171,8 +2226,8 @@ func (ec *executionContext) fieldContext_CheckConfiguration_config(ctx context.C
 	return fc, nil
 }
 
-func (ec *executionContext) _CheckConfiguration_editable_fields(ctx context.Context, field graphql.CollectedField, obj *structs.CheckConfiguration) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_CheckConfiguration_editable_fields(ctx, field)
+func (ec *executionContext) _CheckConfig_editable_fields(ctx context.Context, field graphql.CollectedField, obj *ent.CheckConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CheckConfig_editable_fields(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -2185,7 +2240,7 @@ func (ec *executionContext) _CheckConfiguration_editable_fields(ctx context.Cont
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.EditableFields, nil
+		return ec.resolvers.CheckConfig().EditableFields(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2202,12 +2257,12 @@ func (ec *executionContext) _CheckConfiguration_editable_fields(ctx context.Cont
 	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_CheckConfiguration_editable_fields(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_CheckConfig_editable_fields(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "CheckConfiguration",
+		Object:     "CheckConfig",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
 		},
@@ -2215,8 +2270,8 @@ func (ec *executionContext) fieldContext_CheckConfiguration_editable_fields(ctx 
 	return fc, nil
 }
 
-func (ec *executionContext) _CheckConfiguration_create_time(ctx context.Context, field graphql.CollectedField, obj *structs.CheckConfiguration) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_CheckConfiguration_create_time(ctx, field)
+func (ec *executionContext) _CheckConfig_create_time(ctx context.Context, field graphql.CollectedField, obj *ent.CheckConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CheckConfig_create_time(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -2229,7 +2284,7 @@ func (ec *executionContext) _CheckConfiguration_create_time(ctx context.Context,
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.CheckConfiguration().CreateTime(rctx, obj)
+		return obj.CreateTime, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2241,17 +2296,17 @@ func (ec *executionContext) _CheckConfiguration_create_time(ctx context.Context,
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*time.Time)
+	res := resTmp.(time.Time)
 	fc.Result = res
-	return ec.marshalNTime2ᚖtimeᚐTime(ctx, field.Selections, res)
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_CheckConfiguration_create_time(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_CheckConfig_create_time(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "CheckConfiguration",
+		Object:     "CheckConfig",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Time does not have child fields")
 		},
@@ -2259,8 +2314,8 @@ func (ec *executionContext) fieldContext_CheckConfiguration_create_time(ctx cont
 	return fc, nil
 }
 
-func (ec *executionContext) _CheckConfiguration_update_time(ctx context.Context, field graphql.CollectedField, obj *structs.CheckConfiguration) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_CheckConfiguration_update_time(ctx, field)
+func (ec *executionContext) _CheckConfig_update_time(ctx context.Context, field graphql.CollectedField, obj *ent.CheckConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CheckConfig_update_time(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -2273,7 +2328,7 @@ func (ec *executionContext) _CheckConfiguration_update_time(ctx context.Context,
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.CheckConfiguration().UpdateTime(rctx, obj)
+		return obj.UpdateTime, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2285,17 +2340,17 @@ func (ec *executionContext) _CheckConfiguration_update_time(ctx context.Context,
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*time.Time)
+	res := resTmp.(time.Time)
 	fc.Result = res
-	return ec.marshalNTime2ᚖtimeᚐTime(ctx, field.Selections, res)
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_CheckConfiguration_update_time(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_CheckConfig_update_time(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "CheckConfiguration",
+		Object:     "CheckConfig",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Time does not have child fields")
 		},
@@ -2303,8 +2358,8 @@ func (ec *executionContext) fieldContext_CheckConfiguration_update_time(ctx cont
 	return fc, nil
 }
 
-func (ec *executionContext) _CheckConfiguration_check_id(ctx context.Context, field graphql.CollectedField, obj *structs.CheckConfiguration) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_CheckConfiguration_check_id(ctx, field)
+func (ec *executionContext) _CheckConfig_check_id(ctx context.Context, field graphql.CollectedField, obj *ent.CheckConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CheckConfig_check_id(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -2317,7 +2372,7 @@ func (ec *executionContext) _CheckConfiguration_check_id(ctx context.Context, fi
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.CheckConfiguration().CheckID(rctx, obj)
+		return ec.resolvers.CheckConfig().CheckID(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2334,9 +2389,9 @@ func (ec *executionContext) _CheckConfiguration_check_id(ctx context.Context, fi
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_CheckConfiguration_check_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_CheckConfig_check_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "CheckConfiguration",
+		Object:     "CheckConfig",
 		Field:      field,
 		IsMethod:   true,
 		IsResolver: true,
@@ -2347,8 +2402,8 @@ func (ec *executionContext) fieldContext_CheckConfiguration_check_id(ctx context
 	return fc, nil
 }
 
-func (ec *executionContext) _CheckConfiguration_user_id(ctx context.Context, field graphql.CollectedField, obj *structs.CheckConfiguration) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_CheckConfiguration_user_id(ctx, field)
+func (ec *executionContext) _CheckConfig_user_id(ctx context.Context, field graphql.CollectedField, obj *ent.CheckConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CheckConfig_user_id(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -2361,7 +2416,7 @@ func (ec *executionContext) _CheckConfiguration_user_id(ctx context.Context, fie
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.CheckConfiguration().UserID(rctx, obj)
+		return ec.resolvers.CheckConfig().UserID(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2378,9 +2433,9 @@ func (ec *executionContext) _CheckConfiguration_user_id(ctx context.Context, fie
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_CheckConfiguration_user_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_CheckConfig_user_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "CheckConfiguration",
+		Object:     "CheckConfig",
 		Field:      field,
 		IsMethod:   true,
 		IsResolver: true,
@@ -2391,8 +2446,8 @@ func (ec *executionContext) fieldContext_CheckConfiguration_user_id(ctx context.
 	return fc, nil
 }
 
-func (ec *executionContext) _CheckConfiguration_check(ctx context.Context, field graphql.CollectedField, obj *structs.CheckConfiguration) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_CheckConfiguration_check(ctx, field)
+func (ec *executionContext) _CheckConfig_check(ctx context.Context, field graphql.CollectedField, obj *ent.CheckConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CheckConfig_check(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -2405,7 +2460,7 @@ func (ec *executionContext) _CheckConfiguration_check(ctx context.Context, field
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.CheckConfiguration().Check(rctx, obj)
+		return ec.resolvers.CheckConfig().Check(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2422,9 +2477,9 @@ func (ec *executionContext) _CheckConfiguration_check(ctx context.Context, field
 	return ec.marshalNCheck2ᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚐCheck(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_CheckConfiguration_check(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_CheckConfig_check(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "CheckConfiguration",
+		Object:     "CheckConfig",
 		Field:      field,
 		IsMethod:   true,
 		IsResolver: true,
@@ -2440,6 +2495,8 @@ func (ec *executionContext) fieldContext_CheckConfiguration_check(ctx context.Co
 				return ec.fieldContext_Check_weight(ctx, field)
 			case "config":
 				return ec.fieldContext_Check_config(ctx, field)
+			case "editable_fields":
+				return ec.fieldContext_Check_editable_fields(ctx, field)
 			case "create_time":
 				return ec.fieldContext_Check_create_time(ctx, field)
 			case "update_time":
@@ -2455,8 +2512,8 @@ func (ec *executionContext) fieldContext_CheckConfiguration_check(ctx context.Co
 	return fc, nil
 }
 
-func (ec *executionContext) _CheckConfiguration_user(ctx context.Context, field graphql.CollectedField, obj *structs.CheckConfiguration) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_CheckConfiguration_user(ctx, field)
+func (ec *executionContext) _CheckConfig_user(ctx context.Context, field graphql.CollectedField, obj *ent.CheckConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CheckConfig_user(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -2469,7 +2526,7 @@ func (ec *executionContext) _CheckConfiguration_user(ctx context.Context, field 
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.CheckConfiguration().User(rctx, obj)
+		return ec.resolvers.CheckConfig().User(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2486,9 +2543,9 @@ func (ec *executionContext) _CheckConfiguration_user(ctx context.Context, field 
 	return ec.marshalNUser2ᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚐUser(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_CheckConfiguration_user(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_CheckConfig_user(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "CheckConfiguration",
+		Object:     "CheckConfig",
 		Field:      field,
 		IsMethod:   true,
 		IsResolver: true,
@@ -2656,6 +2713,8 @@ func (ec *executionContext) fieldContext_Config_check(ctx context.Context, field
 				return ec.fieldContext_Check_weight(ctx, field)
 			case "config":
 				return ec.fieldContext_Check_config(ctx, field)
+			case "editable_fields":
+				return ec.fieldContext_Check_editable_fields(ctx, field)
 			case "create_time":
 				return ec.fieldContext_Check_create_time(ctx, field)
 			case "update_time":
@@ -3357,6 +3416,8 @@ func (ec *executionContext) fieldContext_Mutation_createCheck(ctx context.Contex
 				return ec.fieldContext_Check_weight(ctx, field)
 			case "config":
 				return ec.fieldContext_Check_config(ctx, field)
+			case "editable_fields":
+				return ec.fieldContext_Check_editable_fields(ctx, field)
 			case "create_time":
 				return ec.fieldContext_Check_create_time(ctx, field)
 			case "update_time":
@@ -3456,6 +3517,8 @@ func (ec *executionContext) fieldContext_Mutation_updateCheck(ctx context.Contex
 				return ec.fieldContext_Check_weight(ctx, field)
 			case "config":
 				return ec.fieldContext_Check_config(ctx, field)
+			case "editable_fields":
+				return ec.fieldContext_Check_editable_fields(ctx, field)
 			case "create_time":
 				return ec.fieldContext_Check_create_time(ctx, field)
 			case "update_time":
@@ -4426,6 +4489,8 @@ func (ec *executionContext) fieldContext_Query_checks(ctx context.Context, field
 				return ec.fieldContext_Check_weight(ctx, field)
 			case "config":
 				return ec.fieldContext_Check_config(ctx, field)
+			case "editable_fields":
+				return ec.fieldContext_Check_editable_fields(ctx, field)
 			case "create_time":
 				return ec.fieldContext_Check_create_time(ctx, field)
 			case "update_time":
@@ -4490,6 +4555,8 @@ func (ec *executionContext) fieldContext_Query_check(ctx context.Context, field 
 				return ec.fieldContext_Check_weight(ctx, field)
 			case "config":
 				return ec.fieldContext_Check_config(ctx, field)
+			case "editable_fields":
+				return ec.fieldContext_Check_editable_fields(ctx, field)
 			case "create_time":
 				return ec.fieldContext_Check_create_time(ctx, field)
 			case "update_time":
@@ -6120,6 +6187,8 @@ func (ec *executionContext) fieldContext_Status_check(ctx context.Context, field
 				return ec.fieldContext_Check_weight(ctx, field)
 			case "config":
 				return ec.fieldContext_Check_config(ctx, field)
+			case "editable_fields":
+				return ec.fieldContext_Check_editable_fields(ctx, field)
 			case "create_time":
 				return ec.fieldContext_Check_create_time(ctx, field)
 			case "update_time":
@@ -8742,6 +8811,42 @@ func (ec *executionContext) _Check(ctx context.Context, sel ast.SelectionSet, ob
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "editable_fields":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Check_editable_fields(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "create_time":
 			out.Values[i] = ec._Check_create_time(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -8847,17 +8952,17 @@ func (ec *executionContext) _Check(ctx context.Context, sel ast.SelectionSet, ob
 	return out
 }
 
-var checkConfigurationImplementors = []string{"CheckConfiguration"}
+var checkConfigImplementors = []string{"CheckConfig"}
 
-func (ec *executionContext) _CheckConfiguration(ctx context.Context, sel ast.SelectionSet, obj *structs.CheckConfiguration) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, checkConfigurationImplementors)
+func (ec *executionContext) _CheckConfig(ctx context.Context, sel ast.SelectionSet, obj *ent.CheckConfig) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, checkConfigImplementors)
 
 	out := graphql.NewFieldSet(fields)
 	deferred := make(map[string]*graphql.FieldSet)
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("CheckConfiguration")
+			out.Values[i] = graphql.MarshalString("CheckConfig")
 		case "id":
 			field := field
 
@@ -8867,7 +8972,7 @@ func (ec *executionContext) _CheckConfiguration(ctx context.Context, sel ast.Sel
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._CheckConfiguration_id(ctx, field, obj)
+				res = ec._CheckConfig_id(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -8903,7 +9008,7 @@ func (ec *executionContext) _CheckConfiguration(ctx context.Context, sel ast.Sel
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._CheckConfiguration_config(ctx, field, obj)
+				res = ec._CheckConfig_config(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -8931,82 +9036,51 @@ func (ec *executionContext) _CheckConfiguration(ctx context.Context, sel ast.Sel
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "editable_fields":
-			out.Values[i] = ec._CheckConfiguration_editable_fields(ctx, field, obj)
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._CheckConfig_editable_fields(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "create_time":
+			out.Values[i] = ec._CheckConfig_create_time(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
-		case "create_time":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._CheckConfiguration_create_time(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
-			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "update_time":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._CheckConfiguration_update_time(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
+			out.Values[i] = ec._CheckConfig_update_time(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
 			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "check_id":
 			field := field
 
@@ -9016,7 +9090,7 @@ func (ec *executionContext) _CheckConfiguration(ctx context.Context, sel ast.Sel
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._CheckConfiguration_check_id(ctx, field, obj)
+				res = ec._CheckConfig_check_id(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -9052,7 +9126,7 @@ func (ec *executionContext) _CheckConfiguration(ctx context.Context, sel ast.Sel
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._CheckConfiguration_user_id(ctx, field, obj)
+				res = ec._CheckConfig_user_id(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -9088,7 +9162,7 @@ func (ec *executionContext) _CheckConfiguration(ctx context.Context, sel ast.Sel
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._CheckConfiguration_check(ctx, field, obj)
+				res = ec._CheckConfig_check(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -9124,7 +9198,7 @@ func (ec *executionContext) _CheckConfiguration(ctx context.Context, sel ast.Sel
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._CheckConfiguration_user(ctx, field, obj)
+				res = ec._CheckConfig_user(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -11239,11 +11313,7 @@ func (ec *executionContext) marshalNCheck2ᚖgithubᚗcomᚋscorifyᚋbackendᚋ
 	return ec._Check(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNCheckConfiguration2githubᚗcomᚋscorifyᚋbackendᚋpkgᚋstructsᚐCheckConfiguration(ctx context.Context, sel ast.SelectionSet, v structs.CheckConfiguration) graphql.Marshaler {
-	return ec._CheckConfiguration(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNCheckConfiguration2ᚕᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋstructsᚐCheckConfigurationᚄ(ctx context.Context, sel ast.SelectionSet, v []*structs.CheckConfiguration) graphql.Marshaler {
+func (ec *executionContext) marshalNCheckConfig2ᚕᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚐCheckConfigᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.CheckConfig) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -11267,7 +11337,7 @@ func (ec *executionContext) marshalNCheckConfiguration2ᚕᚖgithubᚗcomᚋscor
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNCheckConfiguration2ᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋstructsᚐCheckConfiguration(ctx, sel, v[i])
+			ret[i] = ec.marshalNCheckConfig2ᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚐCheckConfig(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -11287,14 +11357,14 @@ func (ec *executionContext) marshalNCheckConfiguration2ᚕᚖgithubᚗcomᚋscor
 	return ret
 }
 
-func (ec *executionContext) marshalNCheckConfiguration2ᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋstructsᚐCheckConfiguration(ctx context.Context, sel ast.SelectionSet, v *structs.CheckConfiguration) graphql.Marshaler {
+func (ec *executionContext) marshalNCheckConfig2ᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚐCheckConfig(ctx context.Context, sel ast.SelectionSet, v *ent.CheckConfig) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
 		}
 		return graphql.Null
 	}
-	return ec._CheckConfiguration(ctx, sel, v)
+	return ec._CheckConfig(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNConfig2githubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚐCheckConfig(ctx context.Context, sel ast.SelectionSet, v ent.CheckConfig) graphql.Marshaler {
@@ -11698,27 +11768,6 @@ func (ec *executionContext) unmarshalNTime2timeᚐTime(ctx context.Context, v in
 
 func (ec *executionContext) marshalNTime2timeᚐTime(ctx context.Context, sel ast.SelectionSet, v time.Time) graphql.Marshaler {
 	res := graphql.MarshalTime(v)
-	if res == graphql.Null {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-	}
-	return res
-}
-
-func (ec *executionContext) unmarshalNTime2ᚖtimeᚐTime(ctx context.Context, v interface{}) (*time.Time, error) {
-	res, err := graphql.UnmarshalTime(v)
-	return &res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalNTime2ᚖtimeᚐTime(ctx context.Context, sel ast.SelectionSet, v *time.Time) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-		return graphql.Null
-	}
-	res := graphql.MarshalTime(*v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
