@@ -1,4 +1,5 @@
 scalar JSON
+scalar Time
 
 directive @isAuthenticated on FIELD_DEFINITION
 directive @hasRole(roles: [Role]) on FIELD_DEFINITION
@@ -13,6 +14,11 @@ type User {
   username: String!
   role: Role!
   number: Int
+  create_time: Time!
+  update_time: Time!
+  configs: [Config!]! @isAuthenticated
+  statuses: [Status!]! @isAuthenticated
+  scorecaches: [ScoreCache!]! @isAuthenticated
 }
 
 type LoginOutput {
@@ -31,8 +37,15 @@ type Source {
 }
 
 type CheckConfiguration {
+  id: ID!
   config: JSON!
   editable_fields: [String!]!
+  create_time: Time!
+  update_time: Time!
+  check_id: ID!
+  user_id: ID!
+  check: Check!
+  user: User!
 }
 
 type Check {
@@ -41,6 +54,10 @@ type Check {
   source: Source!
   weight: Int!
   config: CheckConfiguration! @hasRole(roles: [admin])
+  create_time: Time!
+  update_time: Time!
+  configs: [Check!]!
+  statuses: [Status!]!
 }
 
 type Config {
@@ -48,6 +65,49 @@ type Config {
   config: JSON!
   check: Check!
   user: User!
+}
+
+enum StatusEnum {
+  up
+  down
+  unknown
+}
+
+type Status {
+  id: ID!
+  error: String
+  status: StatusEnum!
+  points: Int!
+  check_id: ID!
+  round_id: ID!
+  user_id: ID!
+  create_time: Time!
+  update_time: Time!
+  check: Check!
+  round: Round!
+  user: User!
+}
+
+type ScoreCache {
+  id: ID!
+  points: Int!
+  round_id: ID!
+  user_id: ID!
+  create_time: Time!
+  update_time: Time!
+  round: Round!
+  user: User!
+}
+
+type Round {
+  id: ID!
+  number: Int!
+  complete: Boolean!
+  points: Int!
+  create_time: Time!
+  update_time: Time!
+  statuses: [Status!]!
+  scorecaches: [ScoreCache!]!
 }
 
 enum NotificationType {
