@@ -8,6 +8,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/scorify/backend/pkg/auth"
@@ -47,11 +48,56 @@ func (r *checkResolver) Config(ctx context.Context, obj *ent.Check) (*structs.Ch
 	return &obj.DefaultConfig, nil
 }
 
+// Configs is the resolver for the configs field.
+func (r *checkResolver) Configs(ctx context.Context, obj *ent.Check) ([]*ent.Check, error) {
+	panic(fmt.Errorf("not implemented: Configs - configs"))
+}
+
+// Statuses is the resolver for the statuses field.
+func (r *checkResolver) Statuses(ctx context.Context, obj *ent.Check) ([]*ent.Status, error) {
+	panic(fmt.Errorf("not implemented: Statuses - statuses"))
+}
+
+// ID is the resolver for the id field.
+func (r *checkConfigurationResolver) ID(ctx context.Context, obj *structs.CheckConfiguration) (string, error) {
+	panic(fmt.Errorf("not implemented: ID - id"))
+}
+
 // Config is the resolver for the config field.
 func (r *checkConfigurationResolver) Config(ctx context.Context, obj *structs.CheckConfiguration) (string, error) {
 	out, err := json.Marshal(obj.Config)
 
 	return string(out), err
+}
+
+// CreateTime is the resolver for the create_time field.
+func (r *checkConfigurationResolver) CreateTime(ctx context.Context, obj *structs.CheckConfiguration) (*time.Time, error) {
+	panic(fmt.Errorf("not implemented: CreateTime - create_time"))
+}
+
+// UpdateTime is the resolver for the update_time field.
+func (r *checkConfigurationResolver) UpdateTime(ctx context.Context, obj *structs.CheckConfiguration) (*time.Time, error) {
+	panic(fmt.Errorf("not implemented: UpdateTime - update_time"))
+}
+
+// CheckID is the resolver for the check_id field.
+func (r *checkConfigurationResolver) CheckID(ctx context.Context, obj *structs.CheckConfiguration) (string, error) {
+	panic(fmt.Errorf("not implemented: CheckID - check_id"))
+}
+
+// UserID is the resolver for the user_id field.
+func (r *checkConfigurationResolver) UserID(ctx context.Context, obj *structs.CheckConfiguration) (string, error) {
+	panic(fmt.Errorf("not implemented: UserID - user_id"))
+}
+
+// Check is the resolver for the check field.
+func (r *checkConfigurationResolver) Check(ctx context.Context, obj *structs.CheckConfiguration) (*ent.Check, error) {
+	panic(fmt.Errorf("not implemented: Check - check"))
+}
+
+// User is the resolver for the user field.
+func (r *checkConfigurationResolver) User(ctx context.Context, obj *structs.CheckConfiguration) (*ent.User, error) {
+	panic(fmt.Errorf("not implemented: User - user"))
 }
 
 // ID is the resolver for the id field.
@@ -750,6 +796,91 @@ func (r *queryResolver) Config(ctx context.Context, id string) (*ent.CheckConfig
 		).Only(ctx)
 }
 
+// ID is the resolver for the id field.
+func (r *roundResolver) ID(ctx context.Context, obj *ent.Round) (string, error) {
+	panic(fmt.Errorf("not implemented: ID - id"))
+}
+
+// Points is the resolver for the points field.
+func (r *roundResolver) Points(ctx context.Context, obj *ent.Round) (int, error) {
+	panic(fmt.Errorf("not implemented: Points - points"))
+}
+
+// Statuses is the resolver for the statuses field.
+func (r *roundResolver) Statuses(ctx context.Context, obj *ent.Round) ([]*ent.Status, error) {
+	panic(fmt.Errorf("not implemented: Statuses - statuses"))
+}
+
+// Scorecaches is the resolver for the scorecaches field.
+func (r *roundResolver) Scorecaches(ctx context.Context, obj *ent.Round) ([]*ent.ScoreCache, error) {
+	panic(fmt.Errorf("not implemented: Scorecaches - scorecaches"))
+}
+
+// ID is the resolver for the id field.
+func (r *scoreCacheResolver) ID(ctx context.Context, obj *ent.ScoreCache) (string, error) {
+	panic(fmt.Errorf("not implemented: ID - id"))
+}
+
+// RoundID is the resolver for the round_id field.
+func (r *scoreCacheResolver) RoundID(ctx context.Context, obj *ent.ScoreCache) (string, error) {
+	panic(fmt.Errorf("not implemented: RoundID - round_id"))
+}
+
+// UserID is the resolver for the user_id field.
+func (r *scoreCacheResolver) UserID(ctx context.Context, obj *ent.ScoreCache) (string, error) {
+	panic(fmt.Errorf("not implemented: UserID - user_id"))
+}
+
+// Round is the resolver for the round field.
+func (r *scoreCacheResolver) Round(ctx context.Context, obj *ent.ScoreCache) (*ent.Round, error) {
+	panic(fmt.Errorf("not implemented: Round - round"))
+}
+
+// User is the resolver for the user field.
+func (r *scoreCacheResolver) User(ctx context.Context, obj *ent.ScoreCache) (*ent.User, error) {
+	panic(fmt.Errorf("not implemented: User - user"))
+}
+
+// ID is the resolver for the id field.
+func (r *statusResolver) ID(ctx context.Context, obj *ent.Status) (string, error) {
+	panic(fmt.Errorf("not implemented: ID - id"))
+}
+
+// Status is the resolver for the status field.
+func (r *statusResolver) Status(ctx context.Context, obj *ent.Status) (model.StatusEnum, error) {
+	panic(fmt.Errorf("not implemented: Status - status"))
+}
+
+// CheckID is the resolver for the check_id field.
+func (r *statusResolver) CheckID(ctx context.Context, obj *ent.Status) (string, error) {
+	panic(fmt.Errorf("not implemented: CheckID - check_id"))
+}
+
+// RoundID is the resolver for the round_id field.
+func (r *statusResolver) RoundID(ctx context.Context, obj *ent.Status) (string, error) {
+	panic(fmt.Errorf("not implemented: RoundID - round_id"))
+}
+
+// UserID is the resolver for the user_id field.
+func (r *statusResolver) UserID(ctx context.Context, obj *ent.Status) (string, error) {
+	panic(fmt.Errorf("not implemented: UserID - user_id"))
+}
+
+// Check is the resolver for the check field.
+func (r *statusResolver) Check(ctx context.Context, obj *ent.Status) (*ent.Check, error) {
+	panic(fmt.Errorf("not implemented: Check - check"))
+}
+
+// Round is the resolver for the round field.
+func (r *statusResolver) Round(ctx context.Context, obj *ent.Status) (*ent.Round, error) {
+	panic(fmt.Errorf("not implemented: Round - round"))
+}
+
+// User is the resolver for the user field.
+func (r *statusResolver) User(ctx context.Context, obj *ent.Status) (*ent.User, error) {
+	panic(fmt.Errorf("not implemented: User - user"))
+}
+
 // GlobalNotification is the resolver for the globalNotification field.
 func (r *subscriptionResolver) GlobalNotification(ctx context.Context) (<-chan *model.Notification, error) {
 	notification_chan := make(chan *model.Notification, 1)
@@ -784,6 +915,21 @@ func (r *userResolver) ID(ctx context.Context, obj *ent.User) (string, error) {
 	return obj.ID.String(), nil
 }
 
+// Configs is the resolver for the configs field.
+func (r *userResolver) Configs(ctx context.Context, obj *ent.User) ([]*ent.CheckConfig, error) {
+	panic(fmt.Errorf("not implemented: Configs - configs"))
+}
+
+// Statuses is the resolver for the statuses field.
+func (r *userResolver) Statuses(ctx context.Context, obj *ent.User) ([]*ent.Status, error) {
+	panic(fmt.Errorf("not implemented: Statuses - statuses"))
+}
+
+// Scorecaches is the resolver for the scorecaches field.
+func (r *userResolver) Scorecaches(ctx context.Context, obj *ent.User) ([]*ent.ScoreCache, error) {
+	panic(fmt.Errorf("not implemented: Scorecaches - scorecaches"))
+}
+
 // Check returns CheckResolver implementation.
 func (r *Resolver) Check() CheckResolver { return &checkResolver{r} }
 
@@ -801,6 +947,15 @@ func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
 // Query returns QueryResolver implementation.
 func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
+// Round returns RoundResolver implementation.
+func (r *Resolver) Round() RoundResolver { return &roundResolver{r} }
+
+// ScoreCache returns ScoreCacheResolver implementation.
+func (r *Resolver) ScoreCache() ScoreCacheResolver { return &scoreCacheResolver{r} }
+
+// Status returns StatusResolver implementation.
+func (r *Resolver) Status() StatusResolver { return &statusResolver{r} }
+
 // Subscription returns SubscriptionResolver implementation.
 func (r *Resolver) Subscription() SubscriptionResolver { return &subscriptionResolver{r} }
 
@@ -812,5 +967,8 @@ type checkConfigurationResolver struct{ *Resolver }
 type configResolver struct{ *Resolver }
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
+type roundResolver struct{ *Resolver }
+type scoreCacheResolver struct{ *Resolver }
+type statusResolver struct{ *Resolver }
 type subscriptionResolver struct{ *Resolver }
 type userResolver struct{ *Resolver }

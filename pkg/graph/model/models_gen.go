@@ -77,3 +77,46 @@ func (e *NotificationType) UnmarshalGQL(v interface{}) error {
 func (e NotificationType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
+
+type StatusEnum string
+
+const (
+	StatusEnumUp      StatusEnum = "up"
+	StatusEnumDown    StatusEnum = "down"
+	StatusEnumUnknown StatusEnum = "unknown"
+)
+
+var AllStatusEnum = []StatusEnum{
+	StatusEnumUp,
+	StatusEnumDown,
+	StatusEnumUnknown,
+}
+
+func (e StatusEnum) IsValid() bool {
+	switch e {
+	case StatusEnumUp, StatusEnumDown, StatusEnumUnknown:
+		return true
+	}
+	return false
+}
+
+func (e StatusEnum) String() string {
+	return string(e)
+}
+
+func (e *StatusEnum) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = StatusEnum(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid StatusEnum", str)
+	}
+	return nil
+}
+
+func (e StatusEnum) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
