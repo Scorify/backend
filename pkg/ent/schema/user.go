@@ -74,7 +74,7 @@ func (User) Edges() []ent.Edge {
 				},
 			).
 			Ref("user"),
-		edge.From("status", Status.Type).
+		edge.From("statuses", Status.Type).
 			StructTag(`json:"status"`).
 			Comment("The status of a user").
 			Annotations(

@@ -33,10 +33,6 @@ func (Round) Fields() []ent.Field {
 			StructTag(`json:"complete"`).
 			Comment("The completion status of the round").
 			Default(false),
-		field.Int("points").
-			StructTag(`json:"points"`).
-			Comment("The points of the round").
-			NonNegative(),
 	}
 }
 
