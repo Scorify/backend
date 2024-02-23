@@ -111,7 +111,6 @@ type Round {
   id: ID!
   number: Int!
   complete: Boolean!
-  points: Int!
   create_time: Time!
   update_time: Time!
   statuses: [Status!]!

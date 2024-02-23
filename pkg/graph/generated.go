@@ -137,7 +137,6 @@ type ComplexityRoot struct {
 		CreateTime  func(childComplexity int) int
 		ID          func(childComplexity int) int
 		Number      func(childComplexity int) int
-		Points      func(childComplexity int) int
 		Scorecaches func(childComplexity int) int
 		Statuses    func(childComplexity int) int
 		UpdateTime  func(childComplexity int) int
@@ -241,8 +240,6 @@ type QueryResolver interface {
 }
 type RoundResolver interface {
 	ID(ctx context.Context, obj *ent.Round) (string, error)
-
-	Points(ctx context.Context, obj *ent.Round) (int, error)
 
 	Statuses(ctx context.Context, obj *ent.Round) ([]*ent.Status, error)
 	Scorecaches(ctx context.Context, obj *ent.Round) ([]*ent.ScoreCache, error)
@@ -746,13 +743,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Round.Number(childComplexity), true
-
-	case "Round.points":
-		if e.complexity.Round.Points == nil {
-			break
-		}
-
-		return e.complexity.Round.Points(childComplexity), true
 
 	case "Round.scorecaches":
 		if e.complexity.Round.Scorecaches == nil {
@@ -4947,50 +4937,6 @@ func (ec *executionContext) fieldContext_Round_complete(ctx context.Context, fie
 	return fc, nil
 }
 
-func (ec *executionContext) _Round_points(ctx context.Context, field graphql.CollectedField, obj *ent.Round) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Round_points(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Round().Points(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Round_points(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Round",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _Round_create_time(ctx context.Context, field graphql.CollectedField, obj *ent.Round) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Round_create_time(ctx, field)
 	if err != nil {
@@ -5520,8 +5466,6 @@ func (ec *executionContext) fieldContext_ScoreCache_round(ctx context.Context, f
 				return ec.fieldContext_Round_number(ctx, field)
 			case "complete":
 				return ec.fieldContext_Round_complete(ctx, field)
-			case "points":
-				return ec.fieldContext_Round_points(ctx, field)
 			case "create_time":
 				return ec.fieldContext_Round_create_time(ctx, field)
 			case "update_time":
@@ -6193,8 +6137,6 @@ func (ec *executionContext) fieldContext_Status_round(ctx context.Context, field
 				return ec.fieldContext_Round_number(ctx, field)
 			case "complete":
 				return ec.fieldContext_Round_complete(ctx, field)
-			case "points":
-				return ec.fieldContext_Round_points(ctx, field)
 			case "create_time":
 				return ec.fieldContext_Round_create_time(ctx, field)
 			case "update_time":
@@ -9818,42 +9760,6 @@ func (ec *executionContext) _Round(ctx context.Context, sel ast.SelectionSet, ob
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
-		case "points":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Round_points(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
-			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "create_time":
 			out.Values[i] = ec._Round_create_time(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
