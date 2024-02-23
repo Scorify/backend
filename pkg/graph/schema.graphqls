@@ -50,7 +50,7 @@ type Source {
   schema: String!
 }
 
-type CheckConfiguration {
+type CheckConfig {
   id: ID!
   config: JSON!
   editable_fields: [String!]!
@@ -67,10 +67,11 @@ type Check {
   name: String!
   source: Source!
   weight: Int!
-  config: CheckConfiguration! @hasRole(roles: [admin])
+  config: JSON! @hasRole(roles: [admin])
+  editable_fields: [String!]! @hasRole(roles: [admin])
   create_time: Time!
   update_time: Time!
-  configs: [CheckConfiguration!]!
+  configs: [CheckConfig!]!
   statuses: [Status!]!
 }
 
