@@ -138,7 +138,7 @@ type ComplexityRoot struct {
 		CreateTime  func(childComplexity int) int
 		ID          func(childComplexity int) int
 		Number      func(childComplexity int) int
-		Scorecaches func(childComplexity int) int
+		ScoreCaches func(childComplexity int) int
 		Statuses    func(childComplexity int) int
 		UpdateTime  func(childComplexity int) int
 	}
@@ -184,7 +184,7 @@ type ComplexityRoot struct {
 		ID          func(childComplexity int) int
 		Number      func(childComplexity int) int
 		Role        func(childComplexity int) int
-		Scorecaches func(childComplexity int) int
+		ScoreCaches func(childComplexity int) int
 		Statuses    func(childComplexity int) int
 		UpdateTime  func(childComplexity int) int
 		Username    func(childComplexity int) int
@@ -243,7 +243,7 @@ type RoundResolver interface {
 	ID(ctx context.Context, obj *ent.Round) (string, error)
 
 	Statuses(ctx context.Context, obj *ent.Round) ([]*ent.Status, error)
-	Scorecaches(ctx context.Context, obj *ent.Round) ([]*ent.ScoreCache, error)
+	ScoreCaches(ctx context.Context, obj *ent.Round) ([]*ent.ScoreCache, error)
 }
 type ScoreCacheResolver interface {
 	ID(ctx context.Context, obj *ent.ScoreCache) (string, error)
@@ -273,7 +273,7 @@ type UserResolver interface {
 
 	Configs(ctx context.Context, obj *ent.User) ([]*ent.CheckConfig, error)
 	Statuses(ctx context.Context, obj *ent.User) ([]*ent.Status, error)
-	Scorecaches(ctx context.Context, obj *ent.User) ([]*ent.ScoreCache, error)
+	ScoreCaches(ctx context.Context, obj *ent.User) ([]*ent.ScoreCache, error)
 }
 
 type executableSchema struct {
@@ -743,12 +743,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Round.Number(childComplexity), true
 
-	case "Round.scorecaches":
-		if e.complexity.Round.Scorecaches == nil {
+	case "Round.score_caches":
+		if e.complexity.Round.ScoreCaches == nil {
 			break
 		}
 
-		return e.complexity.Round.Scorecaches(childComplexity), true
+		return e.complexity.Round.ScoreCaches(childComplexity), true
 
 	case "Round.statuses":
 		if e.complexity.Round.Statuses == nil {
@@ -960,12 +960,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.User.Role(childComplexity), true
 
-	case "User.scorecaches":
-		if e.complexity.User.Scorecaches == nil {
+	case "User.score_caches":
+		if e.complexity.User.ScoreCaches == nil {
 			break
 		}
 
-		return e.complexity.User.Scorecaches(childComplexity), true
+		return e.complexity.User.ScoreCaches(childComplexity), true
 
 	case "User.statuses":
 		if e.complexity.User.Statuses == nil {
@@ -2500,8 +2500,8 @@ func (ec *executionContext) fieldContext_CheckConfig_user(ctx context.Context, f
 				return ec.fieldContext_User_configs(ctx, field)
 			case "statuses":
 				return ec.fieldContext_User_statuses(ctx, field)
-			case "scorecaches":
-				return ec.fieldContext_User_scorecaches(ctx, field)
+			case "score_caches":
+				return ec.fieldContext_User_score_caches(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
@@ -2718,8 +2718,8 @@ func (ec *executionContext) fieldContext_Config_user(ctx context.Context, field 
 				return ec.fieldContext_User_configs(ctx, field)
 			case "statuses":
 				return ec.fieldContext_User_statuses(ctx, field)
-			case "scorecaches":
-				return ec.fieldContext_User_scorecaches(ctx, field)
+			case "score_caches":
+				return ec.fieldContext_User_score_caches(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
@@ -3636,8 +3636,8 @@ func (ec *executionContext) fieldContext_Mutation_createUser(ctx context.Context
 				return ec.fieldContext_User_configs(ctx, field)
 			case "statuses":
 				return ec.fieldContext_User_statuses(ctx, field)
-			case "scorecaches":
-				return ec.fieldContext_User_scorecaches(ctx, field)
+			case "score_caches":
+				return ec.fieldContext_User_score_caches(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
@@ -3735,8 +3735,8 @@ func (ec *executionContext) fieldContext_Mutation_updateUser(ctx context.Context
 				return ec.fieldContext_User_configs(ctx, field)
 			case "statuses":
 				return ec.fieldContext_User_statuses(ctx, field)
-			case "scorecaches":
-				return ec.fieldContext_User_scorecaches(ctx, field)
+			case "score_caches":
+				return ec.fieldContext_User_score_caches(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
@@ -4141,8 +4141,8 @@ func (ec *executionContext) fieldContext_Query_me(ctx context.Context, field gra
 				return ec.fieldContext_User_configs(ctx, field)
 			case "statuses":
 				return ec.fieldContext_User_statuses(ctx, field)
-			case "scorecaches":
-				return ec.fieldContext_User_scorecaches(ctx, field)
+			case "score_caches":
+				return ec.fieldContext_User_score_caches(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
@@ -4229,8 +4229,8 @@ func (ec *executionContext) fieldContext_Query_users(ctx context.Context, field 
 				return ec.fieldContext_User_configs(ctx, field)
 			case "statuses":
 				return ec.fieldContext_User_statuses(ctx, field)
-			case "scorecaches":
-				return ec.fieldContext_User_scorecaches(ctx, field)
+			case "score_caches":
+				return ec.fieldContext_User_score_caches(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
@@ -5094,8 +5094,8 @@ func (ec *executionContext) fieldContext_Round_statuses(ctx context.Context, fie
 	return fc, nil
 }
 
-func (ec *executionContext) _Round_scorecaches(ctx context.Context, field graphql.CollectedField, obj *ent.Round) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Round_scorecaches(ctx, field)
+func (ec *executionContext) _Round_score_caches(ctx context.Context, field graphql.CollectedField, obj *ent.Round) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Round_score_caches(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -5108,7 +5108,7 @@ func (ec *executionContext) _Round_scorecaches(ctx context.Context, field graphq
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Round().Scorecaches(rctx, obj)
+		return ec.resolvers.Round().ScoreCaches(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5125,7 +5125,7 @@ func (ec *executionContext) _Round_scorecaches(ctx context.Context, field graphq
 	return ec.marshalNScoreCache2ᚕᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚐScoreCacheᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Round_scorecaches(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Round_score_caches(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Round",
 		Field:      field,
@@ -5471,8 +5471,8 @@ func (ec *executionContext) fieldContext_ScoreCache_round(ctx context.Context, f
 				return ec.fieldContext_Round_update_time(ctx, field)
 			case "statuses":
 				return ec.fieldContext_Round_statuses(ctx, field)
-			case "scorecaches":
-				return ec.fieldContext_Round_scorecaches(ctx, field)
+			case "score_caches":
+				return ec.fieldContext_Round_score_caches(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Round", field.Name)
 		},
@@ -5535,8 +5535,8 @@ func (ec *executionContext) fieldContext_ScoreCache_user(ctx context.Context, fi
 				return ec.fieldContext_User_configs(ctx, field)
 			case "statuses":
 				return ec.fieldContext_User_statuses(ctx, field)
-			case "scorecaches":
-				return ec.fieldContext_User_scorecaches(ctx, field)
+			case "score_caches":
+				return ec.fieldContext_User_score_caches(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
@@ -6142,8 +6142,8 @@ func (ec *executionContext) fieldContext_Status_round(ctx context.Context, field
 				return ec.fieldContext_Round_update_time(ctx, field)
 			case "statuses":
 				return ec.fieldContext_Round_statuses(ctx, field)
-			case "scorecaches":
-				return ec.fieldContext_Round_scorecaches(ctx, field)
+			case "score_caches":
+				return ec.fieldContext_Round_score_caches(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Round", field.Name)
 		},
@@ -6206,8 +6206,8 @@ func (ec *executionContext) fieldContext_Status_user(ctx context.Context, field 
 				return ec.fieldContext_User_configs(ctx, field)
 			case "statuses":
 				return ec.fieldContext_User_statuses(ctx, field)
-			case "scorecaches":
-				return ec.fieldContext_User_scorecaches(ctx, field)
+			case "score_caches":
+				return ec.fieldContext_User_score_caches(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
@@ -6704,8 +6704,8 @@ func (ec *executionContext) fieldContext_User_statuses(ctx context.Context, fiel
 	return fc, nil
 }
 
-func (ec *executionContext) _User_scorecaches(ctx context.Context, field graphql.CollectedField, obj *ent.User) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_User_scorecaches(ctx, field)
+func (ec *executionContext) _User_score_caches(ctx context.Context, field graphql.CollectedField, obj *ent.User) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_User_score_caches(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -6719,7 +6719,7 @@ func (ec *executionContext) _User_scorecaches(ctx context.Context, field graphql
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.User().Scorecaches(rctx, obj)
+			return ec.resolvers.User().ScoreCaches(rctx, obj)
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			if ec.directives.IsAuthenticated == nil {
@@ -6755,7 +6755,7 @@ func (ec *executionContext) _User_scorecaches(ctx context.Context, field graphql
 	return ec.marshalNScoreCache2ᚕᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚐScoreCacheᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_User_scorecaches(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_User_score_caches(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "User",
 		Field:      field,
@@ -9805,7 +9805,7 @@ func (ec *executionContext) _Round(ctx context.Context, sel ast.SelectionSet, ob
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-		case "scorecaches":
+		case "score_caches":
 			field := field
 
 			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
@@ -9814,7 +9814,7 @@ func (ec *executionContext) _Round(ctx context.Context, sel ast.SelectionSet, ob
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Round_scorecaches(ctx, field, obj)
+				res = ec._Round_score_caches(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -10606,7 +10606,7 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-		case "scorecaches":
+		case "score_caches":
 			field := field
 
 			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
@@ -10615,7 +10615,7 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._User_scorecaches(ctx, field, obj)
+				res = ec._User_score_caches(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}

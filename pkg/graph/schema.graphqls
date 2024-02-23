@@ -42,7 +42,7 @@ type User {
   update_time: Time!
   configs: [Config!]! @isAuthenticated
   statuses: [Status!]! @isAuthenticated
-  scorecaches: [ScoreCache!]! @isAuthenticated
+  score_caches: [ScoreCache!]! @isAuthenticated
 }
 
 type Source {
@@ -114,7 +114,7 @@ type Round {
   create_time: Time!
   update_time: Time!
   statuses: [Status!]!
-  scorecaches: [ScoreCache!]!
+  score_caches: [ScoreCache!]!
 }
 
 type Notification {
