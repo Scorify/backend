@@ -62,8 +62,8 @@ func (Round) Edges() []ent.Edge {
 				},
 			).
 			Ref("round"),
-		edge.From("scorecaches", ScoreCache.Type).
-			StructTag(`json:"scorecaches"`).
+		edge.From("scoreCaches", ScoreCache.Type).
+			StructTag(`json:"score_caches"`).
 			Comment("The score caches of a round").
 			Annotations(
 				entsql.Annotation{
