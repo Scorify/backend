@@ -199,7 +199,7 @@ type CheckResolver interface {
 
 	Config(ctx context.Context, obj *ent.Check) (*structs.CheckConfiguration, error)
 
-	Configs(ctx context.Context, obj *ent.Check) ([]*ent.Check, error)
+	Configs(ctx context.Context, obj *ent.Check) ([]*structs.CheckConfiguration, error)
 	Statuses(ctx context.Context, obj *ent.Check) ([]*ent.Status, error)
 }
 type CheckConfigurationResolver interface {
@@ -1975,9 +1975,9 @@ func (ec *executionContext) _Check_configs(ctx context.Context, field graphql.Co
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*ent.Check)
+	res := resTmp.([]*structs.CheckConfiguration)
 	fc.Result = res
-	return ec.marshalNCheck2ᚕᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚐCheckᚄ(ctx, field.Selections, res)
+	return ec.marshalNCheckConfiguration2ᚕᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋstructsᚐCheckConfigurationᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Check_configs(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1989,25 +1989,25 @@ func (ec *executionContext) fieldContext_Check_configs(ctx context.Context, fiel
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "id":
-				return ec.fieldContext_Check_id(ctx, field)
-			case "name":
-				return ec.fieldContext_Check_name(ctx, field)
-			case "source":
-				return ec.fieldContext_Check_source(ctx, field)
-			case "weight":
-				return ec.fieldContext_Check_weight(ctx, field)
+				return ec.fieldContext_CheckConfiguration_id(ctx, field)
 			case "config":
-				return ec.fieldContext_Check_config(ctx, field)
+				return ec.fieldContext_CheckConfiguration_config(ctx, field)
+			case "editable_fields":
+				return ec.fieldContext_CheckConfiguration_editable_fields(ctx, field)
 			case "create_time":
-				return ec.fieldContext_Check_create_time(ctx, field)
+				return ec.fieldContext_CheckConfiguration_create_time(ctx, field)
 			case "update_time":
-				return ec.fieldContext_Check_update_time(ctx, field)
-			case "configs":
-				return ec.fieldContext_Check_configs(ctx, field)
-			case "statuses":
-				return ec.fieldContext_Check_statuses(ctx, field)
+				return ec.fieldContext_CheckConfiguration_update_time(ctx, field)
+			case "check_id":
+				return ec.fieldContext_CheckConfiguration_check_id(ctx, field)
+			case "user_id":
+				return ec.fieldContext_CheckConfiguration_user_id(ctx, field)
+			case "check":
+				return ec.fieldContext_CheckConfiguration_check(ctx, field)
+			case "user":
+				return ec.fieldContext_CheckConfiguration_user(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type Check", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type CheckConfiguration", field.Name)
 		},
 	}
 	return fc, nil
@@ -11241,6 +11241,50 @@ func (ec *executionContext) marshalNCheck2ᚖgithubᚗcomᚋscorifyᚋbackendᚋ
 
 func (ec *executionContext) marshalNCheckConfiguration2githubᚗcomᚋscorifyᚋbackendᚋpkgᚋstructsᚐCheckConfiguration(ctx context.Context, sel ast.SelectionSet, v structs.CheckConfiguration) graphql.Marshaler {
 	return ec._CheckConfiguration(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNCheckConfiguration2ᚕᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋstructsᚐCheckConfigurationᚄ(ctx context.Context, sel ast.SelectionSet, v []*structs.CheckConfiguration) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNCheckConfiguration2ᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋstructsᚐCheckConfiguration(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) marshalNCheckConfiguration2ᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋstructsᚐCheckConfiguration(ctx context.Context, sel ast.SelectionSet, v *structs.CheckConfiguration) graphql.Marshaler {

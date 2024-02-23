@@ -49,7 +49,7 @@ func (r *checkResolver) Config(ctx context.Context, obj *ent.Check) (*structs.Ch
 }
 
 // Configs is the resolver for the configs field.
-func (r *checkResolver) Configs(ctx context.Context, obj *ent.Check) ([]*ent.Check, error) {
+func (r *checkResolver) Configs(ctx context.Context, obj *ent.Check) ([]*structs.CheckConfiguration, error) {
 	panic(fmt.Errorf("not implemented: Configs - configs"))
 }
 

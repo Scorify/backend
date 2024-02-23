@@ -70,7 +70,7 @@ type Check {
   config: CheckConfiguration! @hasRole(roles: [admin])
   create_time: Time!
   update_time: Time!
-  configs: [Check!]!
+  configs: [CheckConfiguration!]!
   statuses: [Status!]!
 }
 
