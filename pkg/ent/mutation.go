@@ -41,28 +41,28 @@ const (
 // CheckMutation represents an operation that mutates the Check nodes in the graph.
 type CheckMutation struct {
 	config
-	op                     Op
-	typ                    string
-	id                     *uuid.UUID
-	create_time            *time.Time
-	update_time            *time.Time
-	name                   *string
-	source                 *string
-	weight                 *int
-	addweight              *int
-	_config                *map[string]interface{}
-	edittable_fields       *[]string
-	appendedittable_fields []string
-	clearedFields          map[string]struct{}
-	configs                map[uuid.UUID]struct{}
-	removedconfigs         map[uuid.UUID]struct{}
-	clearedconfigs         bool
-	statuses               map[uuid.UUID]struct{}
-	removedstatuses        map[uuid.UUID]struct{}
-	clearedstatuses        bool
-	done                   bool
-	oldValue               func(context.Context) (*Check, error)
-	predicates             []predicate.Check
+	op                    Op
+	typ                   string
+	id                    *uuid.UUID
+	create_time           *time.Time
+	update_time           *time.Time
+	name                  *string
+	source                *string
+	weight                *int
+	addweight             *int
+	_config               *map[string]interface{}
+	editable_fields       *[]string
+	appendeditable_fields []string
+	clearedFields         map[string]struct{}
+	configs               map[uuid.UUID]struct{}
+	removedconfigs        map[uuid.UUID]struct{}
+	clearedconfigs        bool
+	statuses              map[uuid.UUID]struct{}
+	removedstatuses       map[uuid.UUID]struct{}
+	clearedstatuses       bool
+	done                  bool
+	oldValue              func(context.Context) (*Check, error)
+	predicates            []predicate.Check
 }
 
 var _ ent.Mutation = (*CheckMutation)(nil)
@@ -405,55 +405,55 @@ func (m *CheckMutation) ResetConfig() {
 	m._config = nil
 }
 
-// SetEdittableFields sets the "edittable_fields" field.
-func (m *CheckMutation) SetEdittableFields(s []string) {
-	m.edittable_fields = &s
-	m.appendedittable_fields = nil
+// SetEditableFields sets the "editable_fields" field.
+func (m *CheckMutation) SetEditableFields(s []string) {
+	m.editable_fields = &s
+	m.appendeditable_fields = nil
 }
 
-// EdittableFields returns the value of the "edittable_fields" field in the mutation.
-func (m *CheckMutation) EdittableFields() (r []string, exists bool) {
-	v := m.edittable_fields
+// EditableFields returns the value of the "editable_fields" field in the mutation.
+func (m *CheckMutation) EditableFields() (r []string, exists bool) {
+	v := m.editable_fields
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldEdittableFields returns the old "edittable_fields" field's value of the Check entity.
+// OldEditableFields returns the old "editable_fields" field's value of the Check entity.
 // If the Check object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *CheckMutation) OldEdittableFields(ctx context.Context) (v []string, err error) {
+func (m *CheckMutation) OldEditableFields(ctx context.Context) (v []string, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldEdittableFields is only allowed on UpdateOne operations")
+		return v, errors.New("OldEditableFields is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldEdittableFields requires an ID field in the mutation")
+		return v, errors.New("OldEditableFields requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldEdittableFields: %w", err)
+		return v, fmt.Errorf("querying old value for OldEditableFields: %w", err)
 	}
-	return oldValue.EdittableFields, nil
+	return oldValue.EditableFields, nil
 }
 
-// AppendEdittableFields adds s to the "edittable_fields" field.
-func (m *CheckMutation) AppendEdittableFields(s []string) {
-	m.appendedittable_fields = append(m.appendedittable_fields, s...)
+// AppendEditableFields adds s to the "editable_fields" field.
+func (m *CheckMutation) AppendEditableFields(s []string) {
+	m.appendeditable_fields = append(m.appendeditable_fields, s...)
 }
 
-// AppendedEdittableFields returns the list of values that were appended to the "edittable_fields" field in this mutation.
-func (m *CheckMutation) AppendedEdittableFields() ([]string, bool) {
-	if len(m.appendedittable_fields) == 0 {
+// AppendedEditableFields returns the list of values that were appended to the "editable_fields" field in this mutation.
+func (m *CheckMutation) AppendedEditableFields() ([]string, bool) {
+	if len(m.appendeditable_fields) == 0 {
 		return nil, false
 	}
-	return m.appendedittable_fields, true
+	return m.appendeditable_fields, true
 }
 
-// ResetEdittableFields resets all changes to the "edittable_fields" field.
-func (m *CheckMutation) ResetEdittableFields() {
-	m.edittable_fields = nil
-	m.appendedittable_fields = nil
+// ResetEditableFields resets all changes to the "editable_fields" field.
+func (m *CheckMutation) ResetEditableFields() {
+	m.editable_fields = nil
+	m.appendeditable_fields = nil
 }
 
 // AddConfigIDs adds the "configs" edge to the CheckConfig entity by ids.
@@ -617,8 +617,8 @@ func (m *CheckMutation) Fields() []string {
 	if m._config != nil {
 		fields = append(fields, check.FieldConfig)
 	}
-	if m.edittable_fields != nil {
-		fields = append(fields, check.FieldEdittableFields)
+	if m.editable_fields != nil {
+		fields = append(fields, check.FieldEditableFields)
 	}
 	return fields
 }
@@ -640,8 +640,8 @@ func (m *CheckMutation) Field(name string) (ent.Value, bool) {
 		return m.Weight()
 	case check.FieldConfig:
 		return m.Config()
-	case check.FieldEdittableFields:
-		return m.EdittableFields()
+	case check.FieldEditableFields:
+		return m.EditableFields()
 	}
 	return nil, false
 }
@@ -663,8 +663,8 @@ func (m *CheckMutation) OldField(ctx context.Context, name string) (ent.Value, e
 		return m.OldWeight(ctx)
 	case check.FieldConfig:
 		return m.OldConfig(ctx)
-	case check.FieldEdittableFields:
-		return m.OldEdittableFields(ctx)
+	case check.FieldEditableFields:
+		return m.OldEditableFields(ctx)
 	}
 	return nil, fmt.Errorf("unknown Check field %s", name)
 }
@@ -716,12 +716,12 @@ func (m *CheckMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetConfig(v)
 		return nil
-	case check.FieldEdittableFields:
+	case check.FieldEditableFields:
 		v, ok := value.([]string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetEdittableFields(v)
+		m.SetEditableFields(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Check field %s", name)
@@ -805,8 +805,8 @@ func (m *CheckMutation) ResetField(name string) error {
 	case check.FieldConfig:
 		m.ResetConfig()
 		return nil
-	case check.FieldEdittableFields:
-		m.ResetEdittableFields()
+	case check.FieldEditableFields:
+		m.ResetEditableFields()
 		return nil
 	}
 	return fmt.Errorf("unknown Check field %s", name)

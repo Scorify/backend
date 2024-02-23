@@ -33,7 +33,7 @@ type Check struct {
 	// The configuration of a check
 	Config map[string]interface{} `json:"config"`
 	// The fields that are editable
-	EdittableFields []string `json:"edittable_fields"`
+	EditableFields []string `json:"editable_fields"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the CheckQuery when eager-loading is set.
 	Edges        CheckEdges `json:"edges"`
@@ -74,7 +74,7 @@ func (*Check) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case check.FieldConfig, check.FieldEdittableFields:
+		case check.FieldConfig, check.FieldEditableFields:
 			values[i] = new([]byte)
 		case check.FieldWeight:
 			values[i] = new(sql.NullInt64)
@@ -143,12 +143,12 @@ func (c *Check) assignValues(columns []string, values []any) error {
 					return fmt.Errorf("unmarshal field config: %w", err)
 				}
 			}
-		case check.FieldEdittableFields:
+		case check.FieldEditableFields:
 			if value, ok := values[i].(*[]byte); !ok {
-				return fmt.Errorf("unexpected type %T for field edittable_fields", values[i])
+				return fmt.Errorf("unexpected type %T for field editable_fields", values[i])
 			} else if value != nil && len(*value) > 0 {
-				if err := json.Unmarshal(*value, &c.EdittableFields); err != nil {
-					return fmt.Errorf("unmarshal field edittable_fields: %w", err)
+				if err := json.Unmarshal(*value, &c.EditableFields); err != nil {
+					return fmt.Errorf("unmarshal field editable_fields: %w", err)
 				}
 			}
 		default:
@@ -215,8 +215,8 @@ func (c *Check) String() string {
 	builder.WriteString("config=")
 	builder.WriteString(fmt.Sprintf("%v", c.Config))
 	builder.WriteString(", ")
-	builder.WriteString("edittable_fields=")
-	builder.WriteString(fmt.Sprintf("%v", c.EdittableFields))
+	builder.WriteString("editable_fields=")
+	builder.WriteString(fmt.Sprintf("%v", c.EditableFields))
 	builder.WriteByte(')')
 	return builder.String()
 }

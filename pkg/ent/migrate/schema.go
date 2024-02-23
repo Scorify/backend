@@ -17,7 +17,7 @@ var (
 		{Name: "source", Type: field.TypeString},
 		{Name: "weight", Type: field.TypeInt},
 		{Name: "config", Type: field.TypeJSON},
-		{Name: "edittable_fields", Type: field.TypeJSON},
+		{Name: "editable_fields", Type: field.TypeJSON},
 	}
 	// ChecksTable holds the schema information for the "checks" table.
 	ChecksTable = &schema.Table{

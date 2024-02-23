@@ -75,9 +75,9 @@ func (cc *CheckCreate) SetConfig(m map[string]interface{}) *CheckCreate {
 	return cc
 }
 
-// SetEdittableFields sets the "edittable_fields" field.
-func (cc *CheckCreate) SetEdittableFields(s []string) *CheckCreate {
-	cc.mutation.SetEdittableFields(s)
+// SetEditableFields sets the "editable_fields" field.
+func (cc *CheckCreate) SetEditableFields(s []string) *CheckCreate {
+	cc.mutation.SetEditableFields(s)
 	return cc
 }
 
@@ -209,8 +209,8 @@ func (cc *CheckCreate) check() error {
 	if _, ok := cc.mutation.Config(); !ok {
 		return &ValidationError{Name: "config", err: errors.New(`ent: missing required field "Check.config"`)}
 	}
-	if _, ok := cc.mutation.EdittableFields(); !ok {
-		return &ValidationError{Name: "edittable_fields", err: errors.New(`ent: missing required field "Check.edittable_fields"`)}
+	if _, ok := cc.mutation.EditableFields(); !ok {
+		return &ValidationError{Name: "editable_fields", err: errors.New(`ent: missing required field "Check.editable_fields"`)}
 	}
 	return nil
 }
@@ -271,9 +271,9 @@ func (cc *CheckCreate) createSpec() (*Check, *sqlgraph.CreateSpec) {
 		_spec.SetField(check.FieldConfig, field.TypeJSON, value)
 		_node.Config = value
 	}
-	if value, ok := cc.mutation.EdittableFields(); ok {
-		_spec.SetField(check.FieldEdittableFields, field.TypeJSON, value)
-		_node.EdittableFields = value
+	if value, ok := cc.mutation.EditableFields(); ok {
+		_spec.SetField(check.FieldEditableFields, field.TypeJSON, value)
+		_node.EditableFields = value
 	}
 	if nodes := cc.mutation.ConfigsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

@@ -93,15 +93,15 @@ func (cu *CheckUpdate) SetConfig(m map[string]interface{}) *CheckUpdate {
 	return cu
 }
 
-// SetEdittableFields sets the "edittable_fields" field.
-func (cu *CheckUpdate) SetEdittableFields(s []string) *CheckUpdate {
-	cu.mutation.SetEdittableFields(s)
+// SetEditableFields sets the "editable_fields" field.
+func (cu *CheckUpdate) SetEditableFields(s []string) *CheckUpdate {
+	cu.mutation.SetEditableFields(s)
 	return cu
 }
 
-// AppendEdittableFields appends s to the "edittable_fields" field.
-func (cu *CheckUpdate) AppendEdittableFields(s []string) *CheckUpdate {
-	cu.mutation.AppendEdittableFields(s)
+// AppendEditableFields appends s to the "editable_fields" field.
+func (cu *CheckUpdate) AppendEditableFields(s []string) *CheckUpdate {
+	cu.mutation.AppendEditableFields(s)
 	return cu
 }
 
@@ -268,12 +268,12 @@ func (cu *CheckUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := cu.mutation.Config(); ok {
 		_spec.SetField(check.FieldConfig, field.TypeJSON, value)
 	}
-	if value, ok := cu.mutation.EdittableFields(); ok {
-		_spec.SetField(check.FieldEdittableFields, field.TypeJSON, value)
+	if value, ok := cu.mutation.EditableFields(); ok {
+		_spec.SetField(check.FieldEditableFields, field.TypeJSON, value)
 	}
-	if value, ok := cu.mutation.AppendedEdittableFields(); ok {
+	if value, ok := cu.mutation.AppendedEditableFields(); ok {
 		_spec.AddModifier(func(u *sql.UpdateBuilder) {
-			sqljson.Append(u, check.FieldEdittableFields, value)
+			sqljson.Append(u, check.FieldEditableFields, value)
 		})
 	}
 	if cu.mutation.ConfigsCleared() {
@@ -447,15 +447,15 @@ func (cuo *CheckUpdateOne) SetConfig(m map[string]interface{}) *CheckUpdateOne {
 	return cuo
 }
 
-// SetEdittableFields sets the "edittable_fields" field.
-func (cuo *CheckUpdateOne) SetEdittableFields(s []string) *CheckUpdateOne {
-	cuo.mutation.SetEdittableFields(s)
+// SetEditableFields sets the "editable_fields" field.
+func (cuo *CheckUpdateOne) SetEditableFields(s []string) *CheckUpdateOne {
+	cuo.mutation.SetEditableFields(s)
 	return cuo
 }
 
-// AppendEdittableFields appends s to the "edittable_fields" field.
-func (cuo *CheckUpdateOne) AppendEdittableFields(s []string) *CheckUpdateOne {
-	cuo.mutation.AppendEdittableFields(s)
+// AppendEditableFields appends s to the "editable_fields" field.
+func (cuo *CheckUpdateOne) AppendEditableFields(s []string) *CheckUpdateOne {
+	cuo.mutation.AppendEditableFields(s)
 	return cuo
 }
 
@@ -652,12 +652,12 @@ func (cuo *CheckUpdateOne) sqlSave(ctx context.Context) (_node *Check, err error
 	if value, ok := cuo.mutation.Config(); ok {
 		_spec.SetField(check.FieldConfig, field.TypeJSON, value)
 	}
-	if value, ok := cuo.mutation.EdittableFields(); ok {
-		_spec.SetField(check.FieldEdittableFields, field.TypeJSON, value)
+	if value, ok := cuo.mutation.EditableFields(); ok {
+		_spec.SetField(check.FieldEditableFields, field.TypeJSON, value)
 	}
-	if value, ok := cuo.mutation.AppendedEdittableFields(); ok {
+	if value, ok := cuo.mutation.AppendedEditableFields(); ok {
 		_spec.AddModifier(func(u *sql.UpdateBuilder) {
-			sqljson.Append(u, check.FieldEdittableFields, value)
+			sqljson.Append(u, check.FieldEditableFields, value)
 		})
 	}
 	if cuo.mutation.ConfigsCleared() {
