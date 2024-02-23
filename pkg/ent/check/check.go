@@ -25,8 +25,10 @@ const (
 	FieldSource = "source"
 	// FieldWeight holds the string denoting the weight field in the database.
 	FieldWeight = "weight"
-	// FieldDefaultConfig holds the string denoting the default_config field in the database.
-	FieldDefaultConfig = "default_config"
+	// FieldConfig holds the string denoting the config field in the database.
+	FieldConfig = "config"
+	// FieldEdittableFields holds the string denoting the edittable_fields field in the database.
+	FieldEdittableFields = "edittable_fields"
 	// EdgeConfigs holds the string denoting the configs edge name in mutations.
 	EdgeConfigs = "configs"
 	// EdgeStatuses holds the string denoting the statuses edge name in mutations.
@@ -57,7 +59,8 @@ var Columns = []string{
 	FieldName,
 	FieldSource,
 	FieldWeight,
-	FieldDefaultConfig,
+	FieldConfig,
+	FieldEdittableFields,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
