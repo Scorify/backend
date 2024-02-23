@@ -43,57 +43,51 @@ func (r *checkResolver) Source(ctx context.Context, obj *ent.Check) (*model.Sour
 
 // Config is the resolver for the config field.
 func (r *checkResolver) Config(ctx context.Context, obj *ent.Check) (string, error) {
-	panic(fmt.Errorf("not implemented: Config - config"))
-}
+	out, err := json.Marshal(obj.Config)
 
-// EditableFields is the resolver for the editable_fields field.
-func (r *checkResolver) EditableFields(ctx context.Context, obj *ent.Check) ([]string, error) {
-	panic(fmt.Errorf("not implemented: EditableFields - editable_fields"))
+	return string(out), err
 }
 
 // Configs is the resolver for the configs field.
 func (r *checkResolver) Configs(ctx context.Context, obj *ent.Check) ([]*ent.CheckConfig, error) {
-	panic(fmt.Errorf("not implemented: Configs - configs"))
+	return obj.QueryConfigs().All(ctx)
 }
 
 // Statuses is the resolver for the statuses field.
 func (r *checkResolver) Statuses(ctx context.Context, obj *ent.Check) ([]*ent.Status, error) {
-	panic(fmt.Errorf("not implemented: Statuses - statuses"))
+	return obj.QueryStatuses().All(ctx)
 }
 
 // ID is the resolver for the id field.
 func (r *checkConfigResolver) ID(ctx context.Context, obj *ent.CheckConfig) (string, error) {
-	panic(fmt.Errorf("not implemented: ID - id"))
+	return obj.ID.String(), nil
 }
 
 // Config is the resolver for the config field.
 func (r *checkConfigResolver) Config(ctx context.Context, obj *ent.CheckConfig) (string, error) {
-	panic(fmt.Errorf("not implemented: Config - config"))
-}
+	out, err := json.Marshal(obj.Config)
 
-// EditableFields is the resolver for the editable_fields field.
-func (r *checkConfigResolver) EditableFields(ctx context.Context, obj *ent.CheckConfig) ([]string, error) {
-	panic(fmt.Errorf("not implemented: EditableFields - editable_fields"))
+	return string(out), err
 }
 
 // CheckID is the resolver for the check_id field.
 func (r *checkConfigResolver) CheckID(ctx context.Context, obj *ent.CheckConfig) (string, error) {
-	panic(fmt.Errorf("not implemented: CheckID - check_id"))
+	return obj.ID.String(), nil
 }
 
 // UserID is the resolver for the user_id field.
 func (r *checkConfigResolver) UserID(ctx context.Context, obj *ent.CheckConfig) (string, error) {
-	panic(fmt.Errorf("not implemented: UserID - user_id"))
+	return obj.ID.String(), nil
 }
 
 // Check is the resolver for the check field.
 func (r *checkConfigResolver) Check(ctx context.Context, obj *ent.CheckConfig) (*ent.Check, error) {
-	panic(fmt.Errorf("not implemented: Check - check"))
+	return obj.QueryCheck().Only(ctx)
 }
 
 // User is the resolver for the user field.
 func (r *checkConfigResolver) User(ctx context.Context, obj *ent.CheckConfig) (*ent.User, error) {
-	panic(fmt.Errorf("not implemented: User - user"))
+	return obj.QueryUser().Only(ctx)
 }
 
 // ID is the resolver for the id field.
@@ -109,7 +103,7 @@ func (r *configResolver) Config(ctx context.Context, obj *ent.CheckConfig) (stri
 	}
 
 	outConfig := make(map[string]interface{})
-	for _, key := range entCheck.EdittableFields {
+	for _, key := range entCheck.EditableFields {
 		outConfig[key] = obj.Config[key]
 	}
 
@@ -298,7 +292,7 @@ func (r *mutationResolver) CreateCheck(ctx context.Context, name string, source 
 		SetWeight(weight).
 		SetSource(source).
 		SetConfig(defaultConfig).
-		SetEdittableFields(defaultEditableFields).
+		SetEditableFields(defaultEditableFields).
 		Save(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create check: %v", err)
@@ -384,7 +378,7 @@ func (r *mutationResolver) UpdateCheck(ctx context.Context, id string, name *str
 
 	if config != nil || editableFields != nil {
 		defaultConfig := make(map[string]interface{})
-		defaultEditableFields := entCheck.EdittableFields
+		defaultEditableFields := entCheck.EditableFields
 
 		for key, value := range entCheck.Config {
 			defaultConfig[key] = value
@@ -457,7 +451,7 @@ func (r *mutationResolver) UpdateCheck(ctx context.Context, id string, name *str
 		}
 
 		checkUpdate.SetConfig(defaultConfig)
-		checkUpdate.SetEdittableFields(defaultEditableFields)
+		checkUpdate.SetEditableFields(defaultEditableFields)
 
 		checkUpdateResult, err := checkUpdate.Save(ctx)
 		if err != nil {
@@ -794,87 +788,77 @@ func (r *queryResolver) Config(ctx context.Context, id string) (*ent.CheckConfig
 
 // ID is the resolver for the id field.
 func (r *roundResolver) ID(ctx context.Context, obj *ent.Round) (string, error) {
-	panic(fmt.Errorf("not implemented: ID - id"))
-}
-
-// Points is the resolver for the points field.
-func (r *roundResolver) Points(ctx context.Context, obj *ent.Round) (int, error) {
-	panic(fmt.Errorf("not implemented: Points - points"))
+	return obj.ID.String(), nil
 }
 
 // Statuses is the resolver for the statuses field.
 func (r *roundResolver) Statuses(ctx context.Context, obj *ent.Round) ([]*ent.Status, error) {
-	panic(fmt.Errorf("not implemented: Statuses - statuses"))
+	return obj.QueryStatuses().All(ctx)
 }
 
-// Scorecaches is the resolver for the scorecaches field.
-func (r *roundResolver) Scorecaches(ctx context.Context, obj *ent.Round) ([]*ent.ScoreCache, error) {
-	panic(fmt.Errorf("not implemented: Scorecaches - scorecaches"))
+// ScoreCaches is the resolver for the score_caches field.
+func (r *roundResolver) ScoreCaches(ctx context.Context, obj *ent.Round) ([]*ent.ScoreCache, error) {
+	return obj.QueryScoreCaches().All(ctx)
 }
 
 // ID is the resolver for the id field.
 func (r *scoreCacheResolver) ID(ctx context.Context, obj *ent.ScoreCache) (string, error) {
-	panic(fmt.Errorf("not implemented: ID - id"))
+	return obj.ID.String(), nil
 }
 
 // RoundID is the resolver for the round_id field.
 func (r *scoreCacheResolver) RoundID(ctx context.Context, obj *ent.ScoreCache) (string, error) {
-	panic(fmt.Errorf("not implemented: RoundID - round_id"))
+	return obj.RoundID.String(), nil
 }
 
 // UserID is the resolver for the user_id field.
 func (r *scoreCacheResolver) UserID(ctx context.Context, obj *ent.ScoreCache) (string, error) {
-	panic(fmt.Errorf("not implemented: UserID - user_id"))
+	return obj.UserID.String(), nil
 }
 
 // Round is the resolver for the round field.
 func (r *scoreCacheResolver) Round(ctx context.Context, obj *ent.ScoreCache) (*ent.Round, error) {
-	panic(fmt.Errorf("not implemented: Round - round"))
+	return obj.QueryRound().Only(ctx)
 }
 
 // User is the resolver for the user field.
 func (r *scoreCacheResolver) User(ctx context.Context, obj *ent.ScoreCache) (*ent.User, error) {
-	panic(fmt.Errorf("not implemented: User - user"))
+	return obj.QueryUser().Only(ctx)
 }
 
 // ID is the resolver for the id field.
 func (r *statusResolver) ID(ctx context.Context, obj *ent.Status) (string, error) {
-	panic(fmt.Errorf("not implemented: ID - id"))
-}
-
-// Status is the resolver for the status field.
-func (r *statusResolver) Status(ctx context.Context, obj *ent.Status) (model.StatusEnum, error) {
-	panic(fmt.Errorf("not implemented: Status - status"))
+	return obj.ID.String(), nil
 }
 
 // CheckID is the resolver for the check_id field.
 func (r *statusResolver) CheckID(ctx context.Context, obj *ent.Status) (string, error) {
-	panic(fmt.Errorf("not implemented: CheckID - check_id"))
+	return obj.CheckID.String(), nil
 }
 
 // RoundID is the resolver for the round_id field.
 func (r *statusResolver) RoundID(ctx context.Context, obj *ent.Status) (string, error) {
-	panic(fmt.Errorf("not implemented: RoundID - round_id"))
+	return obj.RoundID.String(), nil
 }
 
 // UserID is the resolver for the user_id field.
 func (r *statusResolver) UserID(ctx context.Context, obj *ent.Status) (string, error) {
-	panic(fmt.Errorf("not implemented: UserID - user_id"))
+	return obj.UserID.String(), nil
 }
 
 // Check is the resolver for the check field.
 func (r *statusResolver) Check(ctx context.Context, obj *ent.Status) (*ent.Check, error) {
-	panic(fmt.Errorf("not implemented: Check - check"))
+	return obj.QueryCheck().Only(ctx)
 }
 
 // Round is the resolver for the round field.
 func (r *statusResolver) Round(ctx context.Context, obj *ent.Status) (*ent.Round, error) {
-	panic(fmt.Errorf("not implemented: Round - round"))
+	return obj.QueryRound().Only(ctx)
 }
 
 // User is the resolver for the user field.
 func (r *statusResolver) User(ctx context.Context, obj *ent.Status) (*ent.User, error) {
-	panic(fmt.Errorf("not implemented: User - user"))
+	return obj.QueryUser().Only(ctx)
 }
 
 // GlobalNotification is the resolver for the globalNotification field.
@@ -913,17 +897,17 @@ func (r *userResolver) ID(ctx context.Context, obj *ent.User) (string, error) {
 
 // Configs is the resolver for the configs field.
 func (r *userResolver) Configs(ctx context.Context, obj *ent.User) ([]*ent.CheckConfig, error) {
-	panic(fmt.Errorf("not implemented: Configs - configs"))
+	return obj.QueryConfigs().All(ctx)
 }
 
 // Statuses is the resolver for the statuses field.
 func (r *userResolver) Statuses(ctx context.Context, obj *ent.User) ([]*ent.Status, error) {
-	panic(fmt.Errorf("not implemented: Statuses - statuses"))
+	return obj.QueryStatuses().All(ctx)
 }
 
-// Scorecaches is the resolver for the scorecaches field.
-func (r *userResolver) Scorecaches(ctx context.Context, obj *ent.User) ([]*ent.ScoreCache, error) {
-	panic(fmt.Errorf("not implemented: Scorecaches - scorecaches"))
+// ScoreCaches is the resolver for the score_caches field.
+func (r *userResolver) ScoreCaches(ctx context.Context, obj *ent.User) ([]*ent.ScoreCache, error) {
+	return obj.QueryScoreCaches().All(ctx)
 }
 
 // Check returns CheckResolver implementation.
