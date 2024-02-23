@@ -32,8 +32,8 @@ const (
 	EdgeConfigs = "configs"
 	// EdgeStatuses holds the string denoting the statuses edge name in mutations.
 	EdgeStatuses = "statuses"
-	// EdgeScorecaches holds the string denoting the scorecaches edge name in mutations.
-	EdgeScorecaches = "scorecaches"
+	// EdgeScoreCaches holds the string denoting the scorecaches edge name in mutations.
+	EdgeScoreCaches = "scoreCaches"
 	// Table holds the table name of the user in the database.
 	Table = "users"
 	// ConfigsTable is the table that holds the configs relation/edge.
@@ -50,13 +50,13 @@ const (
 	StatusesInverseTable = "status"
 	// StatusesColumn is the table column denoting the statuses relation/edge.
 	StatusesColumn = "user_id"
-	// ScorecachesTable is the table that holds the scorecaches relation/edge.
-	ScorecachesTable = "score_caches"
-	// ScorecachesInverseTable is the table name for the ScoreCache entity.
+	// ScoreCachesTable is the table that holds the scoreCaches relation/edge.
+	ScoreCachesTable = "score_caches"
+	// ScoreCachesInverseTable is the table name for the ScoreCache entity.
 	// It exists in this package in order to avoid circular dependency with the "scorecache" package.
-	ScorecachesInverseTable = "score_caches"
-	// ScorecachesColumn is the table column denoting the scorecaches relation/edge.
-	ScorecachesColumn = "user_id"
+	ScoreCachesInverseTable = "score_caches"
+	// ScoreCachesColumn is the table column denoting the scoreCaches relation/edge.
+	ScoreCachesColumn = "user_id"
 )
 
 // Columns holds all SQL columns for user fields.
@@ -189,17 +189,17 @@ func ByStatuses(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	}
 }
 
-// ByScorecachesCount orders the results by scorecaches count.
-func ByScorecachesCount(opts ...sql.OrderTermOption) OrderOption {
+// ByScoreCachesCount orders the results by scoreCaches count.
+func ByScoreCachesCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborsCount(s, newScorecachesStep(), opts...)
+		sqlgraph.OrderByNeighborsCount(s, newScoreCachesStep(), opts...)
 	}
 }
 
-// ByScorecaches orders the results by scorecaches terms.
-func ByScorecaches(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+// ByScoreCaches orders the results by scoreCaches terms.
+func ByScoreCaches(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newScorecachesStep(), append([]sql.OrderTerm{term}, terms...)...)
+		sqlgraph.OrderByNeighborTerms(s, newScoreCachesStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
 func newConfigsStep() *sqlgraph.Step {
@@ -216,10 +216,10 @@ func newStatusesStep() *sqlgraph.Step {
 		sqlgraph.Edge(sqlgraph.O2M, true, StatusesTable, StatusesColumn),
 	)
 }
-func newScorecachesStep() *sqlgraph.Step {
+func newScoreCachesStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(ScorecachesInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.O2M, true, ScorecachesTable, ScorecachesColumn),
+		sqlgraph.To(ScoreCachesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, true, ScoreCachesTable, ScoreCachesColumn),
 	)
 }

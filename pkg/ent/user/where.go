@@ -407,21 +407,21 @@ func HasStatusesWith(preds ...predicate.Status) predicate.User {
 	})
 }
 
-// HasScorecaches applies the HasEdge predicate on the "scorecaches" edge.
-func HasScorecaches() predicate.User {
+// HasScoreCaches applies the HasEdge predicate on the "scoreCaches" edge.
+func HasScoreCaches() predicate.User {
 	return predicate.User(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, true, ScorecachesTable, ScorecachesColumn),
+			sqlgraph.Edge(sqlgraph.O2M, true, ScoreCachesTable, ScoreCachesColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
 }
 
-// HasScorecachesWith applies the HasEdge predicate on the "scorecaches" edge with a given conditions (other predicates).
-func HasScorecachesWith(preds ...predicate.ScoreCache) predicate.User {
+// HasScoreCachesWith applies the HasEdge predicate on the "scoreCaches" edge with a given conditions (other predicates).
+func HasScoreCachesWith(preds ...predicate.ScoreCache) predicate.User {
 	return predicate.User(func(s *sql.Selector) {
-		step := newScorecachesStep()
+		step := newScoreCachesStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

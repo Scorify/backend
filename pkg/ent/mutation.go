@@ -1585,9 +1585,9 @@ type RoundMutation struct {
 	statuses           map[uuid.UUID]struct{}
 	removedstatuses    map[uuid.UUID]struct{}
 	clearedstatuses    bool
-	scorecaches        map[uuid.UUID]struct{}
-	removedscorecaches map[uuid.UUID]struct{}
-	clearedscorecaches bool
+	scoreCaches        map[uuid.UUID]struct{}
+	removedscoreCaches map[uuid.UUID]struct{}
+	clearedscoreCaches bool
 	done               bool
 	oldValue           func(context.Context) (*Round, error)
 	predicates         []predicate.Round
@@ -1915,58 +1915,58 @@ func (m *RoundMutation) ResetStatuses() {
 	m.removedstatuses = nil
 }
 
-// AddScorecachIDs adds the "scorecaches" edge to the ScoreCache entity by ids.
-func (m *RoundMutation) AddScorecachIDs(ids ...uuid.UUID) {
-	if m.scorecaches == nil {
-		m.scorecaches = make(map[uuid.UUID]struct{})
+// AddScoreCachIDs adds the "scoreCaches" edge to the ScoreCache entity by ids.
+func (m *RoundMutation) AddScoreCachIDs(ids ...uuid.UUID) {
+	if m.scoreCaches == nil {
+		m.scoreCaches = make(map[uuid.UUID]struct{})
 	}
 	for i := range ids {
-		m.scorecaches[ids[i]] = struct{}{}
+		m.scoreCaches[ids[i]] = struct{}{}
 	}
 }
 
-// ClearScorecaches clears the "scorecaches" edge to the ScoreCache entity.
-func (m *RoundMutation) ClearScorecaches() {
-	m.clearedscorecaches = true
+// ClearScoreCaches clears the "scoreCaches" edge to the ScoreCache entity.
+func (m *RoundMutation) ClearScoreCaches() {
+	m.clearedscoreCaches = true
 }
 
-// ScorecachesCleared reports if the "scorecaches" edge to the ScoreCache entity was cleared.
-func (m *RoundMutation) ScorecachesCleared() bool {
-	return m.clearedscorecaches
+// ScoreCachesCleared reports if the "scoreCaches" edge to the ScoreCache entity was cleared.
+func (m *RoundMutation) ScoreCachesCleared() bool {
+	return m.clearedscoreCaches
 }
 
-// RemoveScorecachIDs removes the "scorecaches" edge to the ScoreCache entity by IDs.
-func (m *RoundMutation) RemoveScorecachIDs(ids ...uuid.UUID) {
-	if m.removedscorecaches == nil {
-		m.removedscorecaches = make(map[uuid.UUID]struct{})
+// RemoveScoreCachIDs removes the "scoreCaches" edge to the ScoreCache entity by IDs.
+func (m *RoundMutation) RemoveScoreCachIDs(ids ...uuid.UUID) {
+	if m.removedscoreCaches == nil {
+		m.removedscoreCaches = make(map[uuid.UUID]struct{})
 	}
 	for i := range ids {
-		delete(m.scorecaches, ids[i])
-		m.removedscorecaches[ids[i]] = struct{}{}
+		delete(m.scoreCaches, ids[i])
+		m.removedscoreCaches[ids[i]] = struct{}{}
 	}
 }
 
-// RemovedScorecaches returns the removed IDs of the "scorecaches" edge to the ScoreCache entity.
-func (m *RoundMutation) RemovedScorecachesIDs() (ids []uuid.UUID) {
-	for id := range m.removedscorecaches {
+// RemovedScoreCaches returns the removed IDs of the "scoreCaches" edge to the ScoreCache entity.
+func (m *RoundMutation) RemovedScoreCachesIDs() (ids []uuid.UUID) {
+	for id := range m.removedscoreCaches {
 		ids = append(ids, id)
 	}
 	return
 }
 
-// ScorecachesIDs returns the "scorecaches" edge IDs in the mutation.
-func (m *RoundMutation) ScorecachesIDs() (ids []uuid.UUID) {
-	for id := range m.scorecaches {
+// ScoreCachesIDs returns the "scoreCaches" edge IDs in the mutation.
+func (m *RoundMutation) ScoreCachesIDs() (ids []uuid.UUID) {
+	for id := range m.scoreCaches {
 		ids = append(ids, id)
 	}
 	return
 }
 
-// ResetScorecaches resets all changes to the "scorecaches" edge.
-func (m *RoundMutation) ResetScorecaches() {
-	m.scorecaches = nil
-	m.clearedscorecaches = false
-	m.removedscorecaches = nil
+// ResetScoreCaches resets all changes to the "scoreCaches" edge.
+func (m *RoundMutation) ResetScoreCaches() {
+	m.scoreCaches = nil
+	m.clearedscoreCaches = false
+	m.removedscoreCaches = nil
 }
 
 // Where appends a list predicates to the RoundMutation builder.
@@ -2172,8 +2172,8 @@ func (m *RoundMutation) AddedEdges() []string {
 	if m.statuses != nil {
 		edges = append(edges, round.EdgeStatuses)
 	}
-	if m.scorecaches != nil {
-		edges = append(edges, round.EdgeScorecaches)
+	if m.scoreCaches != nil {
+		edges = append(edges, round.EdgeScoreCaches)
 	}
 	return edges
 }
@@ -2188,9 +2188,9 @@ func (m *RoundMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
-	case round.EdgeScorecaches:
-		ids := make([]ent.Value, 0, len(m.scorecaches))
-		for id := range m.scorecaches {
+	case round.EdgeScoreCaches:
+		ids := make([]ent.Value, 0, len(m.scoreCaches))
+		for id := range m.scoreCaches {
 			ids = append(ids, id)
 		}
 		return ids
@@ -2204,8 +2204,8 @@ func (m *RoundMutation) RemovedEdges() []string {
 	if m.removedstatuses != nil {
 		edges = append(edges, round.EdgeStatuses)
 	}
-	if m.removedscorecaches != nil {
-		edges = append(edges, round.EdgeScorecaches)
+	if m.removedscoreCaches != nil {
+		edges = append(edges, round.EdgeScoreCaches)
 	}
 	return edges
 }
@@ -2220,9 +2220,9 @@ func (m *RoundMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
-	case round.EdgeScorecaches:
-		ids := make([]ent.Value, 0, len(m.removedscorecaches))
-		for id := range m.removedscorecaches {
+	case round.EdgeScoreCaches:
+		ids := make([]ent.Value, 0, len(m.removedscoreCaches))
+		for id := range m.removedscoreCaches {
 			ids = append(ids, id)
 		}
 		return ids
@@ -2236,8 +2236,8 @@ func (m *RoundMutation) ClearedEdges() []string {
 	if m.clearedstatuses {
 		edges = append(edges, round.EdgeStatuses)
 	}
-	if m.clearedscorecaches {
-		edges = append(edges, round.EdgeScorecaches)
+	if m.clearedscoreCaches {
+		edges = append(edges, round.EdgeScoreCaches)
 	}
 	return edges
 }
@@ -2248,8 +2248,8 @@ func (m *RoundMutation) EdgeCleared(name string) bool {
 	switch name {
 	case round.EdgeStatuses:
 		return m.clearedstatuses
-	case round.EdgeScorecaches:
-		return m.clearedscorecaches
+	case round.EdgeScoreCaches:
+		return m.clearedscoreCaches
 	}
 	return false
 }
@@ -2269,8 +2269,8 @@ func (m *RoundMutation) ResetEdge(name string) error {
 	case round.EdgeStatuses:
 		m.ResetStatuses()
 		return nil
-	case round.EdgeScorecaches:
-		m.ResetScorecaches()
+	case round.EdgeScoreCaches:
+		m.ResetScoreCaches()
 		return nil
 	}
 	return fmt.Errorf("unknown Round edge %s", name)
@@ -3894,9 +3894,9 @@ type UserMutation struct {
 	statuses           map[uuid.UUID]struct{}
 	removedstatuses    map[uuid.UUID]struct{}
 	clearedstatuses    bool
-	scorecaches        map[uuid.UUID]struct{}
-	removedscorecaches map[uuid.UUID]struct{}
-	clearedscorecaches bool
+	scoreCaches        map[uuid.UUID]struct{}
+	removedscoreCaches map[uuid.UUID]struct{}
+	clearedscoreCaches bool
 	done               bool
 	oldValue           func(context.Context) (*User, error)
 	predicates         []predicate.User
@@ -4364,58 +4364,58 @@ func (m *UserMutation) ResetStatuses() {
 	m.removedstatuses = nil
 }
 
-// AddScorecachIDs adds the "scorecaches" edge to the ScoreCache entity by ids.
-func (m *UserMutation) AddScorecachIDs(ids ...uuid.UUID) {
-	if m.scorecaches == nil {
-		m.scorecaches = make(map[uuid.UUID]struct{})
+// AddScoreCachIDs adds the "scoreCaches" edge to the ScoreCache entity by ids.
+func (m *UserMutation) AddScoreCachIDs(ids ...uuid.UUID) {
+	if m.scoreCaches == nil {
+		m.scoreCaches = make(map[uuid.UUID]struct{})
 	}
 	for i := range ids {
-		m.scorecaches[ids[i]] = struct{}{}
+		m.scoreCaches[ids[i]] = struct{}{}
 	}
 }
 
-// ClearScorecaches clears the "scorecaches" edge to the ScoreCache entity.
-func (m *UserMutation) ClearScorecaches() {
-	m.clearedscorecaches = true
+// ClearScoreCaches clears the "scoreCaches" edge to the ScoreCache entity.
+func (m *UserMutation) ClearScoreCaches() {
+	m.clearedscoreCaches = true
 }
 
-// ScorecachesCleared reports if the "scorecaches" edge to the ScoreCache entity was cleared.
-func (m *UserMutation) ScorecachesCleared() bool {
-	return m.clearedscorecaches
+// ScoreCachesCleared reports if the "scoreCaches" edge to the ScoreCache entity was cleared.
+func (m *UserMutation) ScoreCachesCleared() bool {
+	return m.clearedscoreCaches
 }
 
-// RemoveScorecachIDs removes the "scorecaches" edge to the ScoreCache entity by IDs.
-func (m *UserMutation) RemoveScorecachIDs(ids ...uuid.UUID) {
-	if m.removedscorecaches == nil {
-		m.removedscorecaches = make(map[uuid.UUID]struct{})
+// RemoveScoreCachIDs removes the "scoreCaches" edge to the ScoreCache entity by IDs.
+func (m *UserMutation) RemoveScoreCachIDs(ids ...uuid.UUID) {
+	if m.removedscoreCaches == nil {
+		m.removedscoreCaches = make(map[uuid.UUID]struct{})
 	}
 	for i := range ids {
-		delete(m.scorecaches, ids[i])
-		m.removedscorecaches[ids[i]] = struct{}{}
+		delete(m.scoreCaches, ids[i])
+		m.removedscoreCaches[ids[i]] = struct{}{}
 	}
 }
 
-// RemovedScorecaches returns the removed IDs of the "scorecaches" edge to the ScoreCache entity.
-func (m *UserMutation) RemovedScorecachesIDs() (ids []uuid.UUID) {
-	for id := range m.removedscorecaches {
+// RemovedScoreCaches returns the removed IDs of the "scoreCaches" edge to the ScoreCache entity.
+func (m *UserMutation) RemovedScoreCachesIDs() (ids []uuid.UUID) {
+	for id := range m.removedscoreCaches {
 		ids = append(ids, id)
 	}
 	return
 }
 
-// ScorecachesIDs returns the "scorecaches" edge IDs in the mutation.
-func (m *UserMutation) ScorecachesIDs() (ids []uuid.UUID) {
-	for id := range m.scorecaches {
+// ScoreCachesIDs returns the "scoreCaches" edge IDs in the mutation.
+func (m *UserMutation) ScoreCachesIDs() (ids []uuid.UUID) {
+	for id := range m.scoreCaches {
 		ids = append(ids, id)
 	}
 	return
 }
 
-// ResetScorecaches resets all changes to the "scorecaches" edge.
-func (m *UserMutation) ResetScorecaches() {
-	m.scorecaches = nil
-	m.clearedscorecaches = false
-	m.removedscorecaches = nil
+// ResetScoreCaches resets all changes to the "scoreCaches" edge.
+func (m *UserMutation) ResetScoreCaches() {
+	m.scoreCaches = nil
+	m.clearedscoreCaches = false
+	m.removedscoreCaches = nil
 }
 
 // Where appends a list predicates to the UserMutation builder.
@@ -4667,8 +4667,8 @@ func (m *UserMutation) AddedEdges() []string {
 	if m.statuses != nil {
 		edges = append(edges, user.EdgeStatuses)
 	}
-	if m.scorecaches != nil {
-		edges = append(edges, user.EdgeScorecaches)
+	if m.scoreCaches != nil {
+		edges = append(edges, user.EdgeScoreCaches)
 	}
 	return edges
 }
@@ -4689,9 +4689,9 @@ func (m *UserMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
-	case user.EdgeScorecaches:
-		ids := make([]ent.Value, 0, len(m.scorecaches))
-		for id := range m.scorecaches {
+	case user.EdgeScoreCaches:
+		ids := make([]ent.Value, 0, len(m.scoreCaches))
+		for id := range m.scoreCaches {
 			ids = append(ids, id)
 		}
 		return ids
@@ -4708,8 +4708,8 @@ func (m *UserMutation) RemovedEdges() []string {
 	if m.removedstatuses != nil {
 		edges = append(edges, user.EdgeStatuses)
 	}
-	if m.removedscorecaches != nil {
-		edges = append(edges, user.EdgeScorecaches)
+	if m.removedscoreCaches != nil {
+		edges = append(edges, user.EdgeScoreCaches)
 	}
 	return edges
 }
@@ -4730,9 +4730,9 @@ func (m *UserMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
-	case user.EdgeScorecaches:
-		ids := make([]ent.Value, 0, len(m.removedscorecaches))
-		for id := range m.removedscorecaches {
+	case user.EdgeScoreCaches:
+		ids := make([]ent.Value, 0, len(m.removedscoreCaches))
+		for id := range m.removedscoreCaches {
 			ids = append(ids, id)
 		}
 		return ids
@@ -4749,8 +4749,8 @@ func (m *UserMutation) ClearedEdges() []string {
 	if m.clearedstatuses {
 		edges = append(edges, user.EdgeStatuses)
 	}
-	if m.clearedscorecaches {
-		edges = append(edges, user.EdgeScorecaches)
+	if m.clearedscoreCaches {
+		edges = append(edges, user.EdgeScoreCaches)
 	}
 	return edges
 }
@@ -4763,8 +4763,8 @@ func (m *UserMutation) EdgeCleared(name string) bool {
 		return m.clearedconfigs
 	case user.EdgeStatuses:
 		return m.clearedstatuses
-	case user.EdgeScorecaches:
-		return m.clearedscorecaches
+	case user.EdgeScoreCaches:
+		return m.clearedscoreCaches
 	}
 	return false
 }
@@ -4787,8 +4787,8 @@ func (m *UserMutation) ResetEdge(name string) error {
 	case user.EdgeStatuses:
 		m.ResetStatuses()
 		return nil
-	case user.EdgeScorecaches:
-		m.ResetScorecaches()
+	case user.EdgeScoreCaches:
+		m.ResetScoreCaches()
 		return nil
 	}
 	return fmt.Errorf("unknown User edge %s", name)

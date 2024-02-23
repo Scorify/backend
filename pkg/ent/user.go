@@ -44,7 +44,7 @@ type UserEdges struct {
 	// The status of a user
 	Statuses []*Status `json:"status"`
 	// The score caches of a user
-	Scorecaches []*ScoreCache `json:"scorecaches"`
+	ScoreCaches []*ScoreCache `json:"score_caches"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [3]bool
@@ -68,13 +68,13 @@ func (e UserEdges) StatusesOrErr() ([]*Status, error) {
 	return nil, &NotLoadedError{edge: "statuses"}
 }
 
-// ScorecachesOrErr returns the Scorecaches value or an error if the edge
+// ScoreCachesOrErr returns the ScoreCaches value or an error if the edge
 // was not loaded in eager-loading.
-func (e UserEdges) ScorecachesOrErr() ([]*ScoreCache, error) {
+func (e UserEdges) ScoreCachesOrErr() ([]*ScoreCache, error) {
 	if e.loadedTypes[2] {
-		return e.Scorecaches, nil
+		return e.ScoreCaches, nil
 	}
-	return nil, &NotLoadedError{edge: "scorecaches"}
+	return nil, &NotLoadedError{edge: "scoreCaches"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -170,9 +170,9 @@ func (u *User) QueryStatuses() *StatusQuery {
 	return NewUserClient(u.config).QueryStatuses(u)
 }
 
-// QueryScorecaches queries the "scorecaches" edge of the User entity.
-func (u *User) QueryScorecaches() *ScoreCacheQuery {
-	return NewUserClient(u.config).QueryScorecaches(u)
+// QueryScoreCaches queries the "scoreCaches" edge of the User entity.
+func (u *User) QueryScoreCaches() *ScoreCacheQuery {
+	return NewUserClient(u.config).QueryScoreCaches(u)
 }
 
 // Update returns a builder for updating this User.

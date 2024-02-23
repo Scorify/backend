@@ -38,7 +38,7 @@ type RoundEdges struct {
 	// The statuses of a round
 	Statuses []*Status `json:"statuses"`
 	// The score caches of a round
-	Scorecaches []*ScoreCache `json:"scorecaches"`
+	ScoreCaches []*ScoreCache `json:"score_caches"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [2]bool
@@ -53,13 +53,13 @@ func (e RoundEdges) StatusesOrErr() ([]*Status, error) {
 	return nil, &NotLoadedError{edge: "statuses"}
 }
 
-// ScorecachesOrErr returns the Scorecaches value or an error if the edge
+// ScoreCachesOrErr returns the ScoreCaches value or an error if the edge
 // was not loaded in eager-loading.
-func (e RoundEdges) ScorecachesOrErr() ([]*ScoreCache, error) {
+func (e RoundEdges) ScoreCachesOrErr() ([]*ScoreCache, error) {
 	if e.loadedTypes[1] {
-		return e.Scorecaches, nil
+		return e.ScoreCaches, nil
 	}
-	return nil, &NotLoadedError{edge: "scorecaches"}
+	return nil, &NotLoadedError{edge: "scoreCaches"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -138,9 +138,9 @@ func (r *Round) QueryStatuses() *StatusQuery {
 	return NewRoundClient(r.config).QueryStatuses(r)
 }
 
-// QueryScorecaches queries the "scorecaches" edge of the Round entity.
-func (r *Round) QueryScorecaches() *ScoreCacheQuery {
-	return NewRoundClient(r.config).QueryScorecaches(r)
+// QueryScoreCaches queries the "scoreCaches" edge of the Round entity.
+func (r *Round) QueryScoreCaches() *ScoreCacheQuery {
+	return NewRoundClient(r.config).QueryScoreCaches(r)
 }
 
 // Update returns a builder for updating this Round.

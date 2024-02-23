@@ -87,19 +87,19 @@ func (ru *RoundUpdate) AddStatuses(s ...*Status) *RoundUpdate {
 	return ru.AddStatusIDs(ids...)
 }
 
-// AddScorecachIDs adds the "scorecaches" edge to the ScoreCache entity by IDs.
-func (ru *RoundUpdate) AddScorecachIDs(ids ...uuid.UUID) *RoundUpdate {
-	ru.mutation.AddScorecachIDs(ids...)
+// AddScoreCachIDs adds the "scoreCaches" edge to the ScoreCache entity by IDs.
+func (ru *RoundUpdate) AddScoreCachIDs(ids ...uuid.UUID) *RoundUpdate {
+	ru.mutation.AddScoreCachIDs(ids...)
 	return ru
 }
 
-// AddScorecaches adds the "scorecaches" edges to the ScoreCache entity.
-func (ru *RoundUpdate) AddScorecaches(s ...*ScoreCache) *RoundUpdate {
+// AddScoreCaches adds the "scoreCaches" edges to the ScoreCache entity.
+func (ru *RoundUpdate) AddScoreCaches(s ...*ScoreCache) *RoundUpdate {
 	ids := make([]uuid.UUID, len(s))
 	for i := range s {
 		ids[i] = s[i].ID
 	}
-	return ru.AddScorecachIDs(ids...)
+	return ru.AddScoreCachIDs(ids...)
 }
 
 // Mutation returns the RoundMutation object of the builder.
@@ -128,25 +128,25 @@ func (ru *RoundUpdate) RemoveStatuses(s ...*Status) *RoundUpdate {
 	return ru.RemoveStatusIDs(ids...)
 }
 
-// ClearScorecaches clears all "scorecaches" edges to the ScoreCache entity.
-func (ru *RoundUpdate) ClearScorecaches() *RoundUpdate {
-	ru.mutation.ClearScorecaches()
+// ClearScoreCaches clears all "scoreCaches" edges to the ScoreCache entity.
+func (ru *RoundUpdate) ClearScoreCaches() *RoundUpdate {
+	ru.mutation.ClearScoreCaches()
 	return ru
 }
 
-// RemoveScorecachIDs removes the "scorecaches" edge to ScoreCache entities by IDs.
-func (ru *RoundUpdate) RemoveScorecachIDs(ids ...uuid.UUID) *RoundUpdate {
-	ru.mutation.RemoveScorecachIDs(ids...)
+// RemoveScoreCachIDs removes the "scoreCaches" edge to ScoreCache entities by IDs.
+func (ru *RoundUpdate) RemoveScoreCachIDs(ids ...uuid.UUID) *RoundUpdate {
+	ru.mutation.RemoveScoreCachIDs(ids...)
 	return ru
 }
 
-// RemoveScorecaches removes "scorecaches" edges to ScoreCache entities.
-func (ru *RoundUpdate) RemoveScorecaches(s ...*ScoreCache) *RoundUpdate {
+// RemoveScoreCaches removes "scoreCaches" edges to ScoreCache entities.
+func (ru *RoundUpdate) RemoveScoreCaches(s ...*ScoreCache) *RoundUpdate {
 	ids := make([]uuid.UUID, len(s))
 	for i := range s {
 		ids[i] = s[i].ID
 	}
-	return ru.RemoveScorecachIDs(ids...)
+	return ru.RemoveScoreCachIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -264,12 +264,12 @@ func (ru *RoundUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if ru.mutation.ScorecachesCleared() {
+	if ru.mutation.ScoreCachesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
-			Table:   round.ScorecachesTable,
-			Columns: []string{round.ScorecachesColumn},
+			Table:   round.ScoreCachesTable,
+			Columns: []string{round.ScoreCachesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(scorecache.FieldID, field.TypeUUID),
@@ -277,12 +277,12 @@ func (ru *RoundUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := ru.mutation.RemovedScorecachesIDs(); len(nodes) > 0 && !ru.mutation.ScorecachesCleared() {
+	if nodes := ru.mutation.RemovedScoreCachesIDs(); len(nodes) > 0 && !ru.mutation.ScoreCachesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
-			Table:   round.ScorecachesTable,
-			Columns: []string{round.ScorecachesColumn},
+			Table:   round.ScoreCachesTable,
+			Columns: []string{round.ScoreCachesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(scorecache.FieldID, field.TypeUUID),
@@ -293,12 +293,12 @@ func (ru *RoundUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := ru.mutation.ScorecachesIDs(); len(nodes) > 0 {
+	if nodes := ru.mutation.ScoreCachesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
-			Table:   round.ScorecachesTable,
-			Columns: []string{round.ScorecachesColumn},
+			Table:   round.ScoreCachesTable,
+			Columns: []string{round.ScoreCachesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(scorecache.FieldID, field.TypeUUID),
@@ -385,19 +385,19 @@ func (ruo *RoundUpdateOne) AddStatuses(s ...*Status) *RoundUpdateOne {
 	return ruo.AddStatusIDs(ids...)
 }
 
-// AddScorecachIDs adds the "scorecaches" edge to the ScoreCache entity by IDs.
-func (ruo *RoundUpdateOne) AddScorecachIDs(ids ...uuid.UUID) *RoundUpdateOne {
-	ruo.mutation.AddScorecachIDs(ids...)
+// AddScoreCachIDs adds the "scoreCaches" edge to the ScoreCache entity by IDs.
+func (ruo *RoundUpdateOne) AddScoreCachIDs(ids ...uuid.UUID) *RoundUpdateOne {
+	ruo.mutation.AddScoreCachIDs(ids...)
 	return ruo
 }
 
-// AddScorecaches adds the "scorecaches" edges to the ScoreCache entity.
-func (ruo *RoundUpdateOne) AddScorecaches(s ...*ScoreCache) *RoundUpdateOne {
+// AddScoreCaches adds the "scoreCaches" edges to the ScoreCache entity.
+func (ruo *RoundUpdateOne) AddScoreCaches(s ...*ScoreCache) *RoundUpdateOne {
 	ids := make([]uuid.UUID, len(s))
 	for i := range s {
 		ids[i] = s[i].ID
 	}
-	return ruo.AddScorecachIDs(ids...)
+	return ruo.AddScoreCachIDs(ids...)
 }
 
 // Mutation returns the RoundMutation object of the builder.
@@ -426,25 +426,25 @@ func (ruo *RoundUpdateOne) RemoveStatuses(s ...*Status) *RoundUpdateOne {
 	return ruo.RemoveStatusIDs(ids...)
 }
 
-// ClearScorecaches clears all "scorecaches" edges to the ScoreCache entity.
-func (ruo *RoundUpdateOne) ClearScorecaches() *RoundUpdateOne {
-	ruo.mutation.ClearScorecaches()
+// ClearScoreCaches clears all "scoreCaches" edges to the ScoreCache entity.
+func (ruo *RoundUpdateOne) ClearScoreCaches() *RoundUpdateOne {
+	ruo.mutation.ClearScoreCaches()
 	return ruo
 }
 
-// RemoveScorecachIDs removes the "scorecaches" edge to ScoreCache entities by IDs.
-func (ruo *RoundUpdateOne) RemoveScorecachIDs(ids ...uuid.UUID) *RoundUpdateOne {
-	ruo.mutation.RemoveScorecachIDs(ids...)
+// RemoveScoreCachIDs removes the "scoreCaches" edge to ScoreCache entities by IDs.
+func (ruo *RoundUpdateOne) RemoveScoreCachIDs(ids ...uuid.UUID) *RoundUpdateOne {
+	ruo.mutation.RemoveScoreCachIDs(ids...)
 	return ruo
 }
 
-// RemoveScorecaches removes "scorecaches" edges to ScoreCache entities.
-func (ruo *RoundUpdateOne) RemoveScorecaches(s ...*ScoreCache) *RoundUpdateOne {
+// RemoveScoreCaches removes "scoreCaches" edges to ScoreCache entities.
+func (ruo *RoundUpdateOne) RemoveScoreCaches(s ...*ScoreCache) *RoundUpdateOne {
 	ids := make([]uuid.UUID, len(s))
 	for i := range s {
 		ids[i] = s[i].ID
 	}
-	return ruo.RemoveScorecachIDs(ids...)
+	return ruo.RemoveScoreCachIDs(ids...)
 }
 
 // Where appends a list predicates to the RoundUpdate builder.
@@ -592,12 +592,12 @@ func (ruo *RoundUpdateOne) sqlSave(ctx context.Context) (_node *Round, err error
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if ruo.mutation.ScorecachesCleared() {
+	if ruo.mutation.ScoreCachesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
-			Table:   round.ScorecachesTable,
-			Columns: []string{round.ScorecachesColumn},
+			Table:   round.ScoreCachesTable,
+			Columns: []string{round.ScoreCachesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(scorecache.FieldID, field.TypeUUID),
@@ -605,12 +605,12 @@ func (ruo *RoundUpdateOne) sqlSave(ctx context.Context) (_node *Round, err error
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := ruo.mutation.RemovedScorecachesIDs(); len(nodes) > 0 && !ruo.mutation.ScorecachesCleared() {
+	if nodes := ruo.mutation.RemovedScoreCachesIDs(); len(nodes) > 0 && !ruo.mutation.ScoreCachesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
-			Table:   round.ScorecachesTable,
-			Columns: []string{round.ScorecachesColumn},
+			Table:   round.ScoreCachesTable,
+			Columns: []string{round.ScoreCachesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(scorecache.FieldID, field.TypeUUID),
@@ -621,12 +621,12 @@ func (ruo *RoundUpdateOne) sqlSave(ctx context.Context) (_node *Round, err error
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := ruo.mutation.ScorecachesIDs(); len(nodes) > 0 {
+	if nodes := ruo.mutation.ScoreCachesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
-			Table:   round.ScorecachesTable,
-			Columns: []string{round.ScorecachesColumn},
+			Table:   round.ScoreCachesTable,
+			Columns: []string{round.ScoreCachesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(scorecache.FieldID, field.TypeUUID),

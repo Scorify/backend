@@ -700,15 +700,15 @@ func (c *RoundClient) QueryStatuses(r *Round) *StatusQuery {
 	return query
 }
 
-// QueryScorecaches queries the scorecaches edge of a Round.
-func (c *RoundClient) QueryScorecaches(r *Round) *ScoreCacheQuery {
+// QueryScoreCaches queries the scoreCaches edge of a Round.
+func (c *RoundClient) QueryScoreCaches(r *Round) *ScoreCacheQuery {
 	query := (&ScoreCacheClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := r.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(round.Table, round.FieldID, id),
 			sqlgraph.To(scorecache.Table, scorecache.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, true, round.ScorecachesTable, round.ScorecachesColumn),
+			sqlgraph.Edge(sqlgraph.O2M, true, round.ScoreCachesTable, round.ScoreCachesColumn),
 		)
 		fromV = sqlgraph.Neighbors(r.driver.Dialect(), step)
 		return fromV, nil
@@ -1227,15 +1227,15 @@ func (c *UserClient) QueryStatuses(u *User) *StatusQuery {
 	return query
 }
 
-// QueryScorecaches queries the scorecaches edge of a User.
-func (c *UserClient) QueryScorecaches(u *User) *ScoreCacheQuery {
+// QueryScoreCaches queries the scoreCaches edge of a User.
+func (c *UserClient) QueryScoreCaches(u *User) *ScoreCacheQuery {
 	query := (&ScoreCacheClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := u.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(user.Table, user.FieldID, id),
 			sqlgraph.To(scorecache.Table, scorecache.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, true, user.ScorecachesTable, user.ScorecachesColumn),
+			sqlgraph.Edge(sqlgraph.O2M, true, user.ScoreCachesTable, user.ScoreCachesColumn),
 		)
 		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
 		return fromV, nil
