@@ -9,16 +9,18 @@ enum Role {
   user
 }
 
-type User {
-  id: ID!
-  username: String!
-  role: Role!
-  number: Int
-  create_time: Time!
-  update_time: Time!
-  configs: [Config!]! @isAuthenticated
-  statuses: [Status!]! @isAuthenticated
-  scorecaches: [ScoreCache!]! @isAuthenticated
+enum StatusEnum {
+  up
+  down
+  unknown
+}
+
+enum NotificationType {
+  default
+  error
+  info
+  success
+  warning
 }
 
 type LoginOutput {
@@ -29,6 +31,18 @@ type LoginOutput {
   domain: String!
   secure: Boolean!
   httpOnly: Boolean!
+}
+
+type User {
+  id: ID!
+  username: String!
+  role: Role!
+  number: Int
+  create_time: Time!
+  update_time: Time!
+  configs: [Config!]! @isAuthenticated
+  statuses: [Status!]! @isAuthenticated
+  scorecaches: [ScoreCache!]! @isAuthenticated
 }
 
 type Source {
@@ -67,12 +81,6 @@ type Config {
   user: User!
 }
 
-enum StatusEnum {
-  up
-  down
-  unknown
-}
-
 type Status {
   id: ID!
   error: String
@@ -108,14 +116,6 @@ type Round {
   update_time: Time!
   statuses: [Status!]!
   scorecaches: [ScoreCache!]!
-}
-
-enum NotificationType {
-  default
-  error
-  info
-  success
-  warning
 }
 
 type Notification {
