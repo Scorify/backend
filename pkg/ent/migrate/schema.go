@@ -74,7 +74,6 @@ var (
 		{Name: "update_time", Type: field.TypeTime},
 		{Name: "number", Type: field.TypeInt, Unique: true},
 		{Name: "complete", Type: field.TypeBool, Default: false},
-		{Name: "points", Type: field.TypeInt},
 	}
 	// RoundsTable holds the schema information for the "rounds" table.
 	RoundsTable = &schema.Table{

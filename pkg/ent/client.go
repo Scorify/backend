@@ -1211,15 +1211,15 @@ func (c *UserClient) QueryConfigs(u *User) *CheckConfigQuery {
 	return query
 }
 
-// QueryStatus queries the status edge of a User.
-func (c *UserClient) QueryStatus(u *User) *StatusQuery {
+// QueryStatuses queries the statuses edge of a User.
+func (c *UserClient) QueryStatuses(u *User) *StatusQuery {
 	query := (&StatusClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := u.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(user.Table, user.FieldID, id),
 			sqlgraph.To(status.Table, status.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, true, user.StatusTable, user.StatusColumn),
+			sqlgraph.Edge(sqlgraph.O2M, true, user.StatusesTable, user.StatusesColumn),
 		)
 		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
 		return fromV, nil

@@ -27,7 +27,7 @@ type UserQuery struct {
 	inters          []Interceptor
 	predicates      []predicate.User
 	withConfigs     *CheckConfigQuery
-	withStatus      *StatusQuery
+	withStatuses    *StatusQuery
 	withScorecaches *ScoreCacheQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -87,8 +87,8 @@ func (uq *UserQuery) QueryConfigs() *CheckConfigQuery {
 	return query
 }
 
-// QueryStatus chains the current query on the "status" edge.
-func (uq *UserQuery) QueryStatus() *StatusQuery {
+// QueryStatuses chains the current query on the "statuses" edge.
+func (uq *UserQuery) QueryStatuses() *StatusQuery {
 	query := (&StatusClient{config: uq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := uq.prepareQuery(ctx); err != nil {
@@ -101,7 +101,7 @@ func (uq *UserQuery) QueryStatus() *StatusQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(user.Table, user.FieldID, selector),
 			sqlgraph.To(status.Table, status.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, true, user.StatusTable, user.StatusColumn),
+			sqlgraph.Edge(sqlgraph.O2M, true, user.StatusesTable, user.StatusesColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(uq.driver.Dialect(), step)
 		return fromU, nil
@@ -324,7 +324,7 @@ func (uq *UserQuery) Clone() *UserQuery {
 		inters:          append([]Interceptor{}, uq.inters...),
 		predicates:      append([]predicate.User{}, uq.predicates...),
 		withConfigs:     uq.withConfigs.Clone(),
-		withStatus:      uq.withStatus.Clone(),
+		withStatuses:    uq.withStatuses.Clone(),
 		withScorecaches: uq.withScorecaches.Clone(),
 		// clone intermediate query.
 		sql:  uq.sql.Clone(),
@@ -343,14 +343,14 @@ func (uq *UserQuery) WithConfigs(opts ...func(*CheckConfigQuery)) *UserQuery {
 	return uq
 }
 
-// WithStatus tells the query-builder to eager-load the nodes that are connected to
-// the "status" edge. The optional arguments are used to configure the query builder of the edge.
-func (uq *UserQuery) WithStatus(opts ...func(*StatusQuery)) *UserQuery {
+// WithStatuses tells the query-builder to eager-load the nodes that are connected to
+// the "statuses" edge. The optional arguments are used to configure the query builder of the edge.
+func (uq *UserQuery) WithStatuses(opts ...func(*StatusQuery)) *UserQuery {
 	query := (&StatusClient{config: uq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	uq.withStatus = query
+	uq.withStatuses = query
 	return uq
 }
 
@@ -445,7 +445,7 @@ func (uq *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 		_spec       = uq.querySpec()
 		loadedTypes = [3]bool{
 			uq.withConfigs != nil,
-			uq.withStatus != nil,
+			uq.withStatuses != nil,
 			uq.withScorecaches != nil,
 		}
 	)
@@ -474,10 +474,10 @@ func (uq *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 			return nil, err
 		}
 	}
-	if query := uq.withStatus; query != nil {
-		if err := uq.loadStatus(ctx, query, nodes,
-			func(n *User) { n.Edges.Status = []*Status{} },
-			func(n *User, e *Status) { n.Edges.Status = append(n.Edges.Status, e) }); err != nil {
+	if query := uq.withStatuses; query != nil {
+		if err := uq.loadStatuses(ctx, query, nodes,
+			func(n *User) { n.Edges.Statuses = []*Status{} },
+			func(n *User, e *Status) { n.Edges.Statuses = append(n.Edges.Statuses, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -521,7 +521,7 @@ func (uq *UserQuery) loadConfigs(ctx context.Context, query *CheckConfigQuery, n
 	}
 	return nil
 }
-func (uq *UserQuery) loadStatus(ctx context.Context, query *StatusQuery, nodes []*User, init func(*User), assign func(*User, *Status)) error {
+func (uq *UserQuery) loadStatuses(ctx context.Context, query *StatusQuery, nodes []*User, init func(*User), assign func(*User, *Status)) error {
 	fks := make([]driver.Value, 0, len(nodes))
 	nodeids := make(map[uuid.UUID]*User)
 	for i := range nodes {
@@ -535,7 +535,7 @@ func (uq *UserQuery) loadStatus(ctx context.Context, query *StatusQuery, nodes [
 		query.ctx.AppendFieldOnce(status.FieldUserID)
 	}
 	query.Where(predicate.Status(func(s *sql.Selector) {
-		s.Where(sql.InValues(s.C(user.StatusColumn), fks...))
+		s.Where(sql.InValues(s.C(user.StatusesColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

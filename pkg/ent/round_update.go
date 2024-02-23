@@ -72,27 +72,6 @@ func (ru *RoundUpdate) SetNillableComplete(b *bool) *RoundUpdate {
 	return ru
 }
 
-// SetPoints sets the "points" field.
-func (ru *RoundUpdate) SetPoints(i int) *RoundUpdate {
-	ru.mutation.ResetPoints()
-	ru.mutation.SetPoints(i)
-	return ru
-}
-
-// SetNillablePoints sets the "points" field if the given value is not nil.
-func (ru *RoundUpdate) SetNillablePoints(i *int) *RoundUpdate {
-	if i != nil {
-		ru.SetPoints(*i)
-	}
-	return ru
-}
-
-// AddPoints adds i to the "points" field.
-func (ru *RoundUpdate) AddPoints(i int) *RoundUpdate {
-	ru.mutation.AddPoints(i)
-	return ru
-}
-
 // AddStatusIDs adds the "statuses" edge to the Status entity by IDs.
 func (ru *RoundUpdate) AddStatusIDs(ids ...uuid.UUID) *RoundUpdate {
 	ru.mutation.AddStatusIDs(ids...)
@@ -213,11 +192,6 @@ func (ru *RoundUpdate) check() error {
 			return &ValidationError{Name: "number", err: fmt.Errorf(`ent: validator failed for field "Round.number": %w`, err)}
 		}
 	}
-	if v, ok := ru.mutation.Points(); ok {
-		if err := round.PointsValidator(v); err != nil {
-			return &ValidationError{Name: "points", err: fmt.Errorf(`ent: validator failed for field "Round.points": %w`, err)}
-		}
-	}
 	return nil
 }
 
@@ -244,12 +218,6 @@ func (ru *RoundUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := ru.mutation.Complete(); ok {
 		_spec.SetField(round.FieldComplete, field.TypeBool, value)
-	}
-	if value, ok := ru.mutation.Points(); ok {
-		_spec.SetField(round.FieldPoints, field.TypeInt, value)
-	}
-	if value, ok := ru.mutation.AddedPoints(); ok {
-		_spec.AddField(round.FieldPoints, field.TypeInt, value)
 	}
 	if ru.mutation.StatusesCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -402,27 +370,6 @@ func (ruo *RoundUpdateOne) SetNillableComplete(b *bool) *RoundUpdateOne {
 	return ruo
 }
 
-// SetPoints sets the "points" field.
-func (ruo *RoundUpdateOne) SetPoints(i int) *RoundUpdateOne {
-	ruo.mutation.ResetPoints()
-	ruo.mutation.SetPoints(i)
-	return ruo
-}
-
-// SetNillablePoints sets the "points" field if the given value is not nil.
-func (ruo *RoundUpdateOne) SetNillablePoints(i *int) *RoundUpdateOne {
-	if i != nil {
-		ruo.SetPoints(*i)
-	}
-	return ruo
-}
-
-// AddPoints adds i to the "points" field.
-func (ruo *RoundUpdateOne) AddPoints(i int) *RoundUpdateOne {
-	ruo.mutation.AddPoints(i)
-	return ruo
-}
-
 // AddStatusIDs adds the "statuses" edge to the Status entity by IDs.
 func (ruo *RoundUpdateOne) AddStatusIDs(ids ...uuid.UUID) *RoundUpdateOne {
 	ruo.mutation.AddStatusIDs(ids...)
@@ -556,11 +503,6 @@ func (ruo *RoundUpdateOne) check() error {
 			return &ValidationError{Name: "number", err: fmt.Errorf(`ent: validator failed for field "Round.number": %w`, err)}
 		}
 	}
-	if v, ok := ruo.mutation.Points(); ok {
-		if err := round.PointsValidator(v); err != nil {
-			return &ValidationError{Name: "points", err: fmt.Errorf(`ent: validator failed for field "Round.points": %w`, err)}
-		}
-	}
 	return nil
 }
 
@@ -604,12 +546,6 @@ func (ruo *RoundUpdateOne) sqlSave(ctx context.Context) (_node *Round, err error
 	}
 	if value, ok := ruo.mutation.Complete(); ok {
 		_spec.SetField(round.FieldComplete, field.TypeBool, value)
-	}
-	if value, ok := ruo.mutation.Points(); ok {
-		_spec.SetField(round.FieldPoints, field.TypeInt, value)
-	}
-	if value, ok := ruo.mutation.AddedPoints(); ok {
-		_spec.AddField(round.FieldPoints, field.TypeInt, value)
 	}
 	if ruo.mutation.StatusesCleared() {
 		edge := &sqlgraph.EdgeSpec{

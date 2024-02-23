@@ -71,12 +71,6 @@ func (rc *RoundCreate) SetNillableComplete(b *bool) *RoundCreate {
 	return rc
 }
 
-// SetPoints sets the "points" field.
-func (rc *RoundCreate) SetPoints(i int) *RoundCreate {
-	rc.mutation.SetPoints(i)
-	return rc
-}
-
 // SetID sets the "id" field.
 func (rc *RoundCreate) SetID(u uuid.UUID) *RoundCreate {
 	rc.mutation.SetID(u)
@@ -193,14 +187,6 @@ func (rc *RoundCreate) check() error {
 	if _, ok := rc.mutation.Complete(); !ok {
 		return &ValidationError{Name: "complete", err: errors.New(`ent: missing required field "Round.complete"`)}
 	}
-	if _, ok := rc.mutation.Points(); !ok {
-		return &ValidationError{Name: "points", err: errors.New(`ent: missing required field "Round.points"`)}
-	}
-	if v, ok := rc.mutation.Points(); ok {
-		if err := round.PointsValidator(v); err != nil {
-			return &ValidationError{Name: "points", err: fmt.Errorf(`ent: validator failed for field "Round.points": %w`, err)}
-		}
-	}
 	return nil
 }
 
@@ -251,10 +237,6 @@ func (rc *RoundCreate) createSpec() (*Round, *sqlgraph.CreateSpec) {
 	if value, ok := rc.mutation.Complete(); ok {
 		_spec.SetField(round.FieldComplete, field.TypeBool, value)
 		_node.Complete = value
-	}
-	if value, ok := rc.mutation.Points(); ok {
-		_spec.SetField(round.FieldPoints, field.TypeInt, value)
-		_node.Points = value
 	}
 	if nodes := rc.mutation.StatusesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

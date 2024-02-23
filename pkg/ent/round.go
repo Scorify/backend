@@ -27,8 +27,6 @@ type Round struct {
 	Number int `json:"number"`
 	// The completion status of the round
 	Complete bool `json:"complete"`
-	// The points of the round
-	Points int `json:"points"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the RoundQuery when eager-loading is set.
 	Edges        RoundEdges `json:"edges"`
@@ -71,7 +69,7 @@ func (*Round) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case round.FieldComplete:
 			values[i] = new(sql.NullBool)
-		case round.FieldNumber, round.FieldPoints:
+		case round.FieldNumber:
 			values[i] = new(sql.NullInt64)
 		case round.FieldCreateTime, round.FieldUpdateTime:
 			values[i] = new(sql.NullTime)
@@ -121,12 +119,6 @@ func (r *Round) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field complete", values[i])
 			} else if value.Valid {
 				r.Complete = value.Bool
-			}
-		case round.FieldPoints:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field points", values[i])
-			} else if value.Valid {
-				r.Points = int(value.Int64)
 			}
 		default:
 			r.selectValues.Set(columns[i], values[i])
@@ -185,9 +177,6 @@ func (r *Round) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("complete=")
 	builder.WriteString(fmt.Sprintf("%v", r.Complete))
-	builder.WriteString(", ")
-	builder.WriteString("points=")
-	builder.WriteString(fmt.Sprintf("%v", r.Points))
 	builder.WriteByte(')')
 	return builder.String()
 }

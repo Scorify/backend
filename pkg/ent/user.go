@@ -42,7 +42,7 @@ type UserEdges struct {
 	// The configuration of a check
 	Configs []*CheckConfig `json:"config"`
 	// The status of a user
-	Status []*Status `json:"status"`
+	Statuses []*Status `json:"status"`
 	// The score caches of a user
 	Scorecaches []*ScoreCache `json:"scorecaches"`
 	// loadedTypes holds the information for reporting if a
@@ -59,13 +59,13 @@ func (e UserEdges) ConfigsOrErr() ([]*CheckConfig, error) {
 	return nil, &NotLoadedError{edge: "configs"}
 }
 
-// StatusOrErr returns the Status value or an error if the edge
+// StatusesOrErr returns the Statuses value or an error if the edge
 // was not loaded in eager-loading.
-func (e UserEdges) StatusOrErr() ([]*Status, error) {
+func (e UserEdges) StatusesOrErr() ([]*Status, error) {
 	if e.loadedTypes[1] {
-		return e.Status, nil
+		return e.Statuses, nil
 	}
-	return nil, &NotLoadedError{edge: "status"}
+	return nil, &NotLoadedError{edge: "statuses"}
 }
 
 // ScorecachesOrErr returns the Scorecaches value or an error if the edge
@@ -165,9 +165,9 @@ func (u *User) QueryConfigs() *CheckConfigQuery {
 	return NewUserClient(u.config).QueryConfigs(u)
 }
 
-// QueryStatus queries the "status" edge of the User entity.
-func (u *User) QueryStatus() *StatusQuery {
-	return NewUserClient(u.config).QueryStatus(u)
+// QueryStatuses queries the "statuses" edge of the User entity.
+func (u *User) QueryStatuses() *StatusQuery {
+	return NewUserClient(u.config).QueryStatuses(u)
 }
 
 // QueryScorecaches queries the "scorecaches" edge of the User entity.

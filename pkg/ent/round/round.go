@@ -23,8 +23,6 @@ const (
 	FieldNumber = "number"
 	// FieldComplete holds the string denoting the complete field in the database.
 	FieldComplete = "complete"
-	// FieldPoints holds the string denoting the points field in the database.
-	FieldPoints = "points"
 	// EdgeStatuses holds the string denoting the statuses edge name in mutations.
 	EdgeStatuses = "statuses"
 	// EdgeScorecaches holds the string denoting the scorecaches edge name in mutations.
@@ -54,7 +52,6 @@ var Columns = []string{
 	FieldUpdateTime,
 	FieldNumber,
 	FieldComplete,
-	FieldPoints,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -78,8 +75,6 @@ var (
 	NumberValidator func(int) error
 	// DefaultComplete holds the default value on creation for the "complete" field.
 	DefaultComplete bool
-	// PointsValidator is a validator for the "points" field. It is called by the builders before save.
-	PointsValidator func(int) error
 	// DefaultID holds the default value on creation for the "id" field.
 	DefaultID func() uuid.UUID
 )
@@ -110,11 +105,6 @@ func ByNumber(opts ...sql.OrderTermOption) OrderOption {
 // ByComplete orders the results by the complete field.
 func ByComplete(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldComplete, opts...).ToFunc()
-}
-
-// ByPoints orders the results by the points field.
-func ByPoints(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldPoints, opts...).ToFunc()
 }
 
 // ByStatusesCount orders the results by statuses count.

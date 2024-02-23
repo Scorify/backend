@@ -1512,8 +1512,6 @@ type RoundMutation struct {
 	number             *int
 	addnumber          *int
 	complete           *bool
-	points             *int
-	addpoints          *int
 	clearedFields      map[string]struct{}
 	statuses           map[uuid.UUID]struct{}
 	removedstatuses    map[uuid.UUID]struct{}
@@ -1794,62 +1792,6 @@ func (m *RoundMutation) ResetComplete() {
 	m.complete = nil
 }
 
-// SetPoints sets the "points" field.
-func (m *RoundMutation) SetPoints(i int) {
-	m.points = &i
-	m.addpoints = nil
-}
-
-// Points returns the value of the "points" field in the mutation.
-func (m *RoundMutation) Points() (r int, exists bool) {
-	v := m.points
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldPoints returns the old "points" field's value of the Round entity.
-// If the Round object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *RoundMutation) OldPoints(ctx context.Context) (v int, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldPoints is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldPoints requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldPoints: %w", err)
-	}
-	return oldValue.Points, nil
-}
-
-// AddPoints adds i to the "points" field.
-func (m *RoundMutation) AddPoints(i int) {
-	if m.addpoints != nil {
-		*m.addpoints += i
-	} else {
-		m.addpoints = &i
-	}
-}
-
-// AddedPoints returns the value that was added to the "points" field in this mutation.
-func (m *RoundMutation) AddedPoints() (r int, exists bool) {
-	v := m.addpoints
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ResetPoints resets all changes to the "points" field.
-func (m *RoundMutation) ResetPoints() {
-	m.points = nil
-	m.addpoints = nil
-}
-
 // AddStatusIDs adds the "statuses" edge to the Status entity by ids.
 func (m *RoundMutation) AddStatusIDs(ids ...uuid.UUID) {
 	if m.statuses == nil {
@@ -1992,7 +1934,7 @@ func (m *RoundMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *RoundMutation) Fields() []string {
-	fields := make([]string, 0, 5)
+	fields := make([]string, 0, 4)
 	if m.create_time != nil {
 		fields = append(fields, round.FieldCreateTime)
 	}
@@ -2004,9 +1946,6 @@ func (m *RoundMutation) Fields() []string {
 	}
 	if m.complete != nil {
 		fields = append(fields, round.FieldComplete)
-	}
-	if m.points != nil {
-		fields = append(fields, round.FieldPoints)
 	}
 	return fields
 }
@@ -2024,8 +1963,6 @@ func (m *RoundMutation) Field(name string) (ent.Value, bool) {
 		return m.Number()
 	case round.FieldComplete:
 		return m.Complete()
-	case round.FieldPoints:
-		return m.Points()
 	}
 	return nil, false
 }
@@ -2043,8 +1980,6 @@ func (m *RoundMutation) OldField(ctx context.Context, name string) (ent.Value, e
 		return m.OldNumber(ctx)
 	case round.FieldComplete:
 		return m.OldComplete(ctx)
-	case round.FieldPoints:
-		return m.OldPoints(ctx)
 	}
 	return nil, fmt.Errorf("unknown Round field %s", name)
 }
@@ -2082,13 +2017,6 @@ func (m *RoundMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetComplete(v)
 		return nil
-	case round.FieldPoints:
-		v, ok := value.(int)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetPoints(v)
-		return nil
 	}
 	return fmt.Errorf("unknown Round field %s", name)
 }
@@ -2100,9 +2028,6 @@ func (m *RoundMutation) AddedFields() []string {
 	if m.addnumber != nil {
 		fields = append(fields, round.FieldNumber)
 	}
-	if m.addpoints != nil {
-		fields = append(fields, round.FieldPoints)
-	}
 	return fields
 }
 
@@ -2113,8 +2038,6 @@ func (m *RoundMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
 	case round.FieldNumber:
 		return m.AddedNumber()
-	case round.FieldPoints:
-		return m.AddedPoints()
 	}
 	return nil, false
 }
@@ -2130,13 +2053,6 @@ func (m *RoundMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddNumber(v)
-		return nil
-	case round.FieldPoints:
-		v, ok := value.(int)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddPoints(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Round numeric field %s", name)
@@ -2176,9 +2092,6 @@ func (m *RoundMutation) ResetField(name string) error {
 		return nil
 	case round.FieldComplete:
 		m.ResetComplete()
-		return nil
-	case round.FieldPoints:
-		m.ResetPoints()
 		return nil
 	}
 	return fmt.Errorf("unknown Round field %s", name)
@@ -3909,9 +3822,9 @@ type UserMutation struct {
 	configs            map[uuid.UUID]struct{}
 	removedconfigs     map[uuid.UUID]struct{}
 	clearedconfigs     bool
-	status             map[uuid.UUID]struct{}
-	removedstatus      map[uuid.UUID]struct{}
-	clearedstatus      bool
+	statuses           map[uuid.UUID]struct{}
+	removedstatuses    map[uuid.UUID]struct{}
+	clearedstatuses    bool
 	scorecaches        map[uuid.UUID]struct{}
 	removedscorecaches map[uuid.UUID]struct{}
 	clearedscorecaches bool
@@ -4328,58 +4241,58 @@ func (m *UserMutation) ResetConfigs() {
 	m.removedconfigs = nil
 }
 
-// AddStatuIDs adds the "status" edge to the Status entity by ids.
-func (m *UserMutation) AddStatuIDs(ids ...uuid.UUID) {
-	if m.status == nil {
-		m.status = make(map[uuid.UUID]struct{})
+// AddStatusIDs adds the "statuses" edge to the Status entity by ids.
+func (m *UserMutation) AddStatusIDs(ids ...uuid.UUID) {
+	if m.statuses == nil {
+		m.statuses = make(map[uuid.UUID]struct{})
 	}
 	for i := range ids {
-		m.status[ids[i]] = struct{}{}
+		m.statuses[ids[i]] = struct{}{}
 	}
 }
 
-// ClearStatus clears the "status" edge to the Status entity.
-func (m *UserMutation) ClearStatus() {
-	m.clearedstatus = true
+// ClearStatuses clears the "statuses" edge to the Status entity.
+func (m *UserMutation) ClearStatuses() {
+	m.clearedstatuses = true
 }
 
-// StatusCleared reports if the "status" edge to the Status entity was cleared.
-func (m *UserMutation) StatusCleared() bool {
-	return m.clearedstatus
+// StatusesCleared reports if the "statuses" edge to the Status entity was cleared.
+func (m *UserMutation) StatusesCleared() bool {
+	return m.clearedstatuses
 }
 
-// RemoveStatuIDs removes the "status" edge to the Status entity by IDs.
-func (m *UserMutation) RemoveStatuIDs(ids ...uuid.UUID) {
-	if m.removedstatus == nil {
-		m.removedstatus = make(map[uuid.UUID]struct{})
+// RemoveStatusIDs removes the "statuses" edge to the Status entity by IDs.
+func (m *UserMutation) RemoveStatusIDs(ids ...uuid.UUID) {
+	if m.removedstatuses == nil {
+		m.removedstatuses = make(map[uuid.UUID]struct{})
 	}
 	for i := range ids {
-		delete(m.status, ids[i])
-		m.removedstatus[ids[i]] = struct{}{}
+		delete(m.statuses, ids[i])
+		m.removedstatuses[ids[i]] = struct{}{}
 	}
 }
 
-// RemovedStatus returns the removed IDs of the "status" edge to the Status entity.
-func (m *UserMutation) RemovedStatusIDs() (ids []uuid.UUID) {
-	for id := range m.removedstatus {
+// RemovedStatuses returns the removed IDs of the "statuses" edge to the Status entity.
+func (m *UserMutation) RemovedStatusesIDs() (ids []uuid.UUID) {
+	for id := range m.removedstatuses {
 		ids = append(ids, id)
 	}
 	return
 }
 
-// StatusIDs returns the "status" edge IDs in the mutation.
-func (m *UserMutation) StatusIDs() (ids []uuid.UUID) {
-	for id := range m.status {
+// StatusesIDs returns the "statuses" edge IDs in the mutation.
+func (m *UserMutation) StatusesIDs() (ids []uuid.UUID) {
+	for id := range m.statuses {
 		ids = append(ids, id)
 	}
 	return
 }
 
-// ResetStatus resets all changes to the "status" edge.
-func (m *UserMutation) ResetStatus() {
-	m.status = nil
-	m.clearedstatus = false
-	m.removedstatus = nil
+// ResetStatuses resets all changes to the "statuses" edge.
+func (m *UserMutation) ResetStatuses() {
+	m.statuses = nil
+	m.clearedstatuses = false
+	m.removedstatuses = nil
 }
 
 // AddScorecachIDs adds the "scorecaches" edge to the ScoreCache entity by ids.
@@ -4682,8 +4595,8 @@ func (m *UserMutation) AddedEdges() []string {
 	if m.configs != nil {
 		edges = append(edges, user.EdgeConfigs)
 	}
-	if m.status != nil {
-		edges = append(edges, user.EdgeStatus)
+	if m.statuses != nil {
+		edges = append(edges, user.EdgeStatuses)
 	}
 	if m.scorecaches != nil {
 		edges = append(edges, user.EdgeScorecaches)
@@ -4701,9 +4614,9 @@ func (m *UserMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
-	case user.EdgeStatus:
-		ids := make([]ent.Value, 0, len(m.status))
-		for id := range m.status {
+	case user.EdgeStatuses:
+		ids := make([]ent.Value, 0, len(m.statuses))
+		for id := range m.statuses {
 			ids = append(ids, id)
 		}
 		return ids
@@ -4723,8 +4636,8 @@ func (m *UserMutation) RemovedEdges() []string {
 	if m.removedconfigs != nil {
 		edges = append(edges, user.EdgeConfigs)
 	}
-	if m.removedstatus != nil {
-		edges = append(edges, user.EdgeStatus)
+	if m.removedstatuses != nil {
+		edges = append(edges, user.EdgeStatuses)
 	}
 	if m.removedscorecaches != nil {
 		edges = append(edges, user.EdgeScorecaches)
@@ -4742,9 +4655,9 @@ func (m *UserMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
-	case user.EdgeStatus:
-		ids := make([]ent.Value, 0, len(m.removedstatus))
-		for id := range m.removedstatus {
+	case user.EdgeStatuses:
+		ids := make([]ent.Value, 0, len(m.removedstatuses))
+		for id := range m.removedstatuses {
 			ids = append(ids, id)
 		}
 		return ids
@@ -4764,8 +4677,8 @@ func (m *UserMutation) ClearedEdges() []string {
 	if m.clearedconfigs {
 		edges = append(edges, user.EdgeConfigs)
 	}
-	if m.clearedstatus {
-		edges = append(edges, user.EdgeStatus)
+	if m.clearedstatuses {
+		edges = append(edges, user.EdgeStatuses)
 	}
 	if m.clearedscorecaches {
 		edges = append(edges, user.EdgeScorecaches)
@@ -4779,8 +4692,8 @@ func (m *UserMutation) EdgeCleared(name string) bool {
 	switch name {
 	case user.EdgeConfigs:
 		return m.clearedconfigs
-	case user.EdgeStatus:
-		return m.clearedstatus
+	case user.EdgeStatuses:
+		return m.clearedstatuses
 	case user.EdgeScorecaches:
 		return m.clearedscorecaches
 	}
@@ -4802,8 +4715,8 @@ func (m *UserMutation) ResetEdge(name string) error {
 	case user.EdgeConfigs:
 		m.ResetConfigs()
 		return nil
-	case user.EdgeStatus:
-		m.ResetStatus()
+	case user.EdgeStatuses:
+		m.ResetStatuses()
 		return nil
 	case user.EdgeScorecaches:
 		m.ResetScorecaches()

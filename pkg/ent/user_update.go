@@ -108,19 +108,19 @@ func (uu *UserUpdate) AddConfigs(c ...*CheckConfig) *UserUpdate {
 	return uu.AddConfigIDs(ids...)
 }
 
-// AddStatuIDs adds the "status" edge to the Status entity by IDs.
-func (uu *UserUpdate) AddStatuIDs(ids ...uuid.UUID) *UserUpdate {
-	uu.mutation.AddStatuIDs(ids...)
+// AddStatusIDs adds the "statuses" edge to the Status entity by IDs.
+func (uu *UserUpdate) AddStatusIDs(ids ...uuid.UUID) *UserUpdate {
+	uu.mutation.AddStatusIDs(ids...)
 	return uu
 }
 
-// AddStatus adds the "status" edges to the Status entity.
-func (uu *UserUpdate) AddStatus(s ...*Status) *UserUpdate {
+// AddStatuses adds the "statuses" edges to the Status entity.
+func (uu *UserUpdate) AddStatuses(s ...*Status) *UserUpdate {
 	ids := make([]uuid.UUID, len(s))
 	for i := range s {
 		ids[i] = s[i].ID
 	}
-	return uu.AddStatuIDs(ids...)
+	return uu.AddStatusIDs(ids...)
 }
 
 // AddScorecachIDs adds the "scorecaches" edge to the ScoreCache entity by IDs.
@@ -164,25 +164,25 @@ func (uu *UserUpdate) RemoveConfigs(c ...*CheckConfig) *UserUpdate {
 	return uu.RemoveConfigIDs(ids...)
 }
 
-// ClearStatus clears all "status" edges to the Status entity.
-func (uu *UserUpdate) ClearStatus() *UserUpdate {
-	uu.mutation.ClearStatus()
+// ClearStatuses clears all "statuses" edges to the Status entity.
+func (uu *UserUpdate) ClearStatuses() *UserUpdate {
+	uu.mutation.ClearStatuses()
 	return uu
 }
 
-// RemoveStatuIDs removes the "status" edge to Status entities by IDs.
-func (uu *UserUpdate) RemoveStatuIDs(ids ...uuid.UUID) *UserUpdate {
-	uu.mutation.RemoveStatuIDs(ids...)
+// RemoveStatusIDs removes the "statuses" edge to Status entities by IDs.
+func (uu *UserUpdate) RemoveStatusIDs(ids ...uuid.UUID) *UserUpdate {
+	uu.mutation.RemoveStatusIDs(ids...)
 	return uu
 }
 
-// RemoveStatus removes "status" edges to Status entities.
-func (uu *UserUpdate) RemoveStatus(s ...*Status) *UserUpdate {
+// RemoveStatuses removes "statuses" edges to Status entities.
+func (uu *UserUpdate) RemoveStatuses(s ...*Status) *UserUpdate {
 	ids := make([]uuid.UUID, len(s))
 	for i := range s {
 		ids[i] = s[i].ID
 	}
-	return uu.RemoveStatuIDs(ids...)
+	return uu.RemoveStatusIDs(ids...)
 }
 
 // ClearScorecaches clears all "scorecaches" edges to the ScoreCache entity.
@@ -337,12 +337,12 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if uu.mutation.StatusCleared() {
+	if uu.mutation.StatusesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
-			Table:   user.StatusTable,
-			Columns: []string{user.StatusColumn},
+			Table:   user.StatusesTable,
+			Columns: []string{user.StatusesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(status.FieldID, field.TypeUUID),
@@ -350,12 +350,12 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := uu.mutation.RemovedStatusIDs(); len(nodes) > 0 && !uu.mutation.StatusCleared() {
+	if nodes := uu.mutation.RemovedStatusesIDs(); len(nodes) > 0 && !uu.mutation.StatusesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
-			Table:   user.StatusTable,
-			Columns: []string{user.StatusColumn},
+			Table:   user.StatusesTable,
+			Columns: []string{user.StatusesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(status.FieldID, field.TypeUUID),
@@ -366,12 +366,12 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := uu.mutation.StatusIDs(); len(nodes) > 0 {
+	if nodes := uu.mutation.StatusesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
-			Table:   user.StatusTable,
-			Columns: []string{user.StatusColumn},
+			Table:   user.StatusesTable,
+			Columns: []string{user.StatusesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(status.FieldID, field.TypeUUID),
@@ -523,19 +523,19 @@ func (uuo *UserUpdateOne) AddConfigs(c ...*CheckConfig) *UserUpdateOne {
 	return uuo.AddConfigIDs(ids...)
 }
 
-// AddStatuIDs adds the "status" edge to the Status entity by IDs.
-func (uuo *UserUpdateOne) AddStatuIDs(ids ...uuid.UUID) *UserUpdateOne {
-	uuo.mutation.AddStatuIDs(ids...)
+// AddStatusIDs adds the "statuses" edge to the Status entity by IDs.
+func (uuo *UserUpdateOne) AddStatusIDs(ids ...uuid.UUID) *UserUpdateOne {
+	uuo.mutation.AddStatusIDs(ids...)
 	return uuo
 }
 
-// AddStatus adds the "status" edges to the Status entity.
-func (uuo *UserUpdateOne) AddStatus(s ...*Status) *UserUpdateOne {
+// AddStatuses adds the "statuses" edges to the Status entity.
+func (uuo *UserUpdateOne) AddStatuses(s ...*Status) *UserUpdateOne {
 	ids := make([]uuid.UUID, len(s))
 	for i := range s {
 		ids[i] = s[i].ID
 	}
-	return uuo.AddStatuIDs(ids...)
+	return uuo.AddStatusIDs(ids...)
 }
 
 // AddScorecachIDs adds the "scorecaches" edge to the ScoreCache entity by IDs.
@@ -579,25 +579,25 @@ func (uuo *UserUpdateOne) RemoveConfigs(c ...*CheckConfig) *UserUpdateOne {
 	return uuo.RemoveConfigIDs(ids...)
 }
 
-// ClearStatus clears all "status" edges to the Status entity.
-func (uuo *UserUpdateOne) ClearStatus() *UserUpdateOne {
-	uuo.mutation.ClearStatus()
+// ClearStatuses clears all "statuses" edges to the Status entity.
+func (uuo *UserUpdateOne) ClearStatuses() *UserUpdateOne {
+	uuo.mutation.ClearStatuses()
 	return uuo
 }
 
-// RemoveStatuIDs removes the "status" edge to Status entities by IDs.
-func (uuo *UserUpdateOne) RemoveStatuIDs(ids ...uuid.UUID) *UserUpdateOne {
-	uuo.mutation.RemoveStatuIDs(ids...)
+// RemoveStatusIDs removes the "statuses" edge to Status entities by IDs.
+func (uuo *UserUpdateOne) RemoveStatusIDs(ids ...uuid.UUID) *UserUpdateOne {
+	uuo.mutation.RemoveStatusIDs(ids...)
 	return uuo
 }
 
-// RemoveStatus removes "status" edges to Status entities.
-func (uuo *UserUpdateOne) RemoveStatus(s ...*Status) *UserUpdateOne {
+// RemoveStatuses removes "statuses" edges to Status entities.
+func (uuo *UserUpdateOne) RemoveStatuses(s ...*Status) *UserUpdateOne {
 	ids := make([]uuid.UUID, len(s))
 	for i := range s {
 		ids[i] = s[i].ID
 	}
-	return uuo.RemoveStatuIDs(ids...)
+	return uuo.RemoveStatusIDs(ids...)
 }
 
 // ClearScorecaches clears all "scorecaches" edges to the ScoreCache entity.
@@ -782,12 +782,12 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if uuo.mutation.StatusCleared() {
+	if uuo.mutation.StatusesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
-			Table:   user.StatusTable,
-			Columns: []string{user.StatusColumn},
+			Table:   user.StatusesTable,
+			Columns: []string{user.StatusesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(status.FieldID, field.TypeUUID),
@@ -795,12 +795,12 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := uuo.mutation.RemovedStatusIDs(); len(nodes) > 0 && !uuo.mutation.StatusCleared() {
+	if nodes := uuo.mutation.RemovedStatusesIDs(); len(nodes) > 0 && !uuo.mutation.StatusesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
-			Table:   user.StatusTable,
-			Columns: []string{user.StatusColumn},
+			Table:   user.StatusesTable,
+			Columns: []string{user.StatusesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(status.FieldID, field.TypeUUID),
@@ -811,12 +811,12 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := uuo.mutation.StatusIDs(); len(nodes) > 0 {
+	if nodes := uuo.mutation.StatusesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
-			Table:   user.StatusTable,
-			Columns: []string{user.StatusColumn},
+			Table:   user.StatusesTable,
+			Columns: []string{user.StatusesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(status.FieldID, field.TypeUUID),

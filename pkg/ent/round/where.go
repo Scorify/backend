@@ -76,11 +76,6 @@ func Complete(v bool) predicate.Round {
 	return predicate.Round(sql.FieldEQ(FieldComplete, v))
 }
 
-// Points applies equality check predicate on the "points" field. It's identical to PointsEQ.
-func Points(v int) predicate.Round {
-	return predicate.Round(sql.FieldEQ(FieldPoints, v))
-}
-
 // CreateTimeEQ applies the EQ predicate on the "create_time" field.
 func CreateTimeEQ(v time.Time) predicate.Round {
 	return predicate.Round(sql.FieldEQ(FieldCreateTime, v))
@@ -209,46 +204,6 @@ func CompleteEQ(v bool) predicate.Round {
 // CompleteNEQ applies the NEQ predicate on the "complete" field.
 func CompleteNEQ(v bool) predicate.Round {
 	return predicate.Round(sql.FieldNEQ(FieldComplete, v))
-}
-
-// PointsEQ applies the EQ predicate on the "points" field.
-func PointsEQ(v int) predicate.Round {
-	return predicate.Round(sql.FieldEQ(FieldPoints, v))
-}
-
-// PointsNEQ applies the NEQ predicate on the "points" field.
-func PointsNEQ(v int) predicate.Round {
-	return predicate.Round(sql.FieldNEQ(FieldPoints, v))
-}
-
-// PointsIn applies the In predicate on the "points" field.
-func PointsIn(vs ...int) predicate.Round {
-	return predicate.Round(sql.FieldIn(FieldPoints, vs...))
-}
-
-// PointsNotIn applies the NotIn predicate on the "points" field.
-func PointsNotIn(vs ...int) predicate.Round {
-	return predicate.Round(sql.FieldNotIn(FieldPoints, vs...))
-}
-
-// PointsGT applies the GT predicate on the "points" field.
-func PointsGT(v int) predicate.Round {
-	return predicate.Round(sql.FieldGT(FieldPoints, v))
-}
-
-// PointsGTE applies the GTE predicate on the "points" field.
-func PointsGTE(v int) predicate.Round {
-	return predicate.Round(sql.FieldGTE(FieldPoints, v))
-}
-
-// PointsLT applies the LT predicate on the "points" field.
-func PointsLT(v int) predicate.Round {
-	return predicate.Round(sql.FieldLT(FieldPoints, v))
-}
-
-// PointsLTE applies the LTE predicate on the "points" field.
-func PointsLTE(v int) predicate.Round {
-	return predicate.Round(sql.FieldLTE(FieldPoints, v))
 }
 
 // HasStatuses applies the HasEdge predicate on the "statuses" edge.
