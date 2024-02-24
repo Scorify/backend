@@ -22,7 +22,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ScorifyClient interface {
-	Check(ctx context.Context, in *CheckRequest, opts ...grpc.CallOption) (*CheckResponse, error)
+	Check(ctx context.Context, opts ...grpc.CallOption) (Scorify_CheckClient, error)
 }
 
 type scorifyClient struct {
@@ -33,20 +33,42 @@ func NewScorifyClient(cc grpc.ClientConnInterface) ScorifyClient {
 	return &scorifyClient{cc}
 }
 
-func (c *scorifyClient) Check(ctx context.Context, in *CheckRequest, opts ...grpc.CallOption) (*CheckResponse, error) {
-	out := new(CheckResponse)
-	err := c.cc.Invoke(ctx, "/proto.Scorify/Check", in, out, opts...)
+func (c *scorifyClient) Check(ctx context.Context, opts ...grpc.CallOption) (Scorify_CheckClient, error) {
+	stream, err := c.cc.NewStream(ctx, &Scorify_ServiceDesc.Streams[0], "/proto.Scorify/Check", opts...)
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	x := &scorifyCheckClient{stream}
+	return x, nil
+}
+
+type Scorify_CheckClient interface {
+	Send(*CheckResponse) error
+	Recv() (*CheckRequest, error)
+	grpc.ClientStream
+}
+
+type scorifyCheckClient struct {
+	grpc.ClientStream
+}
+
+func (x *scorifyCheckClient) Send(m *CheckResponse) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *scorifyCheckClient) Recv() (*CheckRequest, error) {
+	m := new(CheckRequest)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 // ScorifyServer is the server API for Scorify service.
 // All implementations must embed UnimplementedScorifyServer
 // for forward compatibility
 type ScorifyServer interface {
-	Check(context.Context, *CheckRequest) (*CheckResponse, error)
+	Check(Scorify_CheckServer) error
 	mustEmbedUnimplementedScorifyServer()
 }
 
@@ -54,8 +76,8 @@ type ScorifyServer interface {
 type UnimplementedScorifyServer struct {
 }
 
-func (UnimplementedScorifyServer) Check(context.Context, *CheckRequest) (*CheckResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Check not implemented")
+func (UnimplementedScorifyServer) Check(Scorify_CheckServer) error {
+	return status.Errorf(codes.Unimplemented, "method Check not implemented")
 }
 func (UnimplementedScorifyServer) mustEmbedUnimplementedScorifyServer() {}
 
@@ -70,22 +92,30 @@ func RegisterScorifyServer(s grpc.ServiceRegistrar, srv ScorifyServer) {
 	s.RegisterService(&Scorify_ServiceDesc, srv)
 }
 
-func _Scorify_Check_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CheckRequest)
-	if err := dec(in); err != nil {
+func _Scorify_Check_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(ScorifyServer).Check(&scorifyCheckServer{stream})
+}
+
+type Scorify_CheckServer interface {
+	Send(*CheckRequest) error
+	Recv() (*CheckResponse, error)
+	grpc.ServerStream
+}
+
+type scorifyCheckServer struct {
+	grpc.ServerStream
+}
+
+func (x *scorifyCheckServer) Send(m *CheckRequest) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *scorifyCheckServer) Recv() (*CheckResponse, error) {
+	m := new(CheckResponse)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
-	if interceptor == nil {
-		return srv.(ScorifyServer).Check(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/proto.Scorify/Check",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ScorifyServer).Check(ctx, req.(*CheckRequest))
-	}
-	return interceptor(ctx, in, info, handler)
+	return m, nil
 }
 
 // Scorify_ServiceDesc is the grpc.ServiceDesc for Scorify service.
@@ -94,12 +124,14 @@ func _Scorify_Check_Handler(srv interface{}, ctx context.Context, dec func(inter
 var Scorify_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "proto.Scorify",
 	HandlerType: (*ScorifyServer)(nil),
-	Methods: []grpc.MethodDesc{
+	Methods:     []grpc.MethodDesc{},
+	Streams: []grpc.StreamDesc{
 		{
-			MethodName: "Check",
-			Handler:    _Scorify_Check_Handler,
+			StreamName:    "Check",
+			Handler:       _Scorify_Check_Handler,
+			ServerStreams: true,
+			ClientStreams: true,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
 	Metadata: "grpc.proto",
 }

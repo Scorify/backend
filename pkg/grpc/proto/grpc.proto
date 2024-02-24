@@ -4,7 +4,7 @@ package proto;
 option go_package = "github.com/scorify/backend/pkg/grpc/proto";
 
 service Scorify {
-  rpc Check(CheckRequest) returns (CheckResponse) {}
+  rpc Check(stream CheckResponse) returns (stream CheckRequest);
 }
 
 message CheckRequest {
