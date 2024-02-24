@@ -570,9 +570,25 @@ func (r *mutationResolver) CreateUser(ctx context.Context, username string, pass
 	}
 
 	for _, entCheck := range entChecks {
+		config := make(map[string]interface{})
+		for key, value := range entCheck.Config {
+			switch val := value.(type) {
+			case string:
+				config[key] = helpers.ConfigTemplate(
+					val,
+					helpers.Template{
+						Number: entUser.Number,
+						Name:   entUser.Username,
+					},
+				)
+			default:
+				config[key] = value
+			}
+		}
+
 		_, err := tx.CheckConfig.Create().
 			SetCheck(entCheck).
-			SetConfig(entCheck.Config).
+			SetConfig(config).
 			SetUser(entUser).
 			Save(ctx)
 		if err != nil {
