@@ -20,7 +20,6 @@ import (
 	"github.com/scorify/backend/pkg/ent/user"
 	"github.com/scorify/backend/pkg/graph/model"
 	"github.com/scorify/backend/pkg/helpers"
-	"github.com/scorify/backend/pkg/structs"
 	"github.com/sirupsen/logrus"
 )
 
@@ -43,15 +42,52 @@ func (r *checkResolver) Source(ctx context.Context, obj *ent.Check) (*model.Sour
 }
 
 // Config is the resolver for the config field.
-func (r *checkResolver) Config(ctx context.Context, obj *ent.Check) (*structs.CheckConfiguration, error) {
-	return &obj.DefaultConfig, nil
-}
-
-// Config is the resolver for the config field.
-func (r *checkConfigurationResolver) Config(ctx context.Context, obj *structs.CheckConfiguration) (string, error) {
+func (r *checkResolver) Config(ctx context.Context, obj *ent.Check) (string, error) {
 	out, err := json.Marshal(obj.Config)
 
 	return string(out), err
+}
+
+// Configs is the resolver for the configs field.
+func (r *checkResolver) Configs(ctx context.Context, obj *ent.Check) ([]*ent.CheckConfig, error) {
+	return obj.QueryConfigs().All(ctx)
+}
+
+// Statuses is the resolver for the statuses field.
+func (r *checkResolver) Statuses(ctx context.Context, obj *ent.Check) ([]*ent.Status, error) {
+	return obj.QueryStatuses().All(ctx)
+}
+
+// ID is the resolver for the id field.
+func (r *checkConfigResolver) ID(ctx context.Context, obj *ent.CheckConfig) (string, error) {
+	return obj.ID.String(), nil
+}
+
+// Config is the resolver for the config field.
+func (r *checkConfigResolver) Config(ctx context.Context, obj *ent.CheckConfig) (string, error) {
+	out, err := json.Marshal(obj.Config)
+
+	return string(out), err
+}
+
+// CheckID is the resolver for the check_id field.
+func (r *checkConfigResolver) CheckID(ctx context.Context, obj *ent.CheckConfig) (string, error) {
+	return obj.ID.String(), nil
+}
+
+// UserID is the resolver for the user_id field.
+func (r *checkConfigResolver) UserID(ctx context.Context, obj *ent.CheckConfig) (string, error) {
+	return obj.ID.String(), nil
+}
+
+// Check is the resolver for the check field.
+func (r *checkConfigResolver) Check(ctx context.Context, obj *ent.CheckConfig) (*ent.Check, error) {
+	return obj.QueryCheck().Only(ctx)
+}
+
+// User is the resolver for the user field.
+func (r *checkConfigResolver) User(ctx context.Context, obj *ent.CheckConfig) (*ent.User, error) {
+	return obj.QueryUser().Only(ctx)
 }
 
 // ID is the resolver for the id field.
@@ -67,7 +103,7 @@ func (r *configResolver) Config(ctx context.Context, obj *ent.CheckConfig) (stri
 	}
 
 	outConfig := make(map[string]interface{})
-	for _, key := range entCheck.DefaultConfig.EditableFields {
+	for _, key := range entCheck.EditableFields {
 		outConfig[key] = obj.Config[key]
 	}
 
@@ -196,10 +232,9 @@ func (r *mutationResolver) CreateCheck(ctx context.Context, name string, source 
 		return nil, fmt.Errorf("failed to unmarshal config: %v", err)
 	}
 
-	defaultConfig := structs.CheckConfiguration{
-		Config:         make(map[string]interface{}),
-		EditableFields: []string{},
-	}
+	defaultConfig := make(map[string]interface{})
+	defaultEditableFields := []string{}
+
 	for key, value := range schemaMap {
 		switch value {
 		case "string":
@@ -213,7 +248,7 @@ func (r *mutationResolver) CreateCheck(ctx context.Context, name string, source 
 				return nil, fmt.Errorf("invalid config, key \"%s\" is not a string", key)
 			}
 
-			defaultConfig.Config[key] = configString
+			defaultConfig[key] = configString
 		case "int":
 			configValue, ok := configMap[key]
 			if !ok {
@@ -225,7 +260,7 @@ func (r *mutationResolver) CreateCheck(ctx context.Context, name string, source 
 				return nil, fmt.Errorf("invalid config, key \"%s\" is not an int", key)
 			}
 
-			defaultConfig.Config[key] = int(configFloat)
+			defaultConfig[key] = int(configFloat)
 		case "bool":
 			configValue, ok := configMap[key]
 			if !ok {
@@ -237,7 +272,7 @@ func (r *mutationResolver) CreateCheck(ctx context.Context, name string, source 
 				return nil, fmt.Errorf("invalid config, key \"%s\" is not a boolean", key)
 			}
 
-			defaultConfig.Config[key] = configBool
+			defaultConfig[key] = configBool
 		default:
 			return nil, fmt.Errorf("invalid schema, unknown type \"%s\" for key \"%s\"", value, key)
 		}
@@ -249,14 +284,15 @@ func (r *mutationResolver) CreateCheck(ctx context.Context, name string, source 
 	}
 
 	if editableFields != nil {
-		defaultConfig.EditableFields = editableFields
+		defaultEditableFields = editableFields
 	}
 
 	entCheck, err := tx.Check.Create().
 		SetName(name).
 		SetWeight(weight).
 		SetSource(source).
-		SetDefaultConfig(defaultConfig).
+		SetConfig(defaultConfig).
+		SetEditableFields(defaultEditableFields).
 		Save(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create check: %v", err)
@@ -274,7 +310,7 @@ func (r *mutationResolver) CreateCheck(ctx context.Context, name string, source 
 
 	for _, entUser := range entUsers {
 		templateConfig := make(map[string]interface{})
-		for key, value := range defaultConfig.Config {
+		for key, value := range defaultConfig {
 			switch val := value.(type) {
 			case string:
 				templateConfig[key] = helpers.ConfigTemplate(
@@ -341,12 +377,11 @@ func (r *mutationResolver) UpdateCheck(ctx context.Context, id string, name *str
 	}
 
 	if config != nil || editableFields != nil {
-		defaultConfig := structs.CheckConfiguration{
-			Config:         make(map[string]interface{}),
-			EditableFields: entCheck.DefaultConfig.EditableFields,
-		}
-		for key, value := range entCheck.DefaultConfig.Config {
-			defaultConfig.Config[key] = value
+		defaultConfig := make(map[string]interface{})
+		defaultEditableFields := entCheck.EditableFields
+
+		for key, value := range entCheck.Config {
+			defaultConfig[key] = value
 		}
 
 		if config != nil {
@@ -380,7 +415,7 @@ func (r *mutationResolver) UpdateCheck(ctx context.Context, id string, name *str
 						return nil, fmt.Errorf("invalid config, key \"%s\" is not a string", key)
 					}
 
-					defaultConfig.Config[key] = configString
+					defaultConfig[key] = configString
 				case "int":
 					configValue, ok := configMap[key]
 					if !ok {
@@ -392,7 +427,7 @@ func (r *mutationResolver) UpdateCheck(ctx context.Context, id string, name *str
 						return nil, fmt.Errorf("invalid config, key \"%s\" is not an int", key)
 					}
 
-					defaultConfig.Config[key] = int(configFloat)
+					defaultConfig[key] = int(configFloat)
 				case "bool":
 					configValue, ok := configMap[key]
 					if !ok {
@@ -404,7 +439,7 @@ func (r *mutationResolver) UpdateCheck(ctx context.Context, id string, name *str
 						return nil, fmt.Errorf("invalid config, key \"%s\" is not a boolean", key)
 					}
 
-					defaultConfig.Config[key] = configBool
+					defaultConfig[key] = configBool
 				default:
 					return nil, fmt.Errorf("invalid schema, unknown type \"%s\" for key \"%s\"", value, key)
 				}
@@ -412,10 +447,11 @@ func (r *mutationResolver) UpdateCheck(ctx context.Context, id string, name *str
 		}
 
 		if editableFields != nil {
-			defaultConfig.EditableFields = editableFields
+			defaultEditableFields = editableFields
 		}
 
-		checkUpdate.SetDefaultConfig(defaultConfig)
+		checkUpdate.SetConfig(defaultConfig)
+		checkUpdate.SetEditableFields(defaultEditableFields)
 
 		checkUpdateResult, err := checkUpdate.Save(ctx)
 		if err != nil {
@@ -424,8 +460,8 @@ func (r *mutationResolver) UpdateCheck(ctx context.Context, id string, name *str
 
 		// generate map of fields and value that were changes
 		patchFields := make(map[string]interface{})
-		for key, value := range defaultConfig.Config {
-			if value != entCheck.DefaultConfig.Config[key] {
+		for key, value := range defaultConfig {
+			if value != entCheck.Config[key] {
 				patchFields[key] = value
 			}
 		}
@@ -536,7 +572,7 @@ func (r *mutationResolver) CreateUser(ctx context.Context, username string, pass
 	for _, entCheck := range entChecks {
 		_, err := tx.CheckConfig.Create().
 			SetCheck(entCheck).
-			SetConfig(entCheck.DefaultConfig.Config).
+			SetConfig(entCheck.Config).
 			SetUser(entUser).
 			Save(ctx)
 		if err != nil {
@@ -750,6 +786,81 @@ func (r *queryResolver) Config(ctx context.Context, id string) (*ent.CheckConfig
 		).Only(ctx)
 }
 
+// ID is the resolver for the id field.
+func (r *roundResolver) ID(ctx context.Context, obj *ent.Round) (string, error) {
+	return obj.ID.String(), nil
+}
+
+// Statuses is the resolver for the statuses field.
+func (r *roundResolver) Statuses(ctx context.Context, obj *ent.Round) ([]*ent.Status, error) {
+	return obj.QueryStatuses().All(ctx)
+}
+
+// ScoreCaches is the resolver for the score_caches field.
+func (r *roundResolver) ScoreCaches(ctx context.Context, obj *ent.Round) ([]*ent.ScoreCache, error) {
+	return obj.QueryScoreCaches().All(ctx)
+}
+
+// ID is the resolver for the id field.
+func (r *scoreCacheResolver) ID(ctx context.Context, obj *ent.ScoreCache) (string, error) {
+	return obj.ID.String(), nil
+}
+
+// RoundID is the resolver for the round_id field.
+func (r *scoreCacheResolver) RoundID(ctx context.Context, obj *ent.ScoreCache) (string, error) {
+	return obj.RoundID.String(), nil
+}
+
+// UserID is the resolver for the user_id field.
+func (r *scoreCacheResolver) UserID(ctx context.Context, obj *ent.ScoreCache) (string, error) {
+	return obj.UserID.String(), nil
+}
+
+// Round is the resolver for the round field.
+func (r *scoreCacheResolver) Round(ctx context.Context, obj *ent.ScoreCache) (*ent.Round, error) {
+	return obj.QueryRound().Only(ctx)
+}
+
+// User is the resolver for the user field.
+func (r *scoreCacheResolver) User(ctx context.Context, obj *ent.ScoreCache) (*ent.User, error) {
+	return obj.QueryUser().Only(ctx)
+}
+
+// ID is the resolver for the id field.
+func (r *statusResolver) ID(ctx context.Context, obj *ent.Status) (string, error) {
+	return obj.ID.String(), nil
+}
+
+// CheckID is the resolver for the check_id field.
+func (r *statusResolver) CheckID(ctx context.Context, obj *ent.Status) (string, error) {
+	return obj.CheckID.String(), nil
+}
+
+// RoundID is the resolver for the round_id field.
+func (r *statusResolver) RoundID(ctx context.Context, obj *ent.Status) (string, error) {
+	return obj.RoundID.String(), nil
+}
+
+// UserID is the resolver for the user_id field.
+func (r *statusResolver) UserID(ctx context.Context, obj *ent.Status) (string, error) {
+	return obj.UserID.String(), nil
+}
+
+// Check is the resolver for the check field.
+func (r *statusResolver) Check(ctx context.Context, obj *ent.Status) (*ent.Check, error) {
+	return obj.QueryCheck().Only(ctx)
+}
+
+// Round is the resolver for the round field.
+func (r *statusResolver) Round(ctx context.Context, obj *ent.Status) (*ent.Round, error) {
+	return obj.QueryRound().Only(ctx)
+}
+
+// User is the resolver for the user field.
+func (r *statusResolver) User(ctx context.Context, obj *ent.Status) (*ent.User, error) {
+	return obj.QueryUser().Only(ctx)
+}
+
 // GlobalNotification is the resolver for the globalNotification field.
 func (r *subscriptionResolver) GlobalNotification(ctx context.Context) (<-chan *model.Notification, error) {
 	notification_chan := make(chan *model.Notification, 1)
@@ -784,13 +895,26 @@ func (r *userResolver) ID(ctx context.Context, obj *ent.User) (string, error) {
 	return obj.ID.String(), nil
 }
 
+// Configs is the resolver for the configs field.
+func (r *userResolver) Configs(ctx context.Context, obj *ent.User) ([]*ent.CheckConfig, error) {
+	return obj.QueryConfigs().All(ctx)
+}
+
+// Statuses is the resolver for the statuses field.
+func (r *userResolver) Statuses(ctx context.Context, obj *ent.User) ([]*ent.Status, error) {
+	return obj.QueryStatuses().All(ctx)
+}
+
+// ScoreCaches is the resolver for the score_caches field.
+func (r *userResolver) ScoreCaches(ctx context.Context, obj *ent.User) ([]*ent.ScoreCache, error) {
+	return obj.QueryScoreCaches().All(ctx)
+}
+
 // Check returns CheckResolver implementation.
 func (r *Resolver) Check() CheckResolver { return &checkResolver{r} }
 
-// CheckConfiguration returns CheckConfigurationResolver implementation.
-func (r *Resolver) CheckConfiguration() CheckConfigurationResolver {
-	return &checkConfigurationResolver{r}
-}
+// CheckConfig returns CheckConfigResolver implementation.
+func (r *Resolver) CheckConfig() CheckConfigResolver { return &checkConfigResolver{r} }
 
 // Config returns ConfigResolver implementation.
 func (r *Resolver) Config() ConfigResolver { return &configResolver{r} }
@@ -801,6 +925,15 @@ func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
 // Query returns QueryResolver implementation.
 func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
+// Round returns RoundResolver implementation.
+func (r *Resolver) Round() RoundResolver { return &roundResolver{r} }
+
+// ScoreCache returns ScoreCacheResolver implementation.
+func (r *Resolver) ScoreCache() ScoreCacheResolver { return &scoreCacheResolver{r} }
+
+// Status returns StatusResolver implementation.
+func (r *Resolver) Status() StatusResolver { return &statusResolver{r} }
+
 // Subscription returns SubscriptionResolver implementation.
 func (r *Resolver) Subscription() SubscriptionResolver { return &subscriptionResolver{r} }
 
@@ -808,9 +941,12 @@ func (r *Resolver) Subscription() SubscriptionResolver { return &subscriptionRes
 func (r *Resolver) User() UserResolver { return &userResolver{r} }
 
 type checkResolver struct{ *Resolver }
-type checkConfigurationResolver struct{ *Resolver }
+type checkConfigResolver struct{ *Resolver }
 type configResolver struct{ *Resolver }
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
+type roundResolver struct{ *Resolver }
+type scoreCacheResolver struct{ *Resolver }
+type statusResolver struct{ *Resolver }
 type subscriptionResolver struct{ *Resolver }
 type userResolver struct{ *Resolver }

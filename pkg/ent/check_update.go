@@ -10,13 +10,13 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"entgo.io/ent/dialect/sql/sqljson"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
 	"github.com/scorify/backend/pkg/ent/check"
 	"github.com/scorify/backend/pkg/ent/checkconfig"
 	"github.com/scorify/backend/pkg/ent/predicate"
 	"github.com/scorify/backend/pkg/ent/status"
-	"github.com/scorify/backend/pkg/structs"
 )
 
 // CheckUpdate is the builder for updating Check entities.
@@ -87,17 +87,21 @@ func (cu *CheckUpdate) AddWeight(i int) *CheckUpdate {
 	return cu
 }
 
-// SetDefaultConfig sets the "default_config" field.
-func (cu *CheckUpdate) SetDefaultConfig(sc structs.CheckConfiguration) *CheckUpdate {
-	cu.mutation.SetDefaultConfig(sc)
+// SetConfig sets the "config" field.
+func (cu *CheckUpdate) SetConfig(m map[string]interface{}) *CheckUpdate {
+	cu.mutation.SetConfig(m)
 	return cu
 }
 
-// SetNillableDefaultConfig sets the "default_config" field if the given value is not nil.
-func (cu *CheckUpdate) SetNillableDefaultConfig(sc *structs.CheckConfiguration) *CheckUpdate {
-	if sc != nil {
-		cu.SetDefaultConfig(*sc)
-	}
+// SetEditableFields sets the "editable_fields" field.
+func (cu *CheckUpdate) SetEditableFields(s []string) *CheckUpdate {
+	cu.mutation.SetEditableFields(s)
+	return cu
+}
+
+// AppendEditableFields appends s to the "editable_fields" field.
+func (cu *CheckUpdate) AppendEditableFields(s []string) *CheckUpdate {
+	cu.mutation.AppendEditableFields(s)
 	return cu
 }
 
@@ -261,8 +265,16 @@ func (cu *CheckUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := cu.mutation.AddedWeight(); ok {
 		_spec.AddField(check.FieldWeight, field.TypeInt, value)
 	}
-	if value, ok := cu.mutation.DefaultConfig(); ok {
-		_spec.SetField(check.FieldDefaultConfig, field.TypeJSON, value)
+	if value, ok := cu.mutation.Config(); ok {
+		_spec.SetField(check.FieldConfig, field.TypeJSON, value)
+	}
+	if value, ok := cu.mutation.EditableFields(); ok {
+		_spec.SetField(check.FieldEditableFields, field.TypeJSON, value)
+	}
+	if value, ok := cu.mutation.AppendedEditableFields(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, check.FieldEditableFields, value)
+		})
 	}
 	if cu.mutation.ConfigsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -429,17 +441,21 @@ func (cuo *CheckUpdateOne) AddWeight(i int) *CheckUpdateOne {
 	return cuo
 }
 
-// SetDefaultConfig sets the "default_config" field.
-func (cuo *CheckUpdateOne) SetDefaultConfig(sc structs.CheckConfiguration) *CheckUpdateOne {
-	cuo.mutation.SetDefaultConfig(sc)
+// SetConfig sets the "config" field.
+func (cuo *CheckUpdateOne) SetConfig(m map[string]interface{}) *CheckUpdateOne {
+	cuo.mutation.SetConfig(m)
 	return cuo
 }
 
-// SetNillableDefaultConfig sets the "default_config" field if the given value is not nil.
-func (cuo *CheckUpdateOne) SetNillableDefaultConfig(sc *structs.CheckConfiguration) *CheckUpdateOne {
-	if sc != nil {
-		cuo.SetDefaultConfig(*sc)
-	}
+// SetEditableFields sets the "editable_fields" field.
+func (cuo *CheckUpdateOne) SetEditableFields(s []string) *CheckUpdateOne {
+	cuo.mutation.SetEditableFields(s)
+	return cuo
+}
+
+// AppendEditableFields appends s to the "editable_fields" field.
+func (cuo *CheckUpdateOne) AppendEditableFields(s []string) *CheckUpdateOne {
+	cuo.mutation.AppendEditableFields(s)
 	return cuo
 }
 
@@ -633,8 +649,16 @@ func (cuo *CheckUpdateOne) sqlSave(ctx context.Context) (_node *Check, err error
 	if value, ok := cuo.mutation.AddedWeight(); ok {
 		_spec.AddField(check.FieldWeight, field.TypeInt, value)
 	}
-	if value, ok := cuo.mutation.DefaultConfig(); ok {
-		_spec.SetField(check.FieldDefaultConfig, field.TypeJSON, value)
+	if value, ok := cuo.mutation.Config(); ok {
+		_spec.SetField(check.FieldConfig, field.TypeJSON, value)
+	}
+	if value, ok := cuo.mutation.EditableFields(); ok {
+		_spec.SetField(check.FieldEditableFields, field.TypeJSON, value)
+	}
+	if value, ok := cuo.mutation.AppendedEditableFields(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, check.FieldEditableFields, value)
+		})
 	}
 	if cuo.mutation.ConfigsCleared() {
 		edge := &sqlgraph.EdgeSpec{

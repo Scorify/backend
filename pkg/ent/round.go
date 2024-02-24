@@ -27,8 +27,6 @@ type Round struct {
 	Number int `json:"number"`
 	// The completion status of the round
 	Complete bool `json:"complete"`
-	// The points of the round
-	Points int `json:"points"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the RoundQuery when eager-loading is set.
 	Edges        RoundEdges `json:"edges"`
@@ -40,7 +38,7 @@ type RoundEdges struct {
 	// The statuses of a round
 	Statuses []*Status `json:"statuses"`
 	// The score caches of a round
-	Scorecaches []*ScoreCache `json:"scorecaches"`
+	ScoreCaches []*ScoreCache `json:"score_caches"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [2]bool
@@ -55,13 +53,13 @@ func (e RoundEdges) StatusesOrErr() ([]*Status, error) {
 	return nil, &NotLoadedError{edge: "statuses"}
 }
 
-// ScorecachesOrErr returns the Scorecaches value or an error if the edge
+// ScoreCachesOrErr returns the ScoreCaches value or an error if the edge
 // was not loaded in eager-loading.
-func (e RoundEdges) ScorecachesOrErr() ([]*ScoreCache, error) {
+func (e RoundEdges) ScoreCachesOrErr() ([]*ScoreCache, error) {
 	if e.loadedTypes[1] {
-		return e.Scorecaches, nil
+		return e.ScoreCaches, nil
 	}
-	return nil, &NotLoadedError{edge: "scorecaches"}
+	return nil, &NotLoadedError{edge: "scoreCaches"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -71,7 +69,7 @@ func (*Round) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case round.FieldComplete:
 			values[i] = new(sql.NullBool)
-		case round.FieldNumber, round.FieldPoints:
+		case round.FieldNumber:
 			values[i] = new(sql.NullInt64)
 		case round.FieldCreateTime, round.FieldUpdateTime:
 			values[i] = new(sql.NullTime)
@@ -122,12 +120,6 @@ func (r *Round) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				r.Complete = value.Bool
 			}
-		case round.FieldPoints:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field points", values[i])
-			} else if value.Valid {
-				r.Points = int(value.Int64)
-			}
 		default:
 			r.selectValues.Set(columns[i], values[i])
 		}
@@ -146,9 +138,9 @@ func (r *Round) QueryStatuses() *StatusQuery {
 	return NewRoundClient(r.config).QueryStatuses(r)
 }
 
-// QueryScorecaches queries the "scorecaches" edge of the Round entity.
-func (r *Round) QueryScorecaches() *ScoreCacheQuery {
-	return NewRoundClient(r.config).QueryScorecaches(r)
+// QueryScoreCaches queries the "scoreCaches" edge of the Round entity.
+func (r *Round) QueryScoreCaches() *ScoreCacheQuery {
+	return NewRoundClient(r.config).QueryScoreCaches(r)
 }
 
 // Update returns a builder for updating this Round.
@@ -185,9 +177,6 @@ func (r *Round) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("complete=")
 	builder.WriteString(fmt.Sprintf("%v", r.Complete))
-	builder.WriteString(", ")
-	builder.WriteString("points=")
-	builder.WriteString(fmt.Sprintf("%v", r.Points))
 	builder.WriteByte(')')
 	return builder.String()
 }

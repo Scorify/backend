@@ -74,7 +74,7 @@ func (User) Edges() []ent.Edge {
 				},
 			).
 			Ref("user"),
-		edge.From("status", Status.Type).
+		edge.From("statuses", Status.Type).
 			StructTag(`json:"status"`).
 			Comment("The status of a user").
 			Annotations(
@@ -83,8 +83,8 @@ func (User) Edges() []ent.Edge {
 				},
 			).
 			Ref("user"),
-		edge.From("scorecaches", ScoreCache.Type).
-			StructTag(`json:"scorecaches"`).
+		edge.From("scoreCaches", ScoreCache.Type).
+			StructTag(`json:"score_caches"`).
 			Comment("The score caches of a user").
 			Annotations(
 				entsql.Annotation{

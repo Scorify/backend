@@ -26,7 +26,7 @@ type RoundQuery struct {
 	inters          []Interceptor
 	predicates      []predicate.Round
 	withStatuses    *StatusQuery
-	withScorecaches *ScoreCacheQuery
+	withScoreCaches *ScoreCacheQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -85,8 +85,8 @@ func (rq *RoundQuery) QueryStatuses() *StatusQuery {
 	return query
 }
 
-// QueryScorecaches chains the current query on the "scorecaches" edge.
-func (rq *RoundQuery) QueryScorecaches() *ScoreCacheQuery {
+// QueryScoreCaches chains the current query on the "scoreCaches" edge.
+func (rq *RoundQuery) QueryScoreCaches() *ScoreCacheQuery {
 	query := (&ScoreCacheClient{config: rq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := rq.prepareQuery(ctx); err != nil {
@@ -99,7 +99,7 @@ func (rq *RoundQuery) QueryScorecaches() *ScoreCacheQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(round.Table, round.FieldID, selector),
 			sqlgraph.To(scorecache.Table, scorecache.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, true, round.ScorecachesTable, round.ScorecachesColumn),
+			sqlgraph.Edge(sqlgraph.O2M, true, round.ScoreCachesTable, round.ScoreCachesColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(rq.driver.Dialect(), step)
 		return fromU, nil
@@ -300,7 +300,7 @@ func (rq *RoundQuery) Clone() *RoundQuery {
 		inters:          append([]Interceptor{}, rq.inters...),
 		predicates:      append([]predicate.Round{}, rq.predicates...),
 		withStatuses:    rq.withStatuses.Clone(),
-		withScorecaches: rq.withScorecaches.Clone(),
+		withScoreCaches: rq.withScoreCaches.Clone(),
 		// clone intermediate query.
 		sql:  rq.sql.Clone(),
 		path: rq.path,
@@ -318,14 +318,14 @@ func (rq *RoundQuery) WithStatuses(opts ...func(*StatusQuery)) *RoundQuery {
 	return rq
 }
 
-// WithScorecaches tells the query-builder to eager-load the nodes that are connected to
-// the "scorecaches" edge. The optional arguments are used to configure the query builder of the edge.
-func (rq *RoundQuery) WithScorecaches(opts ...func(*ScoreCacheQuery)) *RoundQuery {
+// WithScoreCaches tells the query-builder to eager-load the nodes that are connected to
+// the "scoreCaches" edge. The optional arguments are used to configure the query builder of the edge.
+func (rq *RoundQuery) WithScoreCaches(opts ...func(*ScoreCacheQuery)) *RoundQuery {
 	query := (&ScoreCacheClient{config: rq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	rq.withScorecaches = query
+	rq.withScoreCaches = query
 	return rq
 }
 
@@ -409,7 +409,7 @@ func (rq *RoundQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Round,
 		_spec       = rq.querySpec()
 		loadedTypes = [2]bool{
 			rq.withStatuses != nil,
-			rq.withScorecaches != nil,
+			rq.withScoreCaches != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -437,10 +437,10 @@ func (rq *RoundQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Round,
 			return nil, err
 		}
 	}
-	if query := rq.withScorecaches; query != nil {
-		if err := rq.loadScorecaches(ctx, query, nodes,
-			func(n *Round) { n.Edges.Scorecaches = []*ScoreCache{} },
-			func(n *Round, e *ScoreCache) { n.Edges.Scorecaches = append(n.Edges.Scorecaches, e) }); err != nil {
+	if query := rq.withScoreCaches; query != nil {
+		if err := rq.loadScoreCaches(ctx, query, nodes,
+			func(n *Round) { n.Edges.ScoreCaches = []*ScoreCache{} },
+			func(n *Round, e *ScoreCache) { n.Edges.ScoreCaches = append(n.Edges.ScoreCaches, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -477,7 +477,7 @@ func (rq *RoundQuery) loadStatuses(ctx context.Context, query *StatusQuery, node
 	}
 	return nil
 }
-func (rq *RoundQuery) loadScorecaches(ctx context.Context, query *ScoreCacheQuery, nodes []*Round, init func(*Round), assign func(*Round, *ScoreCache)) error {
+func (rq *RoundQuery) loadScoreCaches(ctx context.Context, query *ScoreCacheQuery, nodes []*Round, init func(*Round), assign func(*Round, *ScoreCache)) error {
 	fks := make([]driver.Value, 0, len(nodes))
 	nodeids := make(map[uuid.UUID]*Round)
 	for i := range nodes {
@@ -491,7 +491,7 @@ func (rq *RoundQuery) loadScorecaches(ctx context.Context, query *ScoreCacheQuer
 		query.ctx.AppendFieldOnce(scorecache.FieldRoundID)
 	}
 	query.Where(predicate.ScoreCache(func(s *sql.Selector) {
-		s.Where(sql.InValues(s.C(round.ScorecachesColumn), fks...))
+		s.Where(sql.InValues(s.C(round.ScoreCachesColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

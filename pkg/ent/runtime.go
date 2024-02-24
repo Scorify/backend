@@ -92,10 +92,6 @@ func init() {
 	roundDescComplete := roundFields[2].Descriptor()
 	// round.DefaultComplete holds the default value on creation for the complete field.
 	round.DefaultComplete = roundDescComplete.Default.(bool)
-	// roundDescPoints is the schema descriptor for points field.
-	roundDescPoints := roundFields[3].Descriptor()
-	// round.PointsValidator is a validator for the "points" field. It is called by the builders before save.
-	round.PointsValidator = roundDescPoints.Validators[0].(func(int) error)
 	// roundDescID is the schema descriptor for id field.
 	roundDescID := roundFields[0].Descriptor()
 	// round.DefaultID holds the default value on creation for the id field.

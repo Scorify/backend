@@ -8,7 +8,6 @@ import (
 	"entgo.io/ent/schema/index"
 	"entgo.io/ent/schema/mixin"
 	"github.com/google/uuid"
-	"github.com/scorify/backend/pkg/structs"
 )
 
 // Check holds the schema definition for the Check entity.
@@ -38,9 +37,12 @@ func (Check) Fields() []ent.Field {
 			StructTag(`json:"weight"`).
 			Comment("The weight of the check").
 			NonNegative(),
-		field.JSON("default_config", structs.CheckConfiguration{}).
-			StructTag(`json:"default_config"`).
-			Comment("The default configuration of a check"),
+		field.JSON("config", map[string]interface{}{}).
+			StructTag(`json:"config"`).
+			Comment("The configuration of a check"),
+		field.Strings("editable_fields").
+			StructTag(`json:"editable_fields"`).
+			Comment("The fields that are editable"),
 	}
 }
 

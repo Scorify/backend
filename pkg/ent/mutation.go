@@ -19,7 +19,6 @@ import (
 	"github.com/scorify/backend/pkg/ent/scorecache"
 	"github.com/scorify/backend/pkg/ent/status"
 	"github.com/scorify/backend/pkg/ent/user"
-	"github.com/scorify/backend/pkg/structs"
 )
 
 const (
@@ -42,26 +41,28 @@ const (
 // CheckMutation represents an operation that mutates the Check nodes in the graph.
 type CheckMutation struct {
 	config
-	op              Op
-	typ             string
-	id              *uuid.UUID
-	create_time     *time.Time
-	update_time     *time.Time
-	name            *string
-	source          *string
-	weight          *int
-	addweight       *int
-	default_config  *structs.CheckConfiguration
-	clearedFields   map[string]struct{}
-	configs         map[uuid.UUID]struct{}
-	removedconfigs  map[uuid.UUID]struct{}
-	clearedconfigs  bool
-	statuses        map[uuid.UUID]struct{}
-	removedstatuses map[uuid.UUID]struct{}
-	clearedstatuses bool
-	done            bool
-	oldValue        func(context.Context) (*Check, error)
-	predicates      []predicate.Check
+	op                    Op
+	typ                   string
+	id                    *uuid.UUID
+	create_time           *time.Time
+	update_time           *time.Time
+	name                  *string
+	source                *string
+	weight                *int
+	addweight             *int
+	_config               *map[string]interface{}
+	editable_fields       *[]string
+	appendeditable_fields []string
+	clearedFields         map[string]struct{}
+	configs               map[uuid.UUID]struct{}
+	removedconfigs        map[uuid.UUID]struct{}
+	clearedconfigs        bool
+	statuses              map[uuid.UUID]struct{}
+	removedstatuses       map[uuid.UUID]struct{}
+	clearedstatuses       bool
+	done                  bool
+	oldValue              func(context.Context) (*Check, error)
+	predicates            []predicate.Check
 }
 
 var _ ent.Mutation = (*CheckMutation)(nil)
@@ -368,40 +369,91 @@ func (m *CheckMutation) ResetWeight() {
 	m.addweight = nil
 }
 
-// SetDefaultConfig sets the "default_config" field.
-func (m *CheckMutation) SetDefaultConfig(sc structs.CheckConfiguration) {
-	m.default_config = &sc
+// SetConfig sets the "config" field.
+func (m *CheckMutation) SetConfig(value map[string]interface{}) {
+	m._config = &value
 }
 
-// DefaultConfig returns the value of the "default_config" field in the mutation.
-func (m *CheckMutation) DefaultConfig() (r structs.CheckConfiguration, exists bool) {
-	v := m.default_config
+// Config returns the value of the "config" field in the mutation.
+func (m *CheckMutation) Config() (r map[string]interface{}, exists bool) {
+	v := m._config
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldDefaultConfig returns the old "default_config" field's value of the Check entity.
+// OldConfig returns the old "config" field's value of the Check entity.
 // If the Check object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *CheckMutation) OldDefaultConfig(ctx context.Context) (v structs.CheckConfiguration, err error) {
+func (m *CheckMutation) OldConfig(ctx context.Context) (v map[string]interface{}, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldDefaultConfig is only allowed on UpdateOne operations")
+		return v, errors.New("OldConfig is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldDefaultConfig requires an ID field in the mutation")
+		return v, errors.New("OldConfig requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldDefaultConfig: %w", err)
+		return v, fmt.Errorf("querying old value for OldConfig: %w", err)
 	}
-	return oldValue.DefaultConfig, nil
+	return oldValue.Config, nil
 }
 
-// ResetDefaultConfig resets all changes to the "default_config" field.
-func (m *CheckMutation) ResetDefaultConfig() {
-	m.default_config = nil
+// ResetConfig resets all changes to the "config" field.
+func (m *CheckMutation) ResetConfig() {
+	m._config = nil
+}
+
+// SetEditableFields sets the "editable_fields" field.
+func (m *CheckMutation) SetEditableFields(s []string) {
+	m.editable_fields = &s
+	m.appendeditable_fields = nil
+}
+
+// EditableFields returns the value of the "editable_fields" field in the mutation.
+func (m *CheckMutation) EditableFields() (r []string, exists bool) {
+	v := m.editable_fields
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEditableFields returns the old "editable_fields" field's value of the Check entity.
+// If the Check object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CheckMutation) OldEditableFields(ctx context.Context) (v []string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEditableFields is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEditableFields requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEditableFields: %w", err)
+	}
+	return oldValue.EditableFields, nil
+}
+
+// AppendEditableFields adds s to the "editable_fields" field.
+func (m *CheckMutation) AppendEditableFields(s []string) {
+	m.appendeditable_fields = append(m.appendeditable_fields, s...)
+}
+
+// AppendedEditableFields returns the list of values that were appended to the "editable_fields" field in this mutation.
+func (m *CheckMutation) AppendedEditableFields() ([]string, bool) {
+	if len(m.appendeditable_fields) == 0 {
+		return nil, false
+	}
+	return m.appendeditable_fields, true
+}
+
+// ResetEditableFields resets all changes to the "editable_fields" field.
+func (m *CheckMutation) ResetEditableFields() {
+	m.editable_fields = nil
+	m.appendeditable_fields = nil
 }
 
 // AddConfigIDs adds the "configs" edge to the CheckConfig entity by ids.
@@ -546,7 +598,7 @@ func (m *CheckMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *CheckMutation) Fields() []string {
-	fields := make([]string, 0, 6)
+	fields := make([]string, 0, 7)
 	if m.create_time != nil {
 		fields = append(fields, check.FieldCreateTime)
 	}
@@ -562,8 +614,11 @@ func (m *CheckMutation) Fields() []string {
 	if m.weight != nil {
 		fields = append(fields, check.FieldWeight)
 	}
-	if m.default_config != nil {
-		fields = append(fields, check.FieldDefaultConfig)
+	if m._config != nil {
+		fields = append(fields, check.FieldConfig)
+	}
+	if m.editable_fields != nil {
+		fields = append(fields, check.FieldEditableFields)
 	}
 	return fields
 }
@@ -583,8 +638,10 @@ func (m *CheckMutation) Field(name string) (ent.Value, bool) {
 		return m.Source()
 	case check.FieldWeight:
 		return m.Weight()
-	case check.FieldDefaultConfig:
-		return m.DefaultConfig()
+	case check.FieldConfig:
+		return m.Config()
+	case check.FieldEditableFields:
+		return m.EditableFields()
 	}
 	return nil, false
 }
@@ -604,8 +661,10 @@ func (m *CheckMutation) OldField(ctx context.Context, name string) (ent.Value, e
 		return m.OldSource(ctx)
 	case check.FieldWeight:
 		return m.OldWeight(ctx)
-	case check.FieldDefaultConfig:
-		return m.OldDefaultConfig(ctx)
+	case check.FieldConfig:
+		return m.OldConfig(ctx)
+	case check.FieldEditableFields:
+		return m.OldEditableFields(ctx)
 	}
 	return nil, fmt.Errorf("unknown Check field %s", name)
 }
@@ -650,12 +709,19 @@ func (m *CheckMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetWeight(v)
 		return nil
-	case check.FieldDefaultConfig:
-		v, ok := value.(structs.CheckConfiguration)
+	case check.FieldConfig:
+		v, ok := value.(map[string]interface{})
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetDefaultConfig(v)
+		m.SetConfig(v)
+		return nil
+	case check.FieldEditableFields:
+		v, ok := value.([]string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEditableFields(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Check field %s", name)
@@ -736,8 +802,11 @@ func (m *CheckMutation) ResetField(name string) error {
 	case check.FieldWeight:
 		m.ResetWeight()
 		return nil
-	case check.FieldDefaultConfig:
-		m.ResetDefaultConfig()
+	case check.FieldConfig:
+		m.ResetConfig()
+		return nil
+	case check.FieldEditableFields:
+		m.ResetEditableFields()
 		return nil
 	}
 	return fmt.Errorf("unknown Check field %s", name)
@@ -1512,15 +1581,13 @@ type RoundMutation struct {
 	number             *int
 	addnumber          *int
 	complete           *bool
-	points             *int
-	addpoints          *int
 	clearedFields      map[string]struct{}
 	statuses           map[uuid.UUID]struct{}
 	removedstatuses    map[uuid.UUID]struct{}
 	clearedstatuses    bool
-	scorecaches        map[uuid.UUID]struct{}
-	removedscorecaches map[uuid.UUID]struct{}
-	clearedscorecaches bool
+	scoreCaches        map[uuid.UUID]struct{}
+	removedscoreCaches map[uuid.UUID]struct{}
+	clearedscoreCaches bool
 	done               bool
 	oldValue           func(context.Context) (*Round, error)
 	predicates         []predicate.Round
@@ -1794,62 +1861,6 @@ func (m *RoundMutation) ResetComplete() {
 	m.complete = nil
 }
 
-// SetPoints sets the "points" field.
-func (m *RoundMutation) SetPoints(i int) {
-	m.points = &i
-	m.addpoints = nil
-}
-
-// Points returns the value of the "points" field in the mutation.
-func (m *RoundMutation) Points() (r int, exists bool) {
-	v := m.points
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldPoints returns the old "points" field's value of the Round entity.
-// If the Round object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *RoundMutation) OldPoints(ctx context.Context) (v int, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldPoints is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldPoints requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldPoints: %w", err)
-	}
-	return oldValue.Points, nil
-}
-
-// AddPoints adds i to the "points" field.
-func (m *RoundMutation) AddPoints(i int) {
-	if m.addpoints != nil {
-		*m.addpoints += i
-	} else {
-		m.addpoints = &i
-	}
-}
-
-// AddedPoints returns the value that was added to the "points" field in this mutation.
-func (m *RoundMutation) AddedPoints() (r int, exists bool) {
-	v := m.addpoints
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ResetPoints resets all changes to the "points" field.
-func (m *RoundMutation) ResetPoints() {
-	m.points = nil
-	m.addpoints = nil
-}
-
 // AddStatusIDs adds the "statuses" edge to the Status entity by ids.
 func (m *RoundMutation) AddStatusIDs(ids ...uuid.UUID) {
 	if m.statuses == nil {
@@ -1904,58 +1915,58 @@ func (m *RoundMutation) ResetStatuses() {
 	m.removedstatuses = nil
 }
 
-// AddScorecachIDs adds the "scorecaches" edge to the ScoreCache entity by ids.
-func (m *RoundMutation) AddScorecachIDs(ids ...uuid.UUID) {
-	if m.scorecaches == nil {
-		m.scorecaches = make(map[uuid.UUID]struct{})
+// AddScoreCachIDs adds the "scoreCaches" edge to the ScoreCache entity by ids.
+func (m *RoundMutation) AddScoreCachIDs(ids ...uuid.UUID) {
+	if m.scoreCaches == nil {
+		m.scoreCaches = make(map[uuid.UUID]struct{})
 	}
 	for i := range ids {
-		m.scorecaches[ids[i]] = struct{}{}
+		m.scoreCaches[ids[i]] = struct{}{}
 	}
 }
 
-// ClearScorecaches clears the "scorecaches" edge to the ScoreCache entity.
-func (m *RoundMutation) ClearScorecaches() {
-	m.clearedscorecaches = true
+// ClearScoreCaches clears the "scoreCaches" edge to the ScoreCache entity.
+func (m *RoundMutation) ClearScoreCaches() {
+	m.clearedscoreCaches = true
 }
 
-// ScorecachesCleared reports if the "scorecaches" edge to the ScoreCache entity was cleared.
-func (m *RoundMutation) ScorecachesCleared() bool {
-	return m.clearedscorecaches
+// ScoreCachesCleared reports if the "scoreCaches" edge to the ScoreCache entity was cleared.
+func (m *RoundMutation) ScoreCachesCleared() bool {
+	return m.clearedscoreCaches
 }
 
-// RemoveScorecachIDs removes the "scorecaches" edge to the ScoreCache entity by IDs.
-func (m *RoundMutation) RemoveScorecachIDs(ids ...uuid.UUID) {
-	if m.removedscorecaches == nil {
-		m.removedscorecaches = make(map[uuid.UUID]struct{})
+// RemoveScoreCachIDs removes the "scoreCaches" edge to the ScoreCache entity by IDs.
+func (m *RoundMutation) RemoveScoreCachIDs(ids ...uuid.UUID) {
+	if m.removedscoreCaches == nil {
+		m.removedscoreCaches = make(map[uuid.UUID]struct{})
 	}
 	for i := range ids {
-		delete(m.scorecaches, ids[i])
-		m.removedscorecaches[ids[i]] = struct{}{}
+		delete(m.scoreCaches, ids[i])
+		m.removedscoreCaches[ids[i]] = struct{}{}
 	}
 }
 
-// RemovedScorecaches returns the removed IDs of the "scorecaches" edge to the ScoreCache entity.
-func (m *RoundMutation) RemovedScorecachesIDs() (ids []uuid.UUID) {
-	for id := range m.removedscorecaches {
+// RemovedScoreCaches returns the removed IDs of the "scoreCaches" edge to the ScoreCache entity.
+func (m *RoundMutation) RemovedScoreCachesIDs() (ids []uuid.UUID) {
+	for id := range m.removedscoreCaches {
 		ids = append(ids, id)
 	}
 	return
 }
 
-// ScorecachesIDs returns the "scorecaches" edge IDs in the mutation.
-func (m *RoundMutation) ScorecachesIDs() (ids []uuid.UUID) {
-	for id := range m.scorecaches {
+// ScoreCachesIDs returns the "scoreCaches" edge IDs in the mutation.
+func (m *RoundMutation) ScoreCachesIDs() (ids []uuid.UUID) {
+	for id := range m.scoreCaches {
 		ids = append(ids, id)
 	}
 	return
 }
 
-// ResetScorecaches resets all changes to the "scorecaches" edge.
-func (m *RoundMutation) ResetScorecaches() {
-	m.scorecaches = nil
-	m.clearedscorecaches = false
-	m.removedscorecaches = nil
+// ResetScoreCaches resets all changes to the "scoreCaches" edge.
+func (m *RoundMutation) ResetScoreCaches() {
+	m.scoreCaches = nil
+	m.clearedscoreCaches = false
+	m.removedscoreCaches = nil
 }
 
 // Where appends a list predicates to the RoundMutation builder.
@@ -1992,7 +2003,7 @@ func (m *RoundMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *RoundMutation) Fields() []string {
-	fields := make([]string, 0, 5)
+	fields := make([]string, 0, 4)
 	if m.create_time != nil {
 		fields = append(fields, round.FieldCreateTime)
 	}
@@ -2004,9 +2015,6 @@ func (m *RoundMutation) Fields() []string {
 	}
 	if m.complete != nil {
 		fields = append(fields, round.FieldComplete)
-	}
-	if m.points != nil {
-		fields = append(fields, round.FieldPoints)
 	}
 	return fields
 }
@@ -2024,8 +2032,6 @@ func (m *RoundMutation) Field(name string) (ent.Value, bool) {
 		return m.Number()
 	case round.FieldComplete:
 		return m.Complete()
-	case round.FieldPoints:
-		return m.Points()
 	}
 	return nil, false
 }
@@ -2043,8 +2049,6 @@ func (m *RoundMutation) OldField(ctx context.Context, name string) (ent.Value, e
 		return m.OldNumber(ctx)
 	case round.FieldComplete:
 		return m.OldComplete(ctx)
-	case round.FieldPoints:
-		return m.OldPoints(ctx)
 	}
 	return nil, fmt.Errorf("unknown Round field %s", name)
 }
@@ -2082,13 +2086,6 @@ func (m *RoundMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetComplete(v)
 		return nil
-	case round.FieldPoints:
-		v, ok := value.(int)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetPoints(v)
-		return nil
 	}
 	return fmt.Errorf("unknown Round field %s", name)
 }
@@ -2100,9 +2097,6 @@ func (m *RoundMutation) AddedFields() []string {
 	if m.addnumber != nil {
 		fields = append(fields, round.FieldNumber)
 	}
-	if m.addpoints != nil {
-		fields = append(fields, round.FieldPoints)
-	}
 	return fields
 }
 
@@ -2113,8 +2107,6 @@ func (m *RoundMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
 	case round.FieldNumber:
 		return m.AddedNumber()
-	case round.FieldPoints:
-		return m.AddedPoints()
 	}
 	return nil, false
 }
@@ -2130,13 +2122,6 @@ func (m *RoundMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddNumber(v)
-		return nil
-	case round.FieldPoints:
-		v, ok := value.(int)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddPoints(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Round numeric field %s", name)
@@ -2177,9 +2162,6 @@ func (m *RoundMutation) ResetField(name string) error {
 	case round.FieldComplete:
 		m.ResetComplete()
 		return nil
-	case round.FieldPoints:
-		m.ResetPoints()
-		return nil
 	}
 	return fmt.Errorf("unknown Round field %s", name)
 }
@@ -2190,8 +2172,8 @@ func (m *RoundMutation) AddedEdges() []string {
 	if m.statuses != nil {
 		edges = append(edges, round.EdgeStatuses)
 	}
-	if m.scorecaches != nil {
-		edges = append(edges, round.EdgeScorecaches)
+	if m.scoreCaches != nil {
+		edges = append(edges, round.EdgeScoreCaches)
 	}
 	return edges
 }
@@ -2206,9 +2188,9 @@ func (m *RoundMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
-	case round.EdgeScorecaches:
-		ids := make([]ent.Value, 0, len(m.scorecaches))
-		for id := range m.scorecaches {
+	case round.EdgeScoreCaches:
+		ids := make([]ent.Value, 0, len(m.scoreCaches))
+		for id := range m.scoreCaches {
 			ids = append(ids, id)
 		}
 		return ids
@@ -2222,8 +2204,8 @@ func (m *RoundMutation) RemovedEdges() []string {
 	if m.removedstatuses != nil {
 		edges = append(edges, round.EdgeStatuses)
 	}
-	if m.removedscorecaches != nil {
-		edges = append(edges, round.EdgeScorecaches)
+	if m.removedscoreCaches != nil {
+		edges = append(edges, round.EdgeScoreCaches)
 	}
 	return edges
 }
@@ -2238,9 +2220,9 @@ func (m *RoundMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
-	case round.EdgeScorecaches:
-		ids := make([]ent.Value, 0, len(m.removedscorecaches))
-		for id := range m.removedscorecaches {
+	case round.EdgeScoreCaches:
+		ids := make([]ent.Value, 0, len(m.removedscoreCaches))
+		for id := range m.removedscoreCaches {
 			ids = append(ids, id)
 		}
 		return ids
@@ -2254,8 +2236,8 @@ func (m *RoundMutation) ClearedEdges() []string {
 	if m.clearedstatuses {
 		edges = append(edges, round.EdgeStatuses)
 	}
-	if m.clearedscorecaches {
-		edges = append(edges, round.EdgeScorecaches)
+	if m.clearedscoreCaches {
+		edges = append(edges, round.EdgeScoreCaches)
 	}
 	return edges
 }
@@ -2266,8 +2248,8 @@ func (m *RoundMutation) EdgeCleared(name string) bool {
 	switch name {
 	case round.EdgeStatuses:
 		return m.clearedstatuses
-	case round.EdgeScorecaches:
-		return m.clearedscorecaches
+	case round.EdgeScoreCaches:
+		return m.clearedscoreCaches
 	}
 	return false
 }
@@ -2287,8 +2269,8 @@ func (m *RoundMutation) ResetEdge(name string) error {
 	case round.EdgeStatuses:
 		m.ResetStatuses()
 		return nil
-	case round.EdgeScorecaches:
-		m.ResetScorecaches()
+	case round.EdgeScoreCaches:
+		m.ResetScoreCaches()
 		return nil
 	}
 	return fmt.Errorf("unknown Round edge %s", name)
@@ -3909,12 +3891,12 @@ type UserMutation struct {
 	configs            map[uuid.UUID]struct{}
 	removedconfigs     map[uuid.UUID]struct{}
 	clearedconfigs     bool
-	status             map[uuid.UUID]struct{}
-	removedstatus      map[uuid.UUID]struct{}
-	clearedstatus      bool
-	scorecaches        map[uuid.UUID]struct{}
-	removedscorecaches map[uuid.UUID]struct{}
-	clearedscorecaches bool
+	statuses           map[uuid.UUID]struct{}
+	removedstatuses    map[uuid.UUID]struct{}
+	clearedstatuses    bool
+	scoreCaches        map[uuid.UUID]struct{}
+	removedscoreCaches map[uuid.UUID]struct{}
+	clearedscoreCaches bool
 	done               bool
 	oldValue           func(context.Context) (*User, error)
 	predicates         []predicate.User
@@ -4328,112 +4310,112 @@ func (m *UserMutation) ResetConfigs() {
 	m.removedconfigs = nil
 }
 
-// AddStatuIDs adds the "status" edge to the Status entity by ids.
-func (m *UserMutation) AddStatuIDs(ids ...uuid.UUID) {
-	if m.status == nil {
-		m.status = make(map[uuid.UUID]struct{})
+// AddStatusIDs adds the "statuses" edge to the Status entity by ids.
+func (m *UserMutation) AddStatusIDs(ids ...uuid.UUID) {
+	if m.statuses == nil {
+		m.statuses = make(map[uuid.UUID]struct{})
 	}
 	for i := range ids {
-		m.status[ids[i]] = struct{}{}
+		m.statuses[ids[i]] = struct{}{}
 	}
 }
 
-// ClearStatus clears the "status" edge to the Status entity.
-func (m *UserMutation) ClearStatus() {
-	m.clearedstatus = true
+// ClearStatuses clears the "statuses" edge to the Status entity.
+func (m *UserMutation) ClearStatuses() {
+	m.clearedstatuses = true
 }
 
-// StatusCleared reports if the "status" edge to the Status entity was cleared.
-func (m *UserMutation) StatusCleared() bool {
-	return m.clearedstatus
+// StatusesCleared reports if the "statuses" edge to the Status entity was cleared.
+func (m *UserMutation) StatusesCleared() bool {
+	return m.clearedstatuses
 }
 
-// RemoveStatuIDs removes the "status" edge to the Status entity by IDs.
-func (m *UserMutation) RemoveStatuIDs(ids ...uuid.UUID) {
-	if m.removedstatus == nil {
-		m.removedstatus = make(map[uuid.UUID]struct{})
+// RemoveStatusIDs removes the "statuses" edge to the Status entity by IDs.
+func (m *UserMutation) RemoveStatusIDs(ids ...uuid.UUID) {
+	if m.removedstatuses == nil {
+		m.removedstatuses = make(map[uuid.UUID]struct{})
 	}
 	for i := range ids {
-		delete(m.status, ids[i])
-		m.removedstatus[ids[i]] = struct{}{}
+		delete(m.statuses, ids[i])
+		m.removedstatuses[ids[i]] = struct{}{}
 	}
 }
 
-// RemovedStatus returns the removed IDs of the "status" edge to the Status entity.
-func (m *UserMutation) RemovedStatusIDs() (ids []uuid.UUID) {
-	for id := range m.removedstatus {
+// RemovedStatuses returns the removed IDs of the "statuses" edge to the Status entity.
+func (m *UserMutation) RemovedStatusesIDs() (ids []uuid.UUID) {
+	for id := range m.removedstatuses {
 		ids = append(ids, id)
 	}
 	return
 }
 
-// StatusIDs returns the "status" edge IDs in the mutation.
-func (m *UserMutation) StatusIDs() (ids []uuid.UUID) {
-	for id := range m.status {
+// StatusesIDs returns the "statuses" edge IDs in the mutation.
+func (m *UserMutation) StatusesIDs() (ids []uuid.UUID) {
+	for id := range m.statuses {
 		ids = append(ids, id)
 	}
 	return
 }
 
-// ResetStatus resets all changes to the "status" edge.
-func (m *UserMutation) ResetStatus() {
-	m.status = nil
-	m.clearedstatus = false
-	m.removedstatus = nil
+// ResetStatuses resets all changes to the "statuses" edge.
+func (m *UserMutation) ResetStatuses() {
+	m.statuses = nil
+	m.clearedstatuses = false
+	m.removedstatuses = nil
 }
 
-// AddScorecachIDs adds the "scorecaches" edge to the ScoreCache entity by ids.
-func (m *UserMutation) AddScorecachIDs(ids ...uuid.UUID) {
-	if m.scorecaches == nil {
-		m.scorecaches = make(map[uuid.UUID]struct{})
+// AddScoreCachIDs adds the "scoreCaches" edge to the ScoreCache entity by ids.
+func (m *UserMutation) AddScoreCachIDs(ids ...uuid.UUID) {
+	if m.scoreCaches == nil {
+		m.scoreCaches = make(map[uuid.UUID]struct{})
 	}
 	for i := range ids {
-		m.scorecaches[ids[i]] = struct{}{}
+		m.scoreCaches[ids[i]] = struct{}{}
 	}
 }
 
-// ClearScorecaches clears the "scorecaches" edge to the ScoreCache entity.
-func (m *UserMutation) ClearScorecaches() {
-	m.clearedscorecaches = true
+// ClearScoreCaches clears the "scoreCaches" edge to the ScoreCache entity.
+func (m *UserMutation) ClearScoreCaches() {
+	m.clearedscoreCaches = true
 }
 
-// ScorecachesCleared reports if the "scorecaches" edge to the ScoreCache entity was cleared.
-func (m *UserMutation) ScorecachesCleared() bool {
-	return m.clearedscorecaches
+// ScoreCachesCleared reports if the "scoreCaches" edge to the ScoreCache entity was cleared.
+func (m *UserMutation) ScoreCachesCleared() bool {
+	return m.clearedscoreCaches
 }
 
-// RemoveScorecachIDs removes the "scorecaches" edge to the ScoreCache entity by IDs.
-func (m *UserMutation) RemoveScorecachIDs(ids ...uuid.UUID) {
-	if m.removedscorecaches == nil {
-		m.removedscorecaches = make(map[uuid.UUID]struct{})
+// RemoveScoreCachIDs removes the "scoreCaches" edge to the ScoreCache entity by IDs.
+func (m *UserMutation) RemoveScoreCachIDs(ids ...uuid.UUID) {
+	if m.removedscoreCaches == nil {
+		m.removedscoreCaches = make(map[uuid.UUID]struct{})
 	}
 	for i := range ids {
-		delete(m.scorecaches, ids[i])
-		m.removedscorecaches[ids[i]] = struct{}{}
+		delete(m.scoreCaches, ids[i])
+		m.removedscoreCaches[ids[i]] = struct{}{}
 	}
 }
 
-// RemovedScorecaches returns the removed IDs of the "scorecaches" edge to the ScoreCache entity.
-func (m *UserMutation) RemovedScorecachesIDs() (ids []uuid.UUID) {
-	for id := range m.removedscorecaches {
+// RemovedScoreCaches returns the removed IDs of the "scoreCaches" edge to the ScoreCache entity.
+func (m *UserMutation) RemovedScoreCachesIDs() (ids []uuid.UUID) {
+	for id := range m.removedscoreCaches {
 		ids = append(ids, id)
 	}
 	return
 }
 
-// ScorecachesIDs returns the "scorecaches" edge IDs in the mutation.
-func (m *UserMutation) ScorecachesIDs() (ids []uuid.UUID) {
-	for id := range m.scorecaches {
+// ScoreCachesIDs returns the "scoreCaches" edge IDs in the mutation.
+func (m *UserMutation) ScoreCachesIDs() (ids []uuid.UUID) {
+	for id := range m.scoreCaches {
 		ids = append(ids, id)
 	}
 	return
 }
 
-// ResetScorecaches resets all changes to the "scorecaches" edge.
-func (m *UserMutation) ResetScorecaches() {
-	m.scorecaches = nil
-	m.clearedscorecaches = false
-	m.removedscorecaches = nil
+// ResetScoreCaches resets all changes to the "scoreCaches" edge.
+func (m *UserMutation) ResetScoreCaches() {
+	m.scoreCaches = nil
+	m.clearedscoreCaches = false
+	m.removedscoreCaches = nil
 }
 
 // Where appends a list predicates to the UserMutation builder.
@@ -4682,11 +4664,11 @@ func (m *UserMutation) AddedEdges() []string {
 	if m.configs != nil {
 		edges = append(edges, user.EdgeConfigs)
 	}
-	if m.status != nil {
-		edges = append(edges, user.EdgeStatus)
+	if m.statuses != nil {
+		edges = append(edges, user.EdgeStatuses)
 	}
-	if m.scorecaches != nil {
-		edges = append(edges, user.EdgeScorecaches)
+	if m.scoreCaches != nil {
+		edges = append(edges, user.EdgeScoreCaches)
 	}
 	return edges
 }
@@ -4701,15 +4683,15 @@ func (m *UserMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
-	case user.EdgeStatus:
-		ids := make([]ent.Value, 0, len(m.status))
-		for id := range m.status {
+	case user.EdgeStatuses:
+		ids := make([]ent.Value, 0, len(m.statuses))
+		for id := range m.statuses {
 			ids = append(ids, id)
 		}
 		return ids
-	case user.EdgeScorecaches:
-		ids := make([]ent.Value, 0, len(m.scorecaches))
-		for id := range m.scorecaches {
+	case user.EdgeScoreCaches:
+		ids := make([]ent.Value, 0, len(m.scoreCaches))
+		for id := range m.scoreCaches {
 			ids = append(ids, id)
 		}
 		return ids
@@ -4723,11 +4705,11 @@ func (m *UserMutation) RemovedEdges() []string {
 	if m.removedconfigs != nil {
 		edges = append(edges, user.EdgeConfigs)
 	}
-	if m.removedstatus != nil {
-		edges = append(edges, user.EdgeStatus)
+	if m.removedstatuses != nil {
+		edges = append(edges, user.EdgeStatuses)
 	}
-	if m.removedscorecaches != nil {
-		edges = append(edges, user.EdgeScorecaches)
+	if m.removedscoreCaches != nil {
+		edges = append(edges, user.EdgeScoreCaches)
 	}
 	return edges
 }
@@ -4742,15 +4724,15 @@ func (m *UserMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
-	case user.EdgeStatus:
-		ids := make([]ent.Value, 0, len(m.removedstatus))
-		for id := range m.removedstatus {
+	case user.EdgeStatuses:
+		ids := make([]ent.Value, 0, len(m.removedstatuses))
+		for id := range m.removedstatuses {
 			ids = append(ids, id)
 		}
 		return ids
-	case user.EdgeScorecaches:
-		ids := make([]ent.Value, 0, len(m.removedscorecaches))
-		for id := range m.removedscorecaches {
+	case user.EdgeScoreCaches:
+		ids := make([]ent.Value, 0, len(m.removedscoreCaches))
+		for id := range m.removedscoreCaches {
 			ids = append(ids, id)
 		}
 		return ids
@@ -4764,11 +4746,11 @@ func (m *UserMutation) ClearedEdges() []string {
 	if m.clearedconfigs {
 		edges = append(edges, user.EdgeConfigs)
 	}
-	if m.clearedstatus {
-		edges = append(edges, user.EdgeStatus)
+	if m.clearedstatuses {
+		edges = append(edges, user.EdgeStatuses)
 	}
-	if m.clearedscorecaches {
-		edges = append(edges, user.EdgeScorecaches)
+	if m.clearedscoreCaches {
+		edges = append(edges, user.EdgeScoreCaches)
 	}
 	return edges
 }
@@ -4779,10 +4761,10 @@ func (m *UserMutation) EdgeCleared(name string) bool {
 	switch name {
 	case user.EdgeConfigs:
 		return m.clearedconfigs
-	case user.EdgeStatus:
-		return m.clearedstatus
-	case user.EdgeScorecaches:
-		return m.clearedscorecaches
+	case user.EdgeStatuses:
+		return m.clearedstatuses
+	case user.EdgeScoreCaches:
+		return m.clearedscoreCaches
 	}
 	return false
 }
@@ -4802,11 +4784,11 @@ func (m *UserMutation) ResetEdge(name string) error {
 	case user.EdgeConfigs:
 		m.ResetConfigs()
 		return nil
-	case user.EdgeStatus:
-		m.ResetStatus()
+	case user.EdgeStatuses:
+		m.ResetStatuses()
 		return nil
-	case user.EdgeScorecaches:
-		m.ResetScorecaches()
+	case user.EdgeScoreCaches:
+		m.ResetScoreCaches()
 		return nil
 	}
 	return fmt.Errorf("unknown User edge %s", name)

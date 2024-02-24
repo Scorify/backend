@@ -121,34 +121,34 @@ func (uc *UserCreate) AddConfigs(c ...*CheckConfig) *UserCreate {
 	return uc.AddConfigIDs(ids...)
 }
 
-// AddStatuIDs adds the "status" edge to the Status entity by IDs.
-func (uc *UserCreate) AddStatuIDs(ids ...uuid.UUID) *UserCreate {
-	uc.mutation.AddStatuIDs(ids...)
+// AddStatusIDs adds the "statuses" edge to the Status entity by IDs.
+func (uc *UserCreate) AddStatusIDs(ids ...uuid.UUID) *UserCreate {
+	uc.mutation.AddStatusIDs(ids...)
 	return uc
 }
 
-// AddStatus adds the "status" edges to the Status entity.
-func (uc *UserCreate) AddStatus(s ...*Status) *UserCreate {
+// AddStatuses adds the "statuses" edges to the Status entity.
+func (uc *UserCreate) AddStatuses(s ...*Status) *UserCreate {
 	ids := make([]uuid.UUID, len(s))
 	for i := range s {
 		ids[i] = s[i].ID
 	}
-	return uc.AddStatuIDs(ids...)
+	return uc.AddStatusIDs(ids...)
 }
 
-// AddScorecachIDs adds the "scorecaches" edge to the ScoreCache entity by IDs.
-func (uc *UserCreate) AddScorecachIDs(ids ...uuid.UUID) *UserCreate {
-	uc.mutation.AddScorecachIDs(ids...)
+// AddScoreCachIDs adds the "scoreCaches" edge to the ScoreCache entity by IDs.
+func (uc *UserCreate) AddScoreCachIDs(ids ...uuid.UUID) *UserCreate {
+	uc.mutation.AddScoreCachIDs(ids...)
 	return uc
 }
 
-// AddScorecaches adds the "scorecaches" edges to the ScoreCache entity.
-func (uc *UserCreate) AddScorecaches(s ...*ScoreCache) *UserCreate {
+// AddScoreCaches adds the "scoreCaches" edges to the ScoreCache entity.
+func (uc *UserCreate) AddScoreCaches(s ...*ScoreCache) *UserCreate {
 	ids := make([]uuid.UUID, len(s))
 	for i := range s {
 		ids[i] = s[i].ID
 	}
-	return uc.AddScorecachIDs(ids...)
+	return uc.AddScoreCachIDs(ids...)
 }
 
 // Mutation returns the UserMutation object of the builder.
@@ -316,12 +316,12 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := uc.mutation.StatusIDs(); len(nodes) > 0 {
+	if nodes := uc.mutation.StatusesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
-			Table:   user.StatusTable,
-			Columns: []string{user.StatusColumn},
+			Table:   user.StatusesTable,
+			Columns: []string{user.StatusesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(status.FieldID, field.TypeUUID),
@@ -332,12 +332,12 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := uc.mutation.ScorecachesIDs(); len(nodes) > 0 {
+	if nodes := uc.mutation.ScoreCachesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
-			Table:   user.ScorecachesTable,
-			Columns: []string{user.ScorecachesColumn},
+			Table:   user.ScoreCachesTable,
+			Columns: []string{user.ScoreCachesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(scorecache.FieldID, field.TypeUUID),

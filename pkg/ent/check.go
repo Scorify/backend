@@ -12,7 +12,6 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
 	"github.com/scorify/backend/pkg/ent/check"
-	"github.com/scorify/backend/pkg/structs"
 )
 
 // Check is the model entity for the Check schema.
@@ -31,8 +30,10 @@ type Check struct {
 	Source string `json:"source"`
 	// The weight of the check
 	Weight int `json:"weight"`
-	// The default configuration of a check
-	DefaultConfig structs.CheckConfiguration `json:"default_config"`
+	// The configuration of a check
+	Config map[string]interface{} `json:"config"`
+	// The fields that are editable
+	EditableFields []string `json:"editable_fields"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the CheckQuery when eager-loading is set.
 	Edges        CheckEdges `json:"edges"`
@@ -73,7 +74,7 @@ func (*Check) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case check.FieldDefaultConfig:
+		case check.FieldConfig, check.FieldEditableFields:
 			values[i] = new([]byte)
 		case check.FieldWeight:
 			values[i] = new(sql.NullInt64)
@@ -134,12 +135,20 @@ func (c *Check) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				c.Weight = int(value.Int64)
 			}
-		case check.FieldDefaultConfig:
+		case check.FieldConfig:
 			if value, ok := values[i].(*[]byte); !ok {
-				return fmt.Errorf("unexpected type %T for field default_config", values[i])
+				return fmt.Errorf("unexpected type %T for field config", values[i])
 			} else if value != nil && len(*value) > 0 {
-				if err := json.Unmarshal(*value, &c.DefaultConfig); err != nil {
-					return fmt.Errorf("unmarshal field default_config: %w", err)
+				if err := json.Unmarshal(*value, &c.Config); err != nil {
+					return fmt.Errorf("unmarshal field config: %w", err)
+				}
+			}
+		case check.FieldEditableFields:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field editable_fields", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &c.EditableFields); err != nil {
+					return fmt.Errorf("unmarshal field editable_fields: %w", err)
 				}
 			}
 		default:
@@ -203,8 +212,11 @@ func (c *Check) String() string {
 	builder.WriteString("weight=")
 	builder.WriteString(fmt.Sprintf("%v", c.Weight))
 	builder.WriteString(", ")
-	builder.WriteString("default_config=")
-	builder.WriteString(fmt.Sprintf("%v", c.DefaultConfig))
+	builder.WriteString("config=")
+	builder.WriteString(fmt.Sprintf("%v", c.Config))
+	builder.WriteString(", ")
+	builder.WriteString("editable_fields=")
+	builder.WriteString(fmt.Sprintf("%v", c.EditableFields))
 	builder.WriteByte(')')
 	return builder.String()
 }

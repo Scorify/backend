@@ -33,10 +33,6 @@ func (Round) Fields() []ent.Field {
 			StructTag(`json:"complete"`).
 			Comment("The completion status of the round").
 			Default(false),
-		field.Int("points").
-			StructTag(`json:"points"`).
-			Comment("The points of the round").
-			NonNegative(),
 	}
 }
 
@@ -66,8 +62,8 @@ func (Round) Edges() []ent.Edge {
 				},
 			).
 			Ref("round"),
-		edge.From("scorecaches", ScoreCache.Type).
-			StructTag(`json:"scorecaches"`).
+		edge.From("scoreCaches", ScoreCache.Type).
+			StructTag(`json:"score_caches"`).
 			Comment("The score caches of a round").
 			Annotations(
 				entsql.Annotation{

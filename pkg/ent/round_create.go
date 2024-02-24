@@ -71,12 +71,6 @@ func (rc *RoundCreate) SetNillableComplete(b *bool) *RoundCreate {
 	return rc
 }
 
-// SetPoints sets the "points" field.
-func (rc *RoundCreate) SetPoints(i int) *RoundCreate {
-	rc.mutation.SetPoints(i)
-	return rc
-}
-
 // SetID sets the "id" field.
 func (rc *RoundCreate) SetID(u uuid.UUID) *RoundCreate {
 	rc.mutation.SetID(u)
@@ -106,19 +100,19 @@ func (rc *RoundCreate) AddStatuses(s ...*Status) *RoundCreate {
 	return rc.AddStatusIDs(ids...)
 }
 
-// AddScorecachIDs adds the "scorecaches" edge to the ScoreCache entity by IDs.
-func (rc *RoundCreate) AddScorecachIDs(ids ...uuid.UUID) *RoundCreate {
-	rc.mutation.AddScorecachIDs(ids...)
+// AddScoreCachIDs adds the "scoreCaches" edge to the ScoreCache entity by IDs.
+func (rc *RoundCreate) AddScoreCachIDs(ids ...uuid.UUID) *RoundCreate {
+	rc.mutation.AddScoreCachIDs(ids...)
 	return rc
 }
 
-// AddScorecaches adds the "scorecaches" edges to the ScoreCache entity.
-func (rc *RoundCreate) AddScorecaches(s ...*ScoreCache) *RoundCreate {
+// AddScoreCaches adds the "scoreCaches" edges to the ScoreCache entity.
+func (rc *RoundCreate) AddScoreCaches(s ...*ScoreCache) *RoundCreate {
 	ids := make([]uuid.UUID, len(s))
 	for i := range s {
 		ids[i] = s[i].ID
 	}
-	return rc.AddScorecachIDs(ids...)
+	return rc.AddScoreCachIDs(ids...)
 }
 
 // Mutation returns the RoundMutation object of the builder.
@@ -193,14 +187,6 @@ func (rc *RoundCreate) check() error {
 	if _, ok := rc.mutation.Complete(); !ok {
 		return &ValidationError{Name: "complete", err: errors.New(`ent: missing required field "Round.complete"`)}
 	}
-	if _, ok := rc.mutation.Points(); !ok {
-		return &ValidationError{Name: "points", err: errors.New(`ent: missing required field "Round.points"`)}
-	}
-	if v, ok := rc.mutation.Points(); ok {
-		if err := round.PointsValidator(v); err != nil {
-			return &ValidationError{Name: "points", err: fmt.Errorf(`ent: validator failed for field "Round.points": %w`, err)}
-		}
-	}
 	return nil
 }
 
@@ -252,10 +238,6 @@ func (rc *RoundCreate) createSpec() (*Round, *sqlgraph.CreateSpec) {
 		_spec.SetField(round.FieldComplete, field.TypeBool, value)
 		_node.Complete = value
 	}
-	if value, ok := rc.mutation.Points(); ok {
-		_spec.SetField(round.FieldPoints, field.TypeInt, value)
-		_node.Points = value
-	}
 	if nodes := rc.mutation.StatusesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -272,12 +254,12 @@ func (rc *RoundCreate) createSpec() (*Round, *sqlgraph.CreateSpec) {
 		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := rc.mutation.ScorecachesIDs(); len(nodes) > 0 {
+	if nodes := rc.mutation.ScoreCachesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
-			Table:   round.ScorecachesTable,
-			Columns: []string{round.ScorecachesColumn},
+			Table:   round.ScoreCachesTable,
+			Columns: []string{round.ScoreCachesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(scorecache.FieldID, field.TypeUUID),

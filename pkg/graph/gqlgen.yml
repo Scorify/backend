@@ -95,7 +95,7 @@ models:
     model:
       - github.com/scorify/backend/pkg/ent/user.Role
 
-  CheckConfiguration:
+  StatusEnum:
     model:
-      - github.com/scorify/backend/pkg/structs.CheckConfiguration
+      - github.com/scorify/backend/pkg/ent/status.Status
 

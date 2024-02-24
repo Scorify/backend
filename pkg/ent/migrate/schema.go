@@ -16,7 +16,8 @@ var (
 		{Name: "name", Type: field.TypeString, Unique: true},
 		{Name: "source", Type: field.TypeString},
 		{Name: "weight", Type: field.TypeInt},
-		{Name: "default_config", Type: field.TypeJSON},
+		{Name: "config", Type: field.TypeJSON},
+		{Name: "editable_fields", Type: field.TypeJSON},
 	}
 	// ChecksTable holds the schema information for the "checks" table.
 	ChecksTable = &schema.Table{
@@ -74,7 +75,6 @@ var (
 		{Name: "update_time", Type: field.TypeTime},
 		{Name: "number", Type: field.TypeInt, Unique: true},
 		{Name: "complete", Type: field.TypeBool, Default: false},
-		{Name: "points", Type: field.TypeInt},
 	}
 	// RoundsTable holds the schema information for the "rounds" table.
 	RoundsTable = &schema.Table{

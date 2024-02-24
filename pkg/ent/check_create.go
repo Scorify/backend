@@ -14,7 +14,6 @@ import (
 	"github.com/scorify/backend/pkg/ent/check"
 	"github.com/scorify/backend/pkg/ent/checkconfig"
 	"github.com/scorify/backend/pkg/ent/status"
-	"github.com/scorify/backend/pkg/structs"
 )
 
 // CheckCreate is the builder for creating a Check entity.
@@ -70,9 +69,15 @@ func (cc *CheckCreate) SetWeight(i int) *CheckCreate {
 	return cc
 }
 
-// SetDefaultConfig sets the "default_config" field.
-func (cc *CheckCreate) SetDefaultConfig(sc structs.CheckConfiguration) *CheckCreate {
-	cc.mutation.SetDefaultConfig(sc)
+// SetConfig sets the "config" field.
+func (cc *CheckCreate) SetConfig(m map[string]interface{}) *CheckCreate {
+	cc.mutation.SetConfig(m)
+	return cc
+}
+
+// SetEditableFields sets the "editable_fields" field.
+func (cc *CheckCreate) SetEditableFields(s []string) *CheckCreate {
+	cc.mutation.SetEditableFields(s)
 	return cc
 }
 
@@ -201,8 +206,11 @@ func (cc *CheckCreate) check() error {
 			return &ValidationError{Name: "weight", err: fmt.Errorf(`ent: validator failed for field "Check.weight": %w`, err)}
 		}
 	}
-	if _, ok := cc.mutation.DefaultConfig(); !ok {
-		return &ValidationError{Name: "default_config", err: errors.New(`ent: missing required field "Check.default_config"`)}
+	if _, ok := cc.mutation.Config(); !ok {
+		return &ValidationError{Name: "config", err: errors.New(`ent: missing required field "Check.config"`)}
+	}
+	if _, ok := cc.mutation.EditableFields(); !ok {
+		return &ValidationError{Name: "editable_fields", err: errors.New(`ent: missing required field "Check.editable_fields"`)}
 	}
 	return nil
 }
@@ -259,9 +267,13 @@ func (cc *CheckCreate) createSpec() (*Check, *sqlgraph.CreateSpec) {
 		_spec.SetField(check.FieldWeight, field.TypeInt, value)
 		_node.Weight = value
 	}
-	if value, ok := cc.mutation.DefaultConfig(); ok {
-		_spec.SetField(check.FieldDefaultConfig, field.TypeJSON, value)
-		_node.DefaultConfig = value
+	if value, ok := cc.mutation.Config(); ok {
+		_spec.SetField(check.FieldConfig, field.TypeJSON, value)
+		_node.Config = value
+	}
+	if value, ok := cc.mutation.EditableFields(); ok {
+		_spec.SetField(check.FieldEditableFields, field.TypeJSON, value)
+		_node.EditableFields = value
 	}
 	if nodes := cc.mutation.ConfigsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

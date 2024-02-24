@@ -1,4 +1,5 @@
 scalar JSON
+scalar Time
 
 directive @isAuthenticated on FIELD_DEFINITION
 directive @hasRole(roles: [Role]) on FIELD_DEFINITION
@@ -8,11 +9,18 @@ enum Role {
   user
 }
 
-type User {
-  id: ID!
-  username: String!
-  role: Role!
-  number: Int
+enum StatusEnum {
+  up
+  down
+  unknown
+}
+
+enum NotificationType {
+  default
+  error
+  info
+  success
+  warning
 }
 
 type LoginOutput {
@@ -25,14 +33,32 @@ type LoginOutput {
   httpOnly: Boolean!
 }
 
+type User {
+  id: ID!
+  username: String!
+  role: Role!
+  number: Int
+  create_time: Time!
+  update_time: Time!
+  configs: [Config!]! @isAuthenticated
+  statuses: [Status!]! @isAuthenticated
+  score_caches: [ScoreCache!]! @isAuthenticated
+}
+
 type Source {
   name: String!
   schema: String!
 }
 
-type CheckConfiguration {
+type CheckConfig {
+  id: ID!
   config: JSON!
-  editable_fields: [String!]!
+  create_time: Time!
+  update_time: Time!
+  check_id: ID!
+  user_id: ID!
+  check: Check!
+  user: User!
 }
 
 type Check {
@@ -40,7 +66,12 @@ type Check {
   name: String!
   source: Source!
   weight: Int!
-  config: CheckConfiguration! @hasRole(roles: [admin])
+  config: JSON! @hasRole(roles: [admin])
+  editable_fields: [String!]! @hasRole(roles: [admin])
+  create_time: Time!
+  update_time: Time!
+  configs: [CheckConfig!]!
+  statuses: [Status!]!
 }
 
 type Config {
@@ -50,12 +81,40 @@ type Config {
   user: User!
 }
 
-enum NotificationType {
-  default
-  error
-  info
-  success
-  warning
+type Status {
+  id: ID!
+  error: String
+  status: StatusEnum!
+  points: Int!
+  check_id: ID!
+  round_id: ID!
+  user_id: ID!
+  create_time: Time!
+  update_time: Time!
+  check: Check!
+  round: Round!
+  user: User!
+}
+
+type ScoreCache {
+  id: ID!
+  points: Int!
+  round_id: ID!
+  user_id: ID!
+  create_time: Time!
+  update_time: Time!
+  round: Round!
+  user: User!
+}
+
+type Round {
+  id: ID!
+  number: Int!
+  complete: Boolean!
+  create_time: Time!
+  update_time: Time!
+  statuses: [Status!]!
+  score_caches: [ScoreCache!]!
 }
 
 type Notification {
