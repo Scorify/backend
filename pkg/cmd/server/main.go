@@ -22,7 +22,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// serverCmd represents the server command
 var Cmd = &cobra.Command{
 	Use:     "server",
 	Short:   "Run the server",
