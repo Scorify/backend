@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package proto;
+option go_package = "github.com/scorify/backend/pkg/grpc/proto";
+
+service Scorify {
+  rpc Check(CheckRequest) returns (CheckResponse) {}
+}
+
+message CheckRequest {
+  string check = 1;
+  string config = 2;
+}
+
+message CheckResponse {
+  string error = 1;
+}
