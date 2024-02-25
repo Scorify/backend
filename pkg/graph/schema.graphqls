@@ -3,6 +3,7 @@ scalar Time
 
 directive @isAuthenticated on FIELD_DEFINITION
 directive @hasRole(roles: [Role]) on FIELD_DEFINITION
+directive @isMinion on FIELD_DEFINITION
 
 enum Role {
   admin
@@ -124,6 +125,8 @@ type Notification {
 
 type Subscription {
   globalNotification: Notification!
+
+  enrollScoring: Status! @isMinion
 }
 
 type Query {
@@ -176,4 +179,7 @@ type Mutation {
 
   sendGlobalNotification(message: String!, type: NotificationType!): Boolean!
     @hasRole(roles: [admin])
+
+  submitStatus(status_id: ID!, status: StatusEnum!, error: String): Boolean!
+    @isMinion
 }
