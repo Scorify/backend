@@ -4,6 +4,7 @@ package ent
 
 import (
 	"context"
+	"database/sql/driver"
 	"fmt"
 	"math"
 
@@ -14,18 +15,20 @@ import (
 	"github.com/scorify/backend/pkg/ent/check"
 	"github.com/scorify/backend/pkg/ent/checkconfig"
 	"github.com/scorify/backend/pkg/ent/predicate"
+	"github.com/scorify/backend/pkg/ent/status"
 	"github.com/scorify/backend/pkg/ent/user"
 )
 
 // CheckConfigQuery is the builder for querying CheckConfig entities.
 type CheckConfigQuery struct {
 	config
-	ctx        *QueryContext
-	order      []checkconfig.OrderOption
-	inters     []Interceptor
-	predicates []predicate.CheckConfig
-	withCheck  *CheckQuery
-	withUser   *UserQuery
+	ctx          *QueryContext
+	order        []checkconfig.OrderOption
+	inters       []Interceptor
+	predicates   []predicate.CheckConfig
+	withCheck    *CheckQuery
+	withUser     *UserQuery
+	withStatuses *StatusQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -99,6 +102,28 @@ func (ccq *CheckConfigQuery) QueryUser() *UserQuery {
 			sqlgraph.From(checkconfig.Table, checkconfig.FieldID, selector),
 			sqlgraph.To(user.Table, user.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, false, checkconfig.UserTable, checkconfig.UserColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(ccq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryStatuses chains the current query on the "statuses" edge.
+func (ccq *CheckConfigQuery) QueryStatuses() *StatusQuery {
+	query := (&StatusClient{config: ccq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := ccq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := ccq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(checkconfig.Table, checkconfig.FieldID, selector),
+			sqlgraph.To(status.Table, status.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, checkconfig.StatusesTable, checkconfig.StatusesColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(ccq.driver.Dialect(), step)
 		return fromU, nil
@@ -293,13 +318,14 @@ func (ccq *CheckConfigQuery) Clone() *CheckConfigQuery {
 		return nil
 	}
 	return &CheckConfigQuery{
-		config:     ccq.config,
-		ctx:        ccq.ctx.Clone(),
-		order:      append([]checkconfig.OrderOption{}, ccq.order...),
-		inters:     append([]Interceptor{}, ccq.inters...),
-		predicates: append([]predicate.CheckConfig{}, ccq.predicates...),
-		withCheck:  ccq.withCheck.Clone(),
-		withUser:   ccq.withUser.Clone(),
+		config:       ccq.config,
+		ctx:          ccq.ctx.Clone(),
+		order:        append([]checkconfig.OrderOption{}, ccq.order...),
+		inters:       append([]Interceptor{}, ccq.inters...),
+		predicates:   append([]predicate.CheckConfig{}, ccq.predicates...),
+		withCheck:    ccq.withCheck.Clone(),
+		withUser:     ccq.withUser.Clone(),
+		withStatuses: ccq.withStatuses.Clone(),
 		// clone intermediate query.
 		sql:  ccq.sql.Clone(),
 		path: ccq.path,
@@ -325,6 +351,17 @@ func (ccq *CheckConfigQuery) WithUser(opts ...func(*UserQuery)) *CheckConfigQuer
 		opt(query)
 	}
 	ccq.withUser = query
+	return ccq
+}
+
+// WithStatuses tells the query-builder to eager-load the nodes that are connected to
+// the "statuses" edge. The optional arguments are used to configure the query builder of the edge.
+func (ccq *CheckConfigQuery) WithStatuses(opts ...func(*StatusQuery)) *CheckConfigQuery {
+	query := (&StatusClient{config: ccq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	ccq.withStatuses = query
 	return ccq
 }
 
@@ -406,9 +443,10 @@ func (ccq *CheckConfigQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]
 	var (
 		nodes       = []*CheckConfig{}
 		_spec       = ccq.querySpec()
-		loadedTypes = [2]bool{
+		loadedTypes = [3]bool{
 			ccq.withCheck != nil,
 			ccq.withUser != nil,
+			ccq.withStatuses != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -438,6 +476,13 @@ func (ccq *CheckConfigQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]
 	if query := ccq.withUser; query != nil {
 		if err := ccq.loadUser(ctx, query, nodes, nil,
 			func(n *CheckConfig, e *User) { n.Edges.User = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := ccq.withStatuses; query != nil {
+		if err := ccq.loadStatuses(ctx, query, nodes,
+			func(n *CheckConfig) { n.Edges.Statuses = []*Status{} },
+			func(n *CheckConfig, e *Status) { n.Edges.Statuses = append(n.Edges.Statuses, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -499,6 +544,37 @@ func (ccq *CheckConfigQuery) loadUser(ctx context.Context, query *UserQuery, nod
 		for i := range nodes {
 			assign(nodes[i], n)
 		}
+	}
+	return nil
+}
+func (ccq *CheckConfigQuery) loadStatuses(ctx context.Context, query *StatusQuery, nodes []*CheckConfig, init func(*CheckConfig), assign func(*CheckConfig, *Status)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*CheckConfig)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.Status(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(checkconfig.StatusesColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.status_config
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "status_config" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "status_config" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
 	}
 	return nil
 }

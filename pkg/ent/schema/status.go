@@ -75,6 +75,11 @@ func (Status) Edges() []ent.Edge {
 			Immutable().
 			Required().
 			Unique(),
+		edge.To("config", CheckConfig.Type).
+			StructTag(`json:"config"`).
+			Comment("The check configuration of a status").
+			Required().
+			Unique(),
 		edge.To("round", Round.Type).
 			StructTag(`json:"round"`).
 			Comment("The round of a status").

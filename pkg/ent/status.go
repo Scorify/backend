@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
 	"github.com/scorify/backend/pkg/ent/check"
+	"github.com/scorify/backend/pkg/ent/checkconfig"
 	"github.com/scorify/backend/pkg/ent/round"
 	"github.com/scorify/backend/pkg/ent/status"
 	"github.com/scorify/backend/pkg/ent/user"
@@ -40,21 +41,24 @@ type Status struct {
 	UserID uuid.UUID `json:"user_id"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the StatusQuery when eager-loading is set.
-	Edges        StatusEdges `json:"edges"`
-	selectValues sql.SelectValues
+	Edges         StatusEdges `json:"edges"`
+	status_config *uuid.UUID
+	selectValues  sql.SelectValues
 }
 
 // StatusEdges holds the relations/edges for other nodes in the graph.
 type StatusEdges struct {
 	// The check of a status
 	Check *Check `json:"check"`
+	// The check configuration of a status
+	Config *CheckConfig `json:"config"`
 	// The round of a status
 	Round *Round `json:"round"`
 	// The user of a status
 	User *User `json:"user"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [4]bool
 }
 
 // CheckOrErr returns the Check value or an error if the edge
@@ -70,10 +74,23 @@ func (e StatusEdges) CheckOrErr() (*Check, error) {
 	return nil, &NotLoadedError{edge: "check"}
 }
 
+// ConfigOrErr returns the Config value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e StatusEdges) ConfigOrErr() (*CheckConfig, error) {
+	if e.loadedTypes[1] {
+		if e.Config == nil {
+			// Edge was loaded but was not found.
+			return nil, &NotFoundError{label: checkconfig.Label}
+		}
+		return e.Config, nil
+	}
+	return nil, &NotLoadedError{edge: "config"}
+}
+
 // RoundOrErr returns the Round value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e StatusEdges) RoundOrErr() (*Round, error) {
-	if e.loadedTypes[1] {
+	if e.loadedTypes[2] {
 		if e.Round == nil {
 			// Edge was loaded but was not found.
 			return nil, &NotFoundError{label: round.Label}
@@ -86,7 +103,7 @@ func (e StatusEdges) RoundOrErr() (*Round, error) {
 // UserOrErr returns the User value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e StatusEdges) UserOrErr() (*User, error) {
-	if e.loadedTypes[2] {
+	if e.loadedTypes[3] {
 		if e.User == nil {
 			// Edge was loaded but was not found.
 			return nil, &NotFoundError{label: user.Label}
@@ -109,6 +126,8 @@ func (*Status) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullTime)
 		case status.FieldID, status.FieldCheckID, status.FieldRoundID, status.FieldUserID:
 			values[i] = new(uuid.UUID)
+		case status.ForeignKeys[0]: // status_config
+			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -178,6 +197,13 @@ func (s *Status) assignValues(columns []string, values []any) error {
 			} else if value != nil {
 				s.UserID = *value
 			}
+		case status.ForeignKeys[0]:
+			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field status_config", values[i])
+			} else if value.Valid {
+				s.status_config = new(uuid.UUID)
+				*s.status_config = *value.S.(*uuid.UUID)
+			}
 		default:
 			s.selectValues.Set(columns[i], values[i])
 		}
@@ -194,6 +220,11 @@ func (s *Status) Value(name string) (ent.Value, error) {
 // QueryCheck queries the "check" edge of the Status entity.
 func (s *Status) QueryCheck() *CheckQuery {
 	return NewStatusClient(s.config).QueryCheck(s)
+}
+
+// QueryConfig queries the "config" edge of the Status entity.
+func (s *Status) QueryConfig() *CheckConfigQuery {
+	return NewStatusClient(s.config).QueryConfig(s)
 }
 
 // QueryRound queries the "round" edge of the Status entity.

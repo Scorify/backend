@@ -551,6 +551,22 @@ func (c *CheckConfigClient) QueryUser(cc *CheckConfig) *UserQuery {
 	return query
 }
 
+// QueryStatuses queries the statuses edge of a CheckConfig.
+func (c *CheckConfigClient) QueryStatuses(cc *CheckConfig) *StatusQuery {
+	query := (&StatusClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := cc.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(checkconfig.Table, checkconfig.FieldID, id),
+			sqlgraph.To(status.Table, status.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, checkconfig.StatusesTable, checkconfig.StatusesColumn),
+		)
+		fromV = sqlgraph.Neighbors(cc.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *CheckConfigClient) Hooks() []Hook {
 	return c.hooks.CheckConfig
@@ -1023,6 +1039,22 @@ func (c *StatusClient) QueryCheck(s *Status) *CheckQuery {
 			sqlgraph.From(status.Table, status.FieldID, id),
 			sqlgraph.To(check.Table, check.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, false, status.CheckTable, status.CheckColumn),
+		)
+		fromV = sqlgraph.Neighbors(s.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryConfig queries the config edge of a Status.
+func (c *StatusClient) QueryConfig(s *Status) *CheckConfigQuery {
+	query := (&CheckConfigClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := s.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(status.Table, status.FieldID, id),
+			sqlgraph.To(checkconfig.Table, checkconfig.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, status.ConfigTable, status.ConfigColumn),
 		)
 		fromV = sqlgraph.Neighbors(s.driver.Dialect(), step)
 		return fromV, nil

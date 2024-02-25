@@ -1,4 +1,4 @@
-package graph
+package server
 
 import (
 	"github.com/scorify/backend/pkg/cache"

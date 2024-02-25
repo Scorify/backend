@@ -7,6 +7,13 @@ type Counter struct {
 	count int
 }
 
+func NewCounter() *Counter {
+	return &Counter{
+		count: 0,
+		mutex: sync.Mutex{},
+	}
+}
+
 func (c *Counter) Increment() {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()

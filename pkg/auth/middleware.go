@@ -66,32 +66,3 @@ func Parse(ctx context.Context) (*ent.User, error) {
 	}
 	return user, nil
 }
-
-func MinionMiddleware(ctx *gin.Context) {
-	minionKey, err := ctx.Cookie("minion")
-	if err != nil {
-		ctx.Next()
-		return
-	}
-
-	if minionKey != config.Minion.Key {
-		ctx.Next()
-		return
-	}
-
-	ctx.Request = ctx.Request.WithContext(
-		context.WithValue(
-			ctx.Request.Context(),
-			structs.MINION_CTX_KEY,
-			true,
-		),
-	)
-}
-
-func IsMinion(ctx context.Context) bool {
-	minion, ok := ctx.Value(structs.MINION_CTX_KEY).(bool)
-	if !ok {
-		return false
-	}
-	return minion
-}

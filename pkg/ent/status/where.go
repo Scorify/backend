@@ -389,6 +389,29 @@ func HasCheckWith(preds ...predicate.Check) predicate.Status {
 	})
 }
 
+// HasConfig applies the HasEdge predicate on the "config" edge.
+func HasConfig() predicate.Status {
+	return predicate.Status(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, ConfigTable, ConfigColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasConfigWith applies the HasEdge predicate on the "config" edge with a given conditions (other predicates).
+func HasConfigWith(preds ...predicate.CheckConfig) predicate.Status {
+	return predicate.Status(func(s *sql.Selector) {
+		step := newConfigStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasRound applies the HasEdge predicate on the "round" edge.
 func HasRound() predicate.Status {
 	return predicate.Status(func(s *sql.Selector) {

@@ -925,20 +925,23 @@ func (m *CheckMutation) ResetEdge(name string) error {
 // CheckConfigMutation represents an operation that mutates the CheckConfig nodes in the graph.
 type CheckConfigMutation struct {
 	config
-	op            Op
-	typ           string
-	id            *uuid.UUID
-	create_time   *time.Time
-	update_time   *time.Time
-	_config       *map[string]interface{}
-	clearedFields map[string]struct{}
-	check         *uuid.UUID
-	clearedcheck  bool
-	user          *uuid.UUID
-	cleareduser   bool
-	done          bool
-	oldValue      func(context.Context) (*CheckConfig, error)
-	predicates    []predicate.CheckConfig
+	op              Op
+	typ             string
+	id              *uuid.UUID
+	create_time     *time.Time
+	update_time     *time.Time
+	_config         *map[string]interface{}
+	clearedFields   map[string]struct{}
+	check           *uuid.UUID
+	clearedcheck    bool
+	user            *uuid.UUID
+	cleareduser     bool
+	statuses        map[uuid.UUID]struct{}
+	removedstatuses map[uuid.UUID]struct{}
+	clearedstatuses bool
+	done            bool
+	oldValue        func(context.Context) (*CheckConfig, error)
+	predicates      []predicate.CheckConfig
 }
 
 var _ ent.Mutation = (*CheckConfigMutation)(nil)
@@ -1279,6 +1282,60 @@ func (m *CheckConfigMutation) ResetUser() {
 	m.cleareduser = false
 }
 
+// AddStatusIDs adds the "statuses" edge to the Status entity by ids.
+func (m *CheckConfigMutation) AddStatusIDs(ids ...uuid.UUID) {
+	if m.statuses == nil {
+		m.statuses = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.statuses[ids[i]] = struct{}{}
+	}
+}
+
+// ClearStatuses clears the "statuses" edge to the Status entity.
+func (m *CheckConfigMutation) ClearStatuses() {
+	m.clearedstatuses = true
+}
+
+// StatusesCleared reports if the "statuses" edge to the Status entity was cleared.
+func (m *CheckConfigMutation) StatusesCleared() bool {
+	return m.clearedstatuses
+}
+
+// RemoveStatusIDs removes the "statuses" edge to the Status entity by IDs.
+func (m *CheckConfigMutation) RemoveStatusIDs(ids ...uuid.UUID) {
+	if m.removedstatuses == nil {
+		m.removedstatuses = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.statuses, ids[i])
+		m.removedstatuses[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedStatuses returns the removed IDs of the "statuses" edge to the Status entity.
+func (m *CheckConfigMutation) RemovedStatusesIDs() (ids []uuid.UUID) {
+	for id := range m.removedstatuses {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// StatusesIDs returns the "statuses" edge IDs in the mutation.
+func (m *CheckConfigMutation) StatusesIDs() (ids []uuid.UUID) {
+	for id := range m.statuses {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetStatuses resets all changes to the "statuses" edge.
+func (m *CheckConfigMutation) ResetStatuses() {
+	m.statuses = nil
+	m.clearedstatuses = false
+	m.removedstatuses = nil
+}
+
 // Where appends a list predicates to the CheckConfigMutation builder.
 func (m *CheckConfigMutation) Where(ps ...predicate.CheckConfig) {
 	m.predicates = append(m.predicates, ps...)
@@ -1480,12 +1537,15 @@ func (m *CheckConfigMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *CheckConfigMutation) AddedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.check != nil {
 		edges = append(edges, checkconfig.EdgeCheck)
 	}
 	if m.user != nil {
 		edges = append(edges, checkconfig.EdgeUser)
+	}
+	if m.statuses != nil {
+		edges = append(edges, checkconfig.EdgeStatuses)
 	}
 	return edges
 }
@@ -1502,30 +1562,50 @@ func (m *CheckConfigMutation) AddedIDs(name string) []ent.Value {
 		if id := m.user; id != nil {
 			return []ent.Value{*id}
 		}
+	case checkconfig.EdgeStatuses:
+		ids := make([]ent.Value, 0, len(m.statuses))
+		for id := range m.statuses {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *CheckConfigMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
+	if m.removedstatuses != nil {
+		edges = append(edges, checkconfig.EdgeStatuses)
+	}
 	return edges
 }
 
 // RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
 // the given name in this mutation.
 func (m *CheckConfigMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case checkconfig.EdgeStatuses:
+		ids := make([]ent.Value, 0, len(m.removedstatuses))
+		for id := range m.removedstatuses {
+			ids = append(ids, id)
+		}
+		return ids
+	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *CheckConfigMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.clearedcheck {
 		edges = append(edges, checkconfig.EdgeCheck)
 	}
 	if m.cleareduser {
 		edges = append(edges, checkconfig.EdgeUser)
+	}
+	if m.clearedstatuses {
+		edges = append(edges, checkconfig.EdgeStatuses)
 	}
 	return edges
 }
@@ -1538,6 +1618,8 @@ func (m *CheckConfigMutation) EdgeCleared(name string) bool {
 		return m.clearedcheck
 	case checkconfig.EdgeUser:
 		return m.cleareduser
+	case checkconfig.EdgeStatuses:
+		return m.clearedstatuses
 	}
 	return false
 }
@@ -1565,6 +1647,9 @@ func (m *CheckConfigMutation) ResetEdge(name string) error {
 		return nil
 	case checkconfig.EdgeUser:
 		m.ResetUser()
+		return nil
+	case checkconfig.EdgeStatuses:
+		m.ResetStatuses()
 		return nil
 	}
 	return fmt.Errorf("unknown CheckConfig edge %s", name)
@@ -2963,25 +3048,27 @@ func (m *ScoreCacheMutation) ResetEdge(name string) error {
 // StatusMutation represents an operation that mutates the Status nodes in the graph.
 type StatusMutation struct {
 	config
-	op            Op
-	typ           string
-	id            *uuid.UUID
-	create_time   *time.Time
-	update_time   *time.Time
-	error         *string
-	status        *status.Status
-	points        *int
-	addpoints     *int
-	clearedFields map[string]struct{}
-	check         *uuid.UUID
-	clearedcheck  bool
-	round         *uuid.UUID
-	clearedround  bool
-	user          *uuid.UUID
-	cleareduser   bool
-	done          bool
-	oldValue      func(context.Context) (*Status, error)
-	predicates    []predicate.Status
+	op             Op
+	typ            string
+	id             *uuid.UUID
+	create_time    *time.Time
+	update_time    *time.Time
+	error          *string
+	status         *status.Status
+	points         *int
+	addpoints      *int
+	clearedFields  map[string]struct{}
+	check          *uuid.UUID
+	clearedcheck   bool
+	_config        *uuid.UUID
+	cleared_config bool
+	round          *uuid.UUID
+	clearedround   bool
+	user           *uuid.UUID
+	cleareduser    bool
+	done           bool
+	oldValue       func(context.Context) (*Status, error)
+	predicates     []predicate.Status
 }
 
 var _ ent.Mutation = (*StatusMutation)(nil)
@@ -3436,6 +3523,45 @@ func (m *StatusMutation) ResetCheck() {
 	m.clearedcheck = false
 }
 
+// SetConfigID sets the "config" edge to the CheckConfig entity by id.
+func (m *StatusMutation) SetConfigID(id uuid.UUID) {
+	m._config = &id
+}
+
+// ClearConfig clears the "config" edge to the CheckConfig entity.
+func (m *StatusMutation) ClearConfig() {
+	m.cleared_config = true
+}
+
+// ConfigCleared reports if the "config" edge to the CheckConfig entity was cleared.
+func (m *StatusMutation) ConfigCleared() bool {
+	return m.cleared_config
+}
+
+// ConfigID returns the "config" edge ID in the mutation.
+func (m *StatusMutation) ConfigID() (id uuid.UUID, exists bool) {
+	if m._config != nil {
+		return *m._config, true
+	}
+	return
+}
+
+// ConfigIDs returns the "config" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ConfigID instead. It exists only for internal usage by the builders.
+func (m *StatusMutation) ConfigIDs() (ids []uuid.UUID) {
+	if id := m._config; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetConfig resets all changes to the "config" edge.
+func (m *StatusMutation) ResetConfig() {
+	m._config = nil
+	m.cleared_config = false
+}
+
 // ClearRound clears the "round" edge to the Round entity.
 func (m *StatusMutation) ClearRound() {
 	m.clearedround = true
@@ -3766,9 +3892,12 @@ func (m *StatusMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *StatusMutation) AddedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.check != nil {
 		edges = append(edges, status.EdgeCheck)
+	}
+	if m._config != nil {
+		edges = append(edges, status.EdgeConfig)
 	}
 	if m.round != nil {
 		edges = append(edges, status.EdgeRound)
@@ -3787,6 +3916,10 @@ func (m *StatusMutation) AddedIDs(name string) []ent.Value {
 		if id := m.check; id != nil {
 			return []ent.Value{*id}
 		}
+	case status.EdgeConfig:
+		if id := m._config; id != nil {
+			return []ent.Value{*id}
+		}
 	case status.EdgeRound:
 		if id := m.round; id != nil {
 			return []ent.Value{*id}
@@ -3801,7 +3934,7 @@ func (m *StatusMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *StatusMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	return edges
 }
 
@@ -3813,9 +3946,12 @@ func (m *StatusMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *StatusMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.clearedcheck {
 		edges = append(edges, status.EdgeCheck)
+	}
+	if m.cleared_config {
+		edges = append(edges, status.EdgeConfig)
 	}
 	if m.clearedround {
 		edges = append(edges, status.EdgeRound)
@@ -3832,6 +3968,8 @@ func (m *StatusMutation) EdgeCleared(name string) bool {
 	switch name {
 	case status.EdgeCheck:
 		return m.clearedcheck
+	case status.EdgeConfig:
+		return m.cleared_config
 	case status.EdgeRound:
 		return m.clearedround
 	case status.EdgeUser:
@@ -3846,6 +3984,9 @@ func (m *StatusMutation) ClearEdge(name string) error {
 	switch name {
 	case status.EdgeCheck:
 		m.ClearCheck()
+		return nil
+	case status.EdgeConfig:
+		m.ClearConfig()
 		return nil
 	case status.EdgeRound:
 		m.ClearRound()
@@ -3863,6 +4004,9 @@ func (m *StatusMutation) ResetEdge(name string) error {
 	switch name {
 	case status.EdgeCheck:
 		m.ResetCheck()
+		return nil
+	case status.EdgeConfig:
+		m.ResetConfig()
 		return nil
 	case status.EdgeRound:
 		m.ResetRound()

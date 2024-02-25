@@ -44,9 +44,11 @@ type CheckConfigEdges struct {
 	Check *Check `json:"check"`
 	// The user this configuration belongs to
 	User *User `json:"user"`
+	// The statuses of a check configuration
+	Statuses []*Status `json:"statuses"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [3]bool
 }
 
 // CheckOrErr returns the Check value or an error if the edge
@@ -73,6 +75,15 @@ func (e CheckConfigEdges) UserOrErr() (*User, error) {
 		return e.User, nil
 	}
 	return nil, &NotLoadedError{edge: "user"}
+}
+
+// StatusesOrErr returns the Statuses value or an error if the edge
+// was not loaded in eager-loading.
+func (e CheckConfigEdges) StatusesOrErr() ([]*Status, error) {
+	if e.loadedTypes[2] {
+		return e.Statuses, nil
+	}
+	return nil, &NotLoadedError{edge: "statuses"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -160,6 +171,11 @@ func (cc *CheckConfig) QueryCheck() *CheckQuery {
 // QueryUser queries the "user" edge of the CheckConfig entity.
 func (cc *CheckConfig) QueryUser() *UserQuery {
 	return NewCheckConfigClient(cc.config).QueryUser(cc)
+}
+
+// QueryStatuses queries the "statuses" edge of the CheckConfig entity.
+func (cc *CheckConfig) QueryStatuses() *StatusQuery {
+	return NewCheckConfigClient(cc.config).QueryStatuses(cc)
 }
 
 // Update returns a builder for updating this CheckConfig.

@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
 	"github.com/scorify/backend/pkg/ent/check"
+	"github.com/scorify/backend/pkg/ent/checkconfig"
 	"github.com/scorify/backend/pkg/ent/predicate"
 	"github.com/scorify/backend/pkg/ent/round"
 	"github.com/scorify/backend/pkg/ent/status"
@@ -26,8 +27,10 @@ type StatusQuery struct {
 	inters     []Interceptor
 	predicates []predicate.Status
 	withCheck  *CheckQuery
+	withConfig *CheckConfigQuery
 	withRound  *RoundQuery
 	withUser   *UserQuery
+	withFKs    bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -79,6 +82,28 @@ func (sq *StatusQuery) QueryCheck() *CheckQuery {
 			sqlgraph.From(status.Table, status.FieldID, selector),
 			sqlgraph.To(check.Table, check.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, false, status.CheckTable, status.CheckColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(sq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryConfig chains the current query on the "config" edge.
+func (sq *StatusQuery) QueryConfig() *CheckConfigQuery {
+	query := (&CheckConfigClient{config: sq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := sq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := sq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(status.Table, status.FieldID, selector),
+			sqlgraph.To(checkconfig.Table, checkconfig.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, status.ConfigTable, status.ConfigColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(sq.driver.Dialect(), step)
 		return fromU, nil
@@ -323,6 +348,7 @@ func (sq *StatusQuery) Clone() *StatusQuery {
 		inters:     append([]Interceptor{}, sq.inters...),
 		predicates: append([]predicate.Status{}, sq.predicates...),
 		withCheck:  sq.withCheck.Clone(),
+		withConfig: sq.withConfig.Clone(),
 		withRound:  sq.withRound.Clone(),
 		withUser:   sq.withUser.Clone(),
 		// clone intermediate query.
@@ -339,6 +365,17 @@ func (sq *StatusQuery) WithCheck(opts ...func(*CheckQuery)) *StatusQuery {
 		opt(query)
 	}
 	sq.withCheck = query
+	return sq
+}
+
+// WithConfig tells the query-builder to eager-load the nodes that are connected to
+// the "config" edge. The optional arguments are used to configure the query builder of the edge.
+func (sq *StatusQuery) WithConfig(opts ...func(*CheckConfigQuery)) *StatusQuery {
+	query := (&CheckConfigClient{config: sq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	sq.withConfig = query
 	return sq
 }
 
@@ -441,13 +478,21 @@ func (sq *StatusQuery) prepareQuery(ctx context.Context) error {
 func (sq *StatusQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Status, error) {
 	var (
 		nodes       = []*Status{}
+		withFKs     = sq.withFKs
 		_spec       = sq.querySpec()
-		loadedTypes = [3]bool{
+		loadedTypes = [4]bool{
 			sq.withCheck != nil,
+			sq.withConfig != nil,
 			sq.withRound != nil,
 			sq.withUser != nil,
 		}
 	)
+	if sq.withConfig != nil {
+		withFKs = true
+	}
+	if withFKs {
+		_spec.Node.Columns = append(_spec.Node.Columns, status.ForeignKeys...)
+	}
 	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*Status).scanValues(nil, columns)
 	}
@@ -469,6 +514,12 @@ func (sq *StatusQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Statu
 	if query := sq.withCheck; query != nil {
 		if err := sq.loadCheck(ctx, query, nodes, nil,
 			func(n *Status, e *Check) { n.Edges.Check = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := sq.withConfig; query != nil {
+		if err := sq.loadConfig(ctx, query, nodes, nil,
+			func(n *Status, e *CheckConfig) { n.Edges.Config = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -509,6 +560,38 @@ func (sq *StatusQuery) loadCheck(ctx context.Context, query *CheckQuery, nodes [
 		nodes, ok := nodeids[n.ID]
 		if !ok {
 			return fmt.Errorf(`unexpected foreign-key "check_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
+func (sq *StatusQuery) loadConfig(ctx context.Context, query *CheckConfigQuery, nodes []*Status, init func(*Status), assign func(*Status, *CheckConfig)) error {
+	ids := make([]uuid.UUID, 0, len(nodes))
+	nodeids := make(map[uuid.UUID][]*Status)
+	for i := range nodes {
+		if nodes[i].status_config == nil {
+			continue
+		}
+		fk := *nodes[i].status_config
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(checkconfig.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "status_config" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)

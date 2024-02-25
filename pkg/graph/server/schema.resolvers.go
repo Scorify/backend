@@ -1,4 +1,4 @@
-package graph
+package server
 
 // This file will be automatically regenerated based on the schema, any resolver implementations
 // will be copied through when generating and any unknown code will be moved to the end.
@@ -19,7 +19,7 @@ import (
 	"github.com/scorify/backend/pkg/ent/predicate"
 	"github.com/scorify/backend/pkg/ent/status"
 	"github.com/scorify/backend/pkg/ent/user"
-	"github.com/scorify/backend/pkg/graph/model"
+	"github.com/scorify/backend/pkg/graph/server/model"
 	"github.com/scorify/backend/pkg/helpers"
 	"github.com/sirupsen/logrus"
 )
@@ -705,7 +705,13 @@ func (r *mutationResolver) SendGlobalNotification(ctx context.Context, message s
 }
 
 // SubmitStatus is the resolver for the submitStatus field.
-func (r *mutationResolver) SubmitStatus(ctx context.Context, statusID string, status status.Status, error *string) (bool, error) {
+func (r *mutationResolver) SubmitStatus(ctx context.Context, minionKey string, statusID string, status status.Status, error *string) (bool, error) {
+	if minionKey != config.Minion.Key {
+		return false, fmt.Errorf("invalid minion key")
+	}
+
+	fmt.Println(statusID, status, error)
+
 	uuid, err := uuid.Parse(statusID)
 	if err != nil {
 		return false, fmt.Errorf("encounter error while parsing id: %v", err)
@@ -887,6 +893,11 @@ func (r *statusResolver) Check(ctx context.Context, obj *ent.Status) (*ent.Check
 	return obj.QueryCheck().Only(ctx)
 }
 
+// Config is the resolver for the config field.
+func (r *statusResolver) Config(ctx context.Context, obj *ent.Status) (*ent.CheckConfig, error) {
+	return obj.QueryConfig().Only(ctx)
+}
+
 // Round is the resolver for the round field.
 func (r *statusResolver) Round(ctx context.Context, obj *ent.Status) (*ent.Round, error) {
 	return obj.QueryRound().Only(ctx)
@@ -920,7 +931,6 @@ func (r *subscriptionResolver) GlobalNotification(ctx context.Context) (<-chan *
 
 				notification_chan <- &notification
 			case <-ctx.Done():
-				close(notification_chan)
 				return
 			}
 		}
@@ -929,8 +939,12 @@ func (r *subscriptionResolver) GlobalNotification(ctx context.Context) (<-chan *
 	return notification_chan, nil
 }
 
-// EnrollScoring is the resolver for the enrollScoring field.
-func (r *subscriptionResolver) EnrollScoring(ctx context.Context) (<-chan *ent.Status, error) {
+// EnrollMinion is the resolver for the enrollMinion field.
+func (r *subscriptionResolver) EnrollMinion(ctx context.Context, minionKey string) (<-chan *ent.Status, error) {
+	if minionKey != config.Minion.Key {
+		return nil, fmt.Errorf("invalid minion key")
+	}
+
 	scoring_chan := make(chan *ent.Status)
 
 	fmt.Println("New Minion Enrolled")
@@ -946,7 +960,6 @@ func (r *subscriptionResolver) EnrollScoring(ctx context.Context) (<-chan *ent.S
 			case status := <-r.Checks:
 				scoring_chan <- status
 			case <-ctx.Done():
-				close(scoring_chan)
 				return
 			}
 		}

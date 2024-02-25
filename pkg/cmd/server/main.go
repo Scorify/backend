@@ -11,18 +11,20 @@ import (
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/scorify/backend/pkg/auth"
 	"github.com/scorify/backend/pkg/cache"
 	"github.com/scorify/backend/pkg/config"
 	"github.com/scorify/backend/pkg/data"
-	"github.com/scorify/backend/pkg/graph"
-	"github.com/scorify/backend/pkg/graph/directives"
+	"github.com/scorify/backend/pkg/ent"
+	graph "github.com/scorify/backend/pkg/graph/server"
+	"github.com/scorify/backend/pkg/graph/server/directives"
+	"github.com/scorify/backend/pkg/structs"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
-// serverCmd represents the server command
 var Cmd = &cobra.Command{
 	Use:     "server",
 	Short:   "Run the server",
@@ -37,17 +39,20 @@ var Cmd = &cobra.Command{
 	Run: run,
 }
 
+var CheckChan chan *ent.Status = make(chan *ent.Status)
+
 func graphqlHandler() gin.HandlerFunc {
 	conf := graph.Config{
 		Resolvers: &graph.Resolver{
-			Ent:   data.Client,
-			Redis: cache.Client,
+			Ent:     data.Client,
+			Redis:   cache.Client,
+			Checks:  CheckChan,
+			Minions: structs.NewCounter(),
 		},
 	}
 
 	conf.Directives.IsAuthenticated = directives.IsAuthenticated
 	conf.Directives.HasRole = directives.HasRole
-	conf.Directives.IsMinion = directives.IsMinion
 
 	h := handler.New(
 		graph.NewExecutableSchema(
@@ -86,7 +91,6 @@ func run(cmd *cobra.Command, args []string) {
 
 	router.Use(
 		auth.JWTMiddleware,
-		auth.MinionMiddleware,
 	)
 
 	err := router.SetTrustedProxies(nil)
@@ -115,6 +119,29 @@ func run(cmd *cobra.Command, args []string) {
 	router.GET("/query", graphqlHandler())
 
 	logrus.Printf("Starting server on http://%s:%d", config.Domain, config.Port)
+
+	go func() {
+		i := 0
+		for {
+			time.Sleep(5 * time.Second)
+			fmt.Println("Sending check")
+			CheckChan <- &ent.Status{
+				ID: uuid.New(),
+				Edges: ent.StatusEdges{
+					Check: &ent.Check{
+						Source: fmt.Sprintf("source-%d", i),
+					},
+					Config: &ent.CheckConfig{
+						Config: map[string]interface{}{
+							"key": "value",
+							"i":   i,
+						},
+					},
+				},
+			}
+			fmt.Println("Sent check")
+		}
+	}()
 
 	err = router.Run(fmt.Sprintf(":%d", config.Port))
 	if err != nil {

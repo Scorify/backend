@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
 	"github.com/scorify/backend/pkg/ent/check"
+	"github.com/scorify/backend/pkg/ent/checkconfig"
 	"github.com/scorify/backend/pkg/ent/round"
 	"github.com/scorify/backend/pkg/ent/status"
 	"github.com/scorify/backend/pkg/ent/user"
@@ -123,6 +124,17 @@ func (sc *StatusCreate) SetCheck(c *Check) *StatusCreate {
 	return sc.SetCheckID(c.ID)
 }
 
+// SetConfigID sets the "config" edge to the CheckConfig entity by ID.
+func (sc *StatusCreate) SetConfigID(id uuid.UUID) *StatusCreate {
+	sc.mutation.SetConfigID(id)
+	return sc
+}
+
+// SetConfig sets the "config" edge to the CheckConfig entity.
+func (sc *StatusCreate) SetConfig(c *CheckConfig) *StatusCreate {
+	return sc.SetConfigID(c.ID)
+}
+
 // SetRound sets the "round" edge to the Round entity.
 func (sc *StatusCreate) SetRound(r *Round) *StatusCreate {
 	return sc.SetRoundID(r.ID)
@@ -222,6 +234,9 @@ func (sc *StatusCreate) check() error {
 	if _, ok := sc.mutation.CheckID(); !ok {
 		return &ValidationError{Name: "check", err: errors.New(`ent: missing required edge "Status.check"`)}
 	}
+	if _, ok := sc.mutation.ConfigID(); !ok {
+		return &ValidationError{Name: "config", err: errors.New(`ent: missing required edge "Status.config"`)}
+	}
 	if _, ok := sc.mutation.RoundID(); !ok {
 		return &ValidationError{Name: "round", err: errors.New(`ent: missing required edge "Status.round"`)}
 	}
@@ -298,6 +313,23 @@ func (sc *StatusCreate) createSpec() (*Status, *sqlgraph.CreateSpec) {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.CheckID = nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := sc.mutation.ConfigIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   status.ConfigTable,
+			Columns: []string{status.ConfigColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(checkconfig.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.status_config = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := sc.mutation.RoundIDs(); len(nodes) > 0 {

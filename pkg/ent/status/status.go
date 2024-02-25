@@ -34,6 +34,8 @@ const (
 	FieldUserID = "user_id"
 	// EdgeCheck holds the string denoting the check edge name in mutations.
 	EdgeCheck = "check"
+	// EdgeConfig holds the string denoting the config edge name in mutations.
+	EdgeConfig = "config"
 	// EdgeRound holds the string denoting the round edge name in mutations.
 	EdgeRound = "round"
 	// EdgeUser holds the string denoting the user edge name in mutations.
@@ -47,6 +49,13 @@ const (
 	CheckInverseTable = "checks"
 	// CheckColumn is the table column denoting the check relation/edge.
 	CheckColumn = "check_id"
+	// ConfigTable is the table that holds the config relation/edge.
+	ConfigTable = "status"
+	// ConfigInverseTable is the table name for the CheckConfig entity.
+	// It exists in this package in order to avoid circular dependency with the "checkconfig" package.
+	ConfigInverseTable = "check_configs"
+	// ConfigColumn is the table column denoting the config relation/edge.
+	ConfigColumn = "status_config"
 	// RoundTable is the table that holds the round relation/edge.
 	RoundTable = "status"
 	// RoundInverseTable is the table name for the Round entity.
@@ -76,10 +85,21 @@ var Columns = []string{
 	FieldUserID,
 }
 
+// ForeignKeys holds the SQL foreign-keys that are owned by the "status"
+// table and are not defined as standalone fields in the schema.
+var ForeignKeys = []string{
+	"status_config",
+}
+
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {
 	for i := range Columns {
 		if column == Columns[i] {
+			return true
+		}
+	}
+	for i := range ForeignKeys {
+		if column == ForeignKeys[i] {
 			return true
 		}
 	}
@@ -181,6 +201,13 @@ func ByCheckField(field string, opts ...sql.OrderTermOption) OrderOption {
 	}
 }
 
+// ByConfigField orders the results by config field.
+func ByConfigField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newConfigStep(), sql.OrderByField(field, opts...))
+	}
+}
+
 // ByRoundField orders the results by round field.
 func ByRoundField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -199,6 +226,13 @@ func newCheckStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(CheckInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, false, CheckTable, CheckColumn),
+	)
+}
+func newConfigStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ConfigInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, false, ConfigTable, ConfigColumn),
 	)
 }
 func newRoundStep() *sqlgraph.Step {

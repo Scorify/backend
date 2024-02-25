@@ -11,6 +11,8 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
+	"github.com/scorify/backend/pkg/ent/checkconfig"
 	"github.com/scorify/backend/pkg/ent/predicate"
 	"github.com/scorify/backend/pkg/ent/status"
 )
@@ -89,9 +91,26 @@ func (su *StatusUpdate) AddPoints(i int) *StatusUpdate {
 	return su
 }
 
+// SetConfigID sets the "config" edge to the CheckConfig entity by ID.
+func (su *StatusUpdate) SetConfigID(id uuid.UUID) *StatusUpdate {
+	su.mutation.SetConfigID(id)
+	return su
+}
+
+// SetConfig sets the "config" edge to the CheckConfig entity.
+func (su *StatusUpdate) SetConfig(c *CheckConfig) *StatusUpdate {
+	return su.SetConfigID(c.ID)
+}
+
 // Mutation returns the StatusMutation object of the builder.
 func (su *StatusUpdate) Mutation() *StatusMutation {
 	return su.mutation
+}
+
+// ClearConfig clears the "config" edge to the CheckConfig entity.
+func (su *StatusUpdate) ClearConfig() *StatusUpdate {
+	su.mutation.ClearConfig()
+	return su
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -145,6 +164,9 @@ func (su *StatusUpdate) check() error {
 	if _, ok := su.mutation.CheckID(); su.mutation.CheckCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "Status.check"`)
 	}
+	if _, ok := su.mutation.ConfigID(); su.mutation.ConfigCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "Status.config"`)
+	}
 	if _, ok := su.mutation.RoundID(); su.mutation.RoundCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "Status.round"`)
 	}
@@ -183,6 +205,35 @@ func (su *StatusUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := su.mutation.AddedPoints(); ok {
 		_spec.AddField(status.FieldPoints, field.TypeInt, value)
+	}
+	if su.mutation.ConfigCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   status.ConfigTable,
+			Columns: []string{status.ConfigColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(checkconfig.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := su.mutation.ConfigIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   status.ConfigTable,
+			Columns: []string{status.ConfigColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(checkconfig.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if n, err = sqlgraph.UpdateNodes(ctx, su.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -265,9 +316,26 @@ func (suo *StatusUpdateOne) AddPoints(i int) *StatusUpdateOne {
 	return suo
 }
 
+// SetConfigID sets the "config" edge to the CheckConfig entity by ID.
+func (suo *StatusUpdateOne) SetConfigID(id uuid.UUID) *StatusUpdateOne {
+	suo.mutation.SetConfigID(id)
+	return suo
+}
+
+// SetConfig sets the "config" edge to the CheckConfig entity.
+func (suo *StatusUpdateOne) SetConfig(c *CheckConfig) *StatusUpdateOne {
+	return suo.SetConfigID(c.ID)
+}
+
 // Mutation returns the StatusMutation object of the builder.
 func (suo *StatusUpdateOne) Mutation() *StatusMutation {
 	return suo.mutation
+}
+
+// ClearConfig clears the "config" edge to the CheckConfig entity.
+func (suo *StatusUpdateOne) ClearConfig() *StatusUpdateOne {
+	suo.mutation.ClearConfig()
+	return suo
 }
 
 // Where appends a list predicates to the StatusUpdate builder.
@@ -334,6 +402,9 @@ func (suo *StatusUpdateOne) check() error {
 	if _, ok := suo.mutation.CheckID(); suo.mutation.CheckCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "Status.check"`)
 	}
+	if _, ok := suo.mutation.ConfigID(); suo.mutation.ConfigCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "Status.config"`)
+	}
 	if _, ok := suo.mutation.RoundID(); suo.mutation.RoundCleared() && !ok {
 		return errors.New(`ent: clearing a required unique edge "Status.round"`)
 	}
@@ -389,6 +460,35 @@ func (suo *StatusUpdateOne) sqlSave(ctx context.Context) (_node *Status, err err
 	}
 	if value, ok := suo.mutation.AddedPoints(); ok {
 		_spec.AddField(status.FieldPoints, field.TypeInt, value)
+	}
+	if suo.mutation.ConfigCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   status.ConfigTable,
+			Columns: []string{status.ConfigColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(checkconfig.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := suo.mutation.ConfigIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   status.ConfigTable,
+			Columns: []string{status.ConfigColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(checkconfig.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	_node = &Status{config: suo.config}
 	_spec.Assign = _node.assignValues

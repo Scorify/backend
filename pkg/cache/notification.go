@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 
 	"github.com/redis/go-redis/v9"
-	"github.com/scorify/backend/pkg/graph/model"
+	"github.com/scorify/backend/pkg/graph/server/model"
 )
 
 const (

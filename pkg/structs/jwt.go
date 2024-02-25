@@ -16,6 +16,5 @@ type contextKey struct {
 }
 
 var (
-	USER_CTX_KEY   = &contextKey{"username"}
-	MINION_CTX_KEY = &contextKey{"minion"}
+	USER_CTX_KEY = &contextKey{"username"}
 )

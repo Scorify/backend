@@ -68,5 +68,9 @@ func (CheckConfig) Edges() []ent.Edge {
 			Immutable().
 			Required().
 			Unique(),
+		edge.From("statuses", Status.Type).
+			StructTag(`json:"statuses"`).
+			Comment("The statuses of a check configuration").
+			Ref("config"),
 	}
 }

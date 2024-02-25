@@ -11,8 +11,10 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
 	"github.com/scorify/backend/pkg/ent/checkconfig"
 	"github.com/scorify/backend/pkg/ent/predicate"
+	"github.com/scorify/backend/pkg/ent/status"
 )
 
 // CheckConfigUpdate is the builder for updating CheckConfig entities.
@@ -40,9 +42,45 @@ func (ccu *CheckConfigUpdate) SetConfig(m map[string]interface{}) *CheckConfigUp
 	return ccu
 }
 
+// AddStatusIDs adds the "statuses" edge to the Status entity by IDs.
+func (ccu *CheckConfigUpdate) AddStatusIDs(ids ...uuid.UUID) *CheckConfigUpdate {
+	ccu.mutation.AddStatusIDs(ids...)
+	return ccu
+}
+
+// AddStatuses adds the "statuses" edges to the Status entity.
+func (ccu *CheckConfigUpdate) AddStatuses(s ...*Status) *CheckConfigUpdate {
+	ids := make([]uuid.UUID, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return ccu.AddStatusIDs(ids...)
+}
+
 // Mutation returns the CheckConfigMutation object of the builder.
 func (ccu *CheckConfigUpdate) Mutation() *CheckConfigMutation {
 	return ccu.mutation
+}
+
+// ClearStatuses clears all "statuses" edges to the Status entity.
+func (ccu *CheckConfigUpdate) ClearStatuses() *CheckConfigUpdate {
+	ccu.mutation.ClearStatuses()
+	return ccu
+}
+
+// RemoveStatusIDs removes the "statuses" edge to Status entities by IDs.
+func (ccu *CheckConfigUpdate) RemoveStatusIDs(ids ...uuid.UUID) *CheckConfigUpdate {
+	ccu.mutation.RemoveStatusIDs(ids...)
+	return ccu
+}
+
+// RemoveStatuses removes "statuses" edges to Status entities.
+func (ccu *CheckConfigUpdate) RemoveStatuses(s ...*Status) *CheckConfigUpdate {
+	ids := make([]uuid.UUID, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return ccu.RemoveStatusIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -110,6 +148,51 @@ func (ccu *CheckConfigUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := ccu.mutation.Config(); ok {
 		_spec.SetField(checkconfig.FieldConfig, field.TypeJSON, value)
 	}
+	if ccu.mutation.StatusesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   checkconfig.StatusesTable,
+			Columns: []string{checkconfig.StatusesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(status.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ccu.mutation.RemovedStatusesIDs(); len(nodes) > 0 && !ccu.mutation.StatusesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   checkconfig.StatusesTable,
+			Columns: []string{checkconfig.StatusesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(status.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ccu.mutation.StatusesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   checkconfig.StatusesTable,
+			Columns: []string{checkconfig.StatusesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(status.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, ccu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{checkconfig.Label}
@@ -142,9 +225,45 @@ func (ccuo *CheckConfigUpdateOne) SetConfig(m map[string]interface{}) *CheckConf
 	return ccuo
 }
 
+// AddStatusIDs adds the "statuses" edge to the Status entity by IDs.
+func (ccuo *CheckConfigUpdateOne) AddStatusIDs(ids ...uuid.UUID) *CheckConfigUpdateOne {
+	ccuo.mutation.AddStatusIDs(ids...)
+	return ccuo
+}
+
+// AddStatuses adds the "statuses" edges to the Status entity.
+func (ccuo *CheckConfigUpdateOne) AddStatuses(s ...*Status) *CheckConfigUpdateOne {
+	ids := make([]uuid.UUID, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return ccuo.AddStatusIDs(ids...)
+}
+
 // Mutation returns the CheckConfigMutation object of the builder.
 func (ccuo *CheckConfigUpdateOne) Mutation() *CheckConfigMutation {
 	return ccuo.mutation
+}
+
+// ClearStatuses clears all "statuses" edges to the Status entity.
+func (ccuo *CheckConfigUpdateOne) ClearStatuses() *CheckConfigUpdateOne {
+	ccuo.mutation.ClearStatuses()
+	return ccuo
+}
+
+// RemoveStatusIDs removes the "statuses" edge to Status entities by IDs.
+func (ccuo *CheckConfigUpdateOne) RemoveStatusIDs(ids ...uuid.UUID) *CheckConfigUpdateOne {
+	ccuo.mutation.RemoveStatusIDs(ids...)
+	return ccuo
+}
+
+// RemoveStatuses removes "statuses" edges to Status entities.
+func (ccuo *CheckConfigUpdateOne) RemoveStatuses(s ...*Status) *CheckConfigUpdateOne {
+	ids := make([]uuid.UUID, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return ccuo.RemoveStatusIDs(ids...)
 }
 
 // Where appends a list predicates to the CheckConfigUpdate builder.
@@ -241,6 +360,51 @@ func (ccuo *CheckConfigUpdateOne) sqlSave(ctx context.Context) (_node *CheckConf
 	}
 	if value, ok := ccuo.mutation.Config(); ok {
 		_spec.SetField(checkconfig.FieldConfig, field.TypeJSON, value)
+	}
+	if ccuo.mutation.StatusesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   checkconfig.StatusesTable,
+			Columns: []string{checkconfig.StatusesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(status.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ccuo.mutation.RemovedStatusesIDs(); len(nodes) > 0 && !ccuo.mutation.StatusesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   checkconfig.StatusesTable,
+			Columns: []string{checkconfig.StatusesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(status.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ccuo.mutation.StatusesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   checkconfig.StatusesTable,
+			Columns: []string{checkconfig.StatusesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(status.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	_node = &CheckConfig{config: ccuo.config}
 	_spec.Assign = _node.assignValues
