@@ -204,6 +204,15 @@ func run(cmd *cobra.Command, args []string) {
 		logrus.WithError(err).Fatal("failed to read redis password")
 	}
 
+	// MINION_KEY
+	minionKey, err := promptPassword(
+		reader,
+		"Enter the key for minion to authenticate[randomly generate]: ",
+	)
+	if err != nil {
+		logrus.WithError(err).Fatal("failed to read minion key")
+	}
+
 	envTmpl, err := os.ReadFile(".env.tmpl")
 	if err != nil {
 		logrus.WithError(err).Fatal("failed to read .env.tmpl")
@@ -234,6 +243,8 @@ func run(cmd *cobra.Command, args []string) {
 		RedisHost     string
 		RedisPort     int
 		RedisPassword string
+
+		MinionKey string
 	}{
 		Domain:     domain,
 		Port:       port,
@@ -249,6 +260,8 @@ func run(cmd *cobra.Command, args []string) {
 		RedisHost:     redisHost,
 		RedisPort:     redisPort,
 		RedisPassword: redisPassword,
+
+		MinionKey: minionKey,
 	})
 	if err != nil {
 		logrus.WithError(err).Fatal("failed to write .env")
