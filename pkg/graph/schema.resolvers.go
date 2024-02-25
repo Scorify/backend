@@ -17,6 +17,7 @@ import (
 	"github.com/scorify/backend/pkg/ent/check"
 	"github.com/scorify/backend/pkg/ent/checkconfig"
 	"github.com/scorify/backend/pkg/ent/predicate"
+	"github.com/scorify/backend/pkg/ent/status"
 	"github.com/scorify/backend/pkg/ent/user"
 	"github.com/scorify/backend/pkg/graph/model"
 	"github.com/scorify/backend/pkg/helpers"
@@ -703,6 +704,25 @@ func (r *mutationResolver) SendGlobalNotification(ctx context.Context, message s
 	return err == nil, err
 }
 
+// SubmitStatus is the resolver for the submitStatus field.
+func (r *mutationResolver) SubmitStatus(ctx context.Context, statusID string, status status.Status, error *string) (bool, error) {
+	uuid, err := uuid.Parse(statusID)
+	if err != nil {
+		return false, fmt.Errorf("encounter error while parsing id: %v", err)
+	}
+
+	entStatusUpdate := r.Ent.Status.UpdateOneID(uuid).
+		SetStatus(status)
+
+	if error != nil {
+		entStatusUpdate.SetError(*error)
+	}
+
+	_, err = entStatusUpdate.Save(ctx)
+
+	return err == nil, err
+}
+
 // Me is the resolver for the me field.
 func (r *queryResolver) Me(ctx context.Context) (*ent.User, error) {
 	return auth.Parse(ctx)
@@ -883,8 +903,11 @@ func (r *subscriptionResolver) GlobalNotification(ctx context.Context) (<-chan *
 
 	go func() {
 		sub := r.Redis.SubscribeNotification(ctx)
-
 		ch := sub.Channel()
+
+		defer sub.Close()
+		defer close(notification_chan)
+
 		for {
 			select {
 			case msg := <-ch:
@@ -904,6 +927,32 @@ func (r *subscriptionResolver) GlobalNotification(ctx context.Context) (<-chan *
 	}()
 
 	return notification_chan, nil
+}
+
+// EnrollScoring is the resolver for the enrollScoring field.
+func (r *subscriptionResolver) EnrollScoring(ctx context.Context) (<-chan *ent.Status, error) {
+	scoring_chan := make(chan *ent.Status)
+
+	fmt.Println("New Minion Enrolled")
+
+	go func() {
+		r.Minions.Increment()
+
+		defer r.Minions.Decrement()
+		defer close(scoring_chan)
+
+		for {
+			select {
+			case status := <-r.Checks:
+				scoring_chan <- status
+			case <-ctx.Done():
+				close(scoring_chan)
+				return
+			}
+		}
+	}()
+
+	return scoring_chan, nil
 }
 
 // ID is the resolver for the id field.
