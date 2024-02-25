@@ -53,6 +53,12 @@ var (
 		// Password is the password of the redis server
 		Password string
 	}
+
+	// Minion is the configuration for the minion server
+	Minion struct {
+		// Key is the key for the minion server
+		Key string
+	}
 )
 
 func Init() {

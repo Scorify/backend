@@ -47,6 +47,7 @@ func graphqlHandler() gin.HandlerFunc {
 
 	conf.Directives.IsAuthenticated = directives.IsAuthenticated
 	conf.Directives.HasRole = directives.HasRole
+	conf.Directives.IsMinion = directives.IsMinion
 
 	h := handler.New(
 		graph.NewExecutableSchema(
@@ -83,7 +84,10 @@ func run(cmd *cobra.Command, args []string) {
 
 	router := gin.Default()
 
-	router.Use(auth.JWTMiddleware)
+	router.Use(
+		auth.JWTMiddleware,
+		auth.MinionMiddleware,
+	)
 
 	err := router.SetTrustedProxies(nil)
 	if err != nil {
