@@ -1,8 +1,10 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/99designs/gqlgen/graphql/handler"
@@ -11,6 +13,7 @@ import (
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/scorify/backend/pkg/auth"
 	"github.com/scorify/backend/pkg/cache"
@@ -18,6 +21,8 @@ import (
 	"github.com/scorify/backend/pkg/data"
 	"github.com/scorify/backend/pkg/graph"
 	"github.com/scorify/backend/pkg/graph/directives"
+	"github.com/scorify/backend/pkg/grpc/proto"
+	"github.com/scorify/backend/pkg/grpc/server"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -77,8 +82,9 @@ func graphqlHandler() gin.HandlerFunc {
 	}
 }
 
-// serverRun runs the server
-func run(cmd *cobra.Command, args []string) {
+func startWebServer(wg *sync.WaitGroup) {
+	defer wg.Done()
+
 	gin.SetMode(gin.ReleaseMode)
 
 	router := gin.Default()
@@ -110,7 +116,7 @@ func run(cmd *cobra.Command, args []string) {
 	router.POST("/query", graphqlHandler())
 	router.GET("/query", graphqlHandler())
 
-	logrus.Printf("Starting server on http://%s:%d", config.Domain, config.Port)
+	logrus.Printf("Starting web server on http://%s:%d", config.Domain, config.Port)
 
 	err = router.Run(fmt.Sprintf(":%d", config.Port))
 	if err != nil {
@@ -118,4 +124,49 @@ func run(cmd *cobra.Command, args []string) {
 	} else {
 		logrus.Info("Server stopped")
 	}
+}
+
+func startGRPCServer(wg *sync.WaitGroup) {
+	scoreTaskChan := make(chan *proto.GetScoreTaskResponse)
+	scoreTaskReponseChan := make(chan *proto.SubmitScoreTaskRequest)
+
+	defer wg.Done()
+	defer close(scoreTaskChan)
+	defer close(scoreTaskReponseChan)
+
+	go func() {
+		i := 0
+		for {
+			time.Sleep(2 * time.Second)
+			scoreTaskChan <- &proto.GetScoreTaskResponse{
+				StatusId:   uuid.New().String(),
+				SourceName: fmt.Sprintf("source-%d", i),
+				Config:     "{}",
+			}
+			i++
+		}
+	}()
+
+	go func() {
+		for range scoreTaskReponseChan {
+		}
+	}()
+
+	server.Serve(
+		context.Background(),
+		scoreTaskChan,
+		scoreTaskReponseChan,
+	)
+}
+
+// serverRun runs the server
+func run(cmd *cobra.Command, args []string) {
+	wg := &sync.WaitGroup{}
+
+	wg.Add(1)
+
+	go startWebServer(wg)
+	go startGRPCServer(wg)
+
+	wg.Wait()
 }
