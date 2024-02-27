@@ -53,6 +53,18 @@ var (
 		// Password is the password of the redis server
 		Password string
 	}
+
+	// gRPC is the configuration for the gRPC server
+	GRPC struct {
+		// Host is the host of the gRPC server
+		Host string
+
+		// Port is the port of the gRPC server
+		Port int
+
+		// Secret is the secret key for the gRPC server
+		Secret string
+	}
 )
 
 func Init() {
@@ -119,5 +131,20 @@ func Init() {
 	Redis.Password = os.Getenv("REDIS_PASSWORD")
 	if Redis.Password == "" {
 		logrus.Fatal("REDIS_PASSWORD is not set")
+	}
+
+	GRPC.Host = os.Getenv("GRPC_HOST")
+	if GRPC.Host == "" {
+		logrus.Fatal("GRPC_HOST is not set")
+	}
+
+	GRPC.Port, err = strconv.Atoi(os.Getenv("GRPC_PORT"))
+	if err != nil {
+		logrus.WithError(err).Fatal("failed to parse GRPC_PORT")
+	}
+
+	GRPC.Secret = os.Getenv("GRPC_SECRET")
+	if GRPC.Secret == "" {
+		logrus.Fatal("GRPC_SECRET is not set")
 	}
 }

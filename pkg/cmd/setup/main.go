@@ -204,6 +204,36 @@ func run(cmd *cobra.Command, args []string) {
 		logrus.WithError(err).Fatal("failed to read redis password")
 	}
 
+	// GRPC_HOST
+	grpcHost, err := prompt(
+		reader,
+		"localhost",
+		"Enter the host of the gRPC server [localhost]: ",
+	)
+	if err != nil {
+		logrus.WithError(err).Fatal("failed to read gRPC host")
+	}
+
+	// GRPC_PORT
+	grpcPort, err := promptInt(
+		reader,
+		50051,
+		"Enter the port of the gRPC server [50051]: ",
+	)
+	if err != nil {
+		logrus.WithError(err).Fatal("failed to read gRPC port")
+	}
+
+	// GRPC_SECRET
+	grpcSecret, err := promptPassword(
+		reader,
+		"Enter the secret key for the gRPC server [randomly generate]: ",
+	)
+	if err != nil {
+		logrus.WithError(err).Fatal("failed to read gRPC secret")
+	}
+
+	// Write .env file
 	envTmpl, err := os.ReadFile(".env.tmpl")
 	if err != nil {
 		logrus.WithError(err).Fatal("failed to read .env.tmpl")
@@ -234,6 +264,10 @@ func run(cmd *cobra.Command, args []string) {
 		RedisHost     string
 		RedisPort     int
 		RedisPassword string
+
+		GRPCHost   string
+		GRPCPort   int
+		GRPCSecret string
 	}{
 		Domain:     domain,
 		Port:       port,
@@ -249,6 +283,10 @@ func run(cmd *cobra.Command, args []string) {
 		RedisHost:     redisHost,
 		RedisPort:     redisPort,
 		RedisPassword: redisPassword,
+
+		GRPCHost:   grpcHost,
+		GRPCPort:   grpcPort,
+		GRPCSecret: grpcSecret,
 	})
 	if err != nil {
 		logrus.WithError(err).Fatal("failed to write .env")

@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/scorify/backend/pkg/cmd/minion"
 	"github.com/scorify/backend/pkg/cmd/server"
 	"github.com/scorify/backend/pkg/cmd/setup"
 	"github.com/sirupsen/logrus"
@@ -31,6 +32,7 @@ func Execute() error {
 // registers all commands
 func init() {
 	rootCmd.AddCommand(
+		minion.Cmd,
 		server.Cmd,
 		setup.Cmd,
 	)
