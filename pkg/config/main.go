@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"
@@ -15,10 +16,13 @@ var (
 	// Port is the port of the server
 	Port int
 
+	// Scoring Interval is the interval for the scoring in seconds
+	Interval time.Duration
+
 	// JWT is the configuration for the JWT token
 	JWT struct {
 		// Timeout is the timeout for the JWT token in hours
-		Timeout int
+		Timeout time.Duration
 
 		// Key is the secret key for the JWT token
 		Secret string
@@ -83,9 +87,20 @@ func Init() {
 		logrus.WithError(err).Fatal("failed to parse PORT")
 	}
 
-	JWT.Timeout, err = strconv.Atoi(os.Getenv("JWT_TIMEOUT"))
+	Interval, err = time.ParseDuration(os.Getenv("INTERVAL"))
+	if err != nil {
+		logrus.WithError(err).Fatal("failed to parse INTERVAL")
+	}
+	if Interval < time.Second {
+		logrus.Fatal("INTERVAL must be greater than 1 second")
+	}
+
+	JWT.Timeout, err = time.ParseDuration(os.Getenv("JWT_TIMEOUT"))
 	if err != nil {
 		logrus.WithError(err).Fatal("failed to parse JWT_TIMEOUT")
+	}
+	if JWT.Timeout <= time.Hour {
+		logrus.Fatal("JWT_TIMEOUT must be greater than 1 hour")
 	}
 
 	JWT.Secret = os.Getenv("JWT_SECRET")
