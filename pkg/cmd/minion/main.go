@@ -58,7 +58,7 @@ func run(cmd *cobra.Command, args []string) {
 			logrus.WithError(err).Fatal("encountered error while parsing UUID")
 		}
 
-		_, err = grpcClient.SubmitScoreTask(ctx, uuid, status.StatusUp)
+		_, err = grpcClient.SubmitScoreTask(ctx, uuid, "bruh", status.StatusUp)
 		if err != nil {
 			logrus.WithError(err).Fatal("encountered error while submitting score task")
 		}
