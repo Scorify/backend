@@ -8,10 +8,11 @@ import (
 	"github.com/scorify/backend/pkg/grpc/proto"
 )
 
-func (c *MinionClient) SubmitScoreTask(ctx context.Context, statusID uuid.UUID, checkStatus status.Status) (*proto.SubmitScoreTaskResponse, error) {
+func (c *MinionClient) SubmitScoreTask(ctx context.Context, statusID uuid.UUID, err string, checkStatus status.Status) (*proto.SubmitScoreTaskResponse, error) {
 	return c.client.SubmitScoreTask(ctx, &proto.SubmitScoreTaskRequest{
 		MinionId: c.MinionID.String(),
 		StatusId: statusID.String(),
+		Error:    err,
 		Status: func() proto.Status {
 			switch checkStatus {
 			case status.StatusUp:
