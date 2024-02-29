@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/scorify/backend/pkg/checks"
 	"github.com/scorify/backend/pkg/config"
 	"github.com/scorify/backend/pkg/ent/status"
 	"github.com/scorify/backend/pkg/grpc/client"
@@ -25,42 +26,109 @@ var Cmd = &cobra.Command{
 }
 
 func run(cmd *cobra.Command, args []string) {
-	ctx := context.Background()
+	backOff := time.Second
+	heartbeatSuccess := make(chan struct{})
 
+	// Reset backoff on successful heartbeat
+	go func() {
+		for range heartbeatSuccess {
+			backOff = time.Second
+		}
+	}()
+
+	// Run minion loop first with no backoff
+	minionLoop(context.Background(), heartbeatSuccess)
+	for {
+		time.Sleep(backOff)
+		minionLoop(context.Background(), heartbeatSuccess)
+		backOff = min(backOff*2, time.Minute)
+	}
+
+}
+
+func minionLoop(ctx context.Context, heartbeatSuccess chan struct{}) {
 	grpcClient, err := client.Open(ctx)
 	if err != nil {
 		logrus.WithError(err).Fatal("encountered error while opening gRPC client")
+		return
 	}
-
 	defer grpcClient.Close()
 
 	logrus.Info("gRPC client opened successfully")
 
 	go func() {
+		var err error
 		for {
-			grpcClient.Heartbeat(ctx)
-			time.Sleep(5 * time.Second)
+			err = grpcClient.Heartbeat(ctx)
+			if err != nil {
+				logrus.WithError(err).Error("encountered error while sending heartbeat")
+				ctx.Done()
+				return
+			}
+			heartbeatSuccess <- struct{}{}
+			time.Sleep(10 * time.Second)
 		}
 	}()
 
 	for {
+		// recieved score task
 		task, err := grpcClient.GetScoreTask(ctx)
 		if err != nil {
 			logrus.WithError(err).Fatal("encountered error while getting score task")
+			ctx.Done()
+			return
 		}
 
 		logrus.WithField("task", task).
 			WithField("time", time.Now()).
 			Info("recieved score task")
 
+		// parse UUID
 		uuid, err := uuid.Parse(task.GetStatusId())
 		if err != nil {
 			logrus.WithError(err).Fatal("encountered error while parsing UUID")
+			continue
 		}
 
-		_, err = grpcClient.SubmitScoreTask(ctx, uuid, status.StatusUp)
-		if err != nil {
-			logrus.WithError(err).Fatal("encountered error while submitting score task")
+		// check if source exists
+		check, ok := checks.Checks[task.GetSourceName()]
+		if !ok {
+			logrus.WithField("source", task.GetSourceName()).
+				Error("source not found")
+
+			_, err = grpcClient.SubmitScoreTask(ctx, uuid, "source not found", status.StatusDown)
+			if err != nil {
+				logrus.WithError(err).Fatal("encountered error while submitting score task")
+				ctx.Done()
+				return
+			}
+			continue
 		}
+
+		// run check
+		checkCtx, cancel := context.WithTimeout(ctx, config.Interval)
+		defer cancel()
+
+		go runCheck(checkCtx, cancel, grpcClient, uuid, check, task.GetConfig())
+	}
+}
+
+func runCheck(ctx context.Context, cancel context.CancelFunc, grpcClient *client.MinionClient, uuid uuid.UUID, check checks.Check, config string) {
+	defer cancel()
+
+	checkError := ""
+	err := check.Func(ctx, config)
+	if err != nil {
+		checkError = err.Error()
+	}
+
+	if checkError == "" {
+		_, err = grpcClient.SubmitScoreTask(ctx, uuid, checkError, status.StatusUp)
+	} else {
+		_, err = grpcClient.SubmitScoreTask(ctx, uuid, checkError, status.StatusDown)
+	}
+	if err != nil {
+		logrus.WithError(err).Fatal("encountered error while submitting score task")
+		ctx.Done()
 	}
 }

@@ -35,7 +35,8 @@ message GetScoreTaskResponse {
 message SubmitScoreTaskRequest {
     string minion_id = 1;
     string status_id = 2;
-    status status = 3;
+    string error = 3;
+    status status = 4;
 }
 
 message SubmitScoreTaskResponse {}

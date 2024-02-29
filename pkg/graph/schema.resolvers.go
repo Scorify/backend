@@ -11,6 +11,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/scorify/backend/pkg/auth"
+	"github.com/scorify/backend/pkg/cache"
 	"github.com/scorify/backend/pkg/checks"
 	"github.com/scorify/backend/pkg/config"
 	"github.com/scorify/backend/pkg/ent"
@@ -699,7 +700,7 @@ func (r *mutationResolver) EditConfig(ctx context.Context, id string, config str
 
 // SendGlobalNotification is the resolver for the sendGlobalNotification field.
 func (r *mutationResolver) SendGlobalNotification(ctx context.Context, message string, typeArg model.NotificationType) (bool, error) {
-	_, err := r.Redis.PublishNotification(ctx, message, typeArg)
+	_, err := cache.PublishNotification(ctx, r.Redis, message, typeArg)
 	return err == nil, err
 }
 
@@ -882,7 +883,7 @@ func (r *subscriptionResolver) GlobalNotification(ctx context.Context) (<-chan *
 	notification_chan := make(chan *model.Notification, 1)
 
 	go func() {
-		sub := r.Redis.SubscribeNotification(ctx)
+		sub := cache.SubscribeNotification(ctx, r.Redis)
 
 		ch := sub.Channel()
 		for {

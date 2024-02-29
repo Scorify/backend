@@ -1,8 +1,10 @@
 package graph
 
 import (
-	"github.com/scorify/backend/pkg/cache"
+	"github.com/redis/go-redis/v9"
+	"github.com/scorify/backend/pkg/engine"
 	"github.com/scorify/backend/pkg/ent"
+	"github.com/scorify/backend/pkg/grpc/proto"
 )
 
 // This file will not be regenerated automatically.
@@ -12,6 +14,9 @@ import (
 //go:generate go run github.com/99designs/gqlgen generate
 
 type Resolver struct {
-	Ent   *ent.Client
-	Redis *cache.Cache
+	Ent                  *ent.Client
+	Redis                *redis.Client
+	Engine               *engine.Client
+	ScoreTaskChan        <-chan *proto.GetScoreTaskResponse
+	ScoreTaskReponseChan chan<- *proto.SubmitScoreTaskRequest
 }

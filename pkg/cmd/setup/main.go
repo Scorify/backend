@@ -9,6 +9,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -70,6 +71,29 @@ func promptPassword(reader *bufio.Reader, message string) (string, error) {
 	return strings.TrimSpace(text), nil
 }
 
+func promptDuration(reader *bufio.Reader, defaultValue time.Duration, minValue time.Duration, message string) (time.Duration, error) {
+	fmt.Print(message)
+	text, err := reader.ReadString('\n')
+	if err != nil {
+		return 0, err
+	}
+
+	if text == "\n" {
+		return defaultValue, nil
+	}
+
+	out, err := time.ParseDuration(strings.TrimSpace(text))
+	if err != nil {
+		return 0, err
+	}
+
+	if out < minValue {
+		return 0, fmt.Errorf("duration must be greater than %s", minValue)
+	}
+
+	return out, nil
+}
+
 func promptInt(reader *bufio.Reader, defaultValue int, message string) (int, error) {
 	fmt.Print(message)
 	text, err := reader.ReadString('\n')
@@ -107,11 +131,23 @@ func run(cmd *cobra.Command, args []string) {
 		logrus.WithError(err).Fatal("failed to read port")
 	}
 
-	// JWT_TIMEOUT
-	jwtTimeout, err := promptInt(
+	// INTERVAL
+	interval, err := promptDuration(
 		reader,
-		6,
-		"Enter the timeout of the JWT (session length) in hours [6]: ",
+		30*time.Second,
+		time.Second,
+		"Enter the interval of the score task in seconds [30s]: ",
+	)
+	if err != nil {
+		logrus.WithError(err).Fatal("failed to read interval")
+	}
+
+	// JWT_TIMEOUT
+	jwtTimeout, err := promptDuration(
+		reader,
+		6*time.Hour,
+		time.Hour,
+		"Enter the timeout of the JWT (session length) in hours [6h]: ",
 	)
 	if err != nil {
 		logrus.WithError(err).Fatal("failed to read JWT timeout")
@@ -252,7 +288,8 @@ func run(cmd *cobra.Command, args []string) {
 	err = tmpl.Execute(envFile, struct {
 		Domain     string
 		Port       int
-		JWTTimeout int
+		Interval   time.Duration
+		JWTTimeout time.Duration
 		JWTSecret  string
 
 		PostgresHost     string
@@ -271,6 +308,7 @@ func run(cmd *cobra.Command, args []string) {
 	}{
 		Domain:     domain,
 		Port:       port,
+		Interval:   interval,
 		JWTTimeout: jwtTimeout,
 		JWTSecret:  jwtSecret,
 

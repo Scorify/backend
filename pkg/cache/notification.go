@@ -13,7 +13,7 @@ const (
 	globalNotification = "global_notification"
 )
 
-func (c *Cache) PublishNotification(ctx context.Context, message string, notification_type model.NotificationType) (*redis.IntCmd, error) {
+func PublishNotification(ctx context.Context, redisClient *redis.Client, message string, notification_type model.NotificationType) (*redis.IntCmd, error) {
 	out, err := json.Marshal(model.Notification{
 		Message: message,
 		Type:    notification_type,
@@ -22,9 +22,9 @@ func (c *Cache) PublishNotification(ctx context.Context, message string, notific
 		return nil, err
 	}
 
-	return c.Client.Publish(context.Background(), globalNotification, out), nil
+	return redisClient.Publish(context.Background(), globalNotification, out), nil
 }
 
-func (c *Cache) SubscribeNotification(ctx context.Context) *redis.PubSub {
-	return c.Client.Subscribe(context.Background(), globalNotification)
+func SubscribeNotification(ctx context.Context, redisClient *redis.Client) *redis.PubSub {
+	return redisClient.Subscribe(context.Background(), globalNotification)
 }
