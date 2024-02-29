@@ -15,10 +15,13 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
+	"github.com/redis/go-redis/v9"
 	"github.com/scorify/backend/pkg/auth"
 	"github.com/scorify/backend/pkg/cache"
 	"github.com/scorify/backend/pkg/config"
 	"github.com/scorify/backend/pkg/data"
+	"github.com/scorify/backend/pkg/engine"
+	"github.com/scorify/backend/pkg/ent"
 	"github.com/scorify/backend/pkg/graph"
 	"github.com/scorify/backend/pkg/graph/directives"
 	"github.com/scorify/backend/pkg/grpc/proto"
@@ -35,18 +38,19 @@ var Cmd = &cobra.Command{
 	Aliases: []string{"s", "serve"},
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		config.Init()
-		data.Init()
-		cache.Init()
 	},
 
 	Run: run,
 }
 
-func graphqlHandler() gin.HandlerFunc {
+func graphqlHandler(entClient *ent.Client, redisClient *redis.Client, engineClient *engine.Client, scoreTaskChan chan *proto.GetScoreTaskResponse, scoreTaskReponseChan chan *proto.SubmitScoreTaskRequest) gin.HandlerFunc {
 	conf := graph.Config{
 		Resolvers: &graph.Resolver{
-			Ent:   data.Client,
-			Redis: cache.Client,
+			Ent:                  entClient,
+			Redis:                redisClient,
+			Engine:               engineClient,
+			ScoreTaskChan:        scoreTaskChan,
+			ScoreTaskReponseChan: scoreTaskReponseChan,
 		},
 	}
 
@@ -82,14 +86,14 @@ func graphqlHandler() gin.HandlerFunc {
 	}
 }
 
-func startWebServer(wg *sync.WaitGroup) {
+func startWebServer(wg *sync.WaitGroup, entClient *ent.Client, redisClient *redis.Client, engineClient *engine.Client, scoreTaskChan chan *proto.GetScoreTaskResponse, scoreTaskReponseChan chan *proto.SubmitScoreTaskRequest) {
 	defer wg.Done()
 
 	gin.SetMode(gin.ReleaseMode)
 
 	router := gin.Default()
 
-	router.Use(auth.JWTMiddleware)
+	router.Use(auth.JWTMiddleware(entClient))
 
 	err := router.SetTrustedProxies(nil)
 	if err != nil {
@@ -113,8 +117,8 @@ func startWebServer(wg *sync.WaitGroup) {
 	}))
 
 	router.GET("/", gin.WrapH(playground.Handler("GraphQL playground", "/query")))
-	router.POST("/query", graphqlHandler())
-	router.GET("/query", graphqlHandler())
+	router.POST("/query", graphqlHandler(entClient, redisClient, engineClient, scoreTaskChan, scoreTaskReponseChan))
+	router.GET("/query", graphqlHandler(entClient, redisClient, engineClient, scoreTaskChan, scoreTaskReponseChan))
 
 	logrus.Printf("Starting web server on http://%s:%d", config.Domain, config.Port)
 
@@ -126,13 +130,8 @@ func startWebServer(wg *sync.WaitGroup) {
 	}
 }
 
-func startGRPCServer(wg *sync.WaitGroup) {
-	scoreTaskChan := make(chan *proto.GetScoreTaskResponse)
-	scoreTaskReponseChan := make(chan *proto.SubmitScoreTaskRequest)
-
+func startGRPCServer(wg *sync.WaitGroup, scoreTaskChan chan *proto.GetScoreTaskResponse, scoreTaskReponseChan chan *proto.SubmitScoreTaskRequest) {
 	defer wg.Done()
-	defer close(scoreTaskChan)
-	defer close(scoreTaskReponseChan)
 
 	go func() {
 		i := 0
@@ -161,12 +160,27 @@ func startGRPCServer(wg *sync.WaitGroup) {
 
 // serverRun runs the server
 func run(cmd *cobra.Command, args []string) {
-	wg := &sync.WaitGroup{}
+	ctx := cmd.Context()
 
+	entClient, err := data.NewClient(ctx)
+	if err != nil {
+		logrus.WithError(err).Fatal("failed to create ent client")
+	}
+
+	scoreTaskChan := make(chan *proto.GetScoreTaskResponse)
+	scoreTaskReponseChan := make(chan *proto.SubmitScoreTaskRequest)
+	defer close(scoreTaskChan)
+	defer close(scoreTaskReponseChan)
+
+	redisClient := cache.NewRedisClient()
+
+	engineClient := engine.NewEngine(ctx, entClient, redisClient, scoreTaskChan, scoreTaskReponseChan)
+
+	wg := &sync.WaitGroup{}
 	wg.Add(1)
 
-	go startWebServer(wg)
-	go startGRPCServer(wg)
+	go startWebServer(wg, entClient, redisClient, engineClient, scoreTaskChan, scoreTaskReponseChan)
+	go startGRPCServer(wg, scoreTaskChan, scoreTaskReponseChan)
 
 	wg.Wait()
 }
