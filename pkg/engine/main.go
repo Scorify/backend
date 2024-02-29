@@ -24,7 +24,7 @@ const (
 	Running
 )
 
-type engine struct {
+type Client struct {
 	lock        *structs.Lock
 	ctx         context.Context
 	ent         *ent.Client
@@ -39,8 +39,8 @@ func NewEngine(
 	redis *redis.Client,
 	taskChan chan<- *proto.GetScoreTaskResponse,
 	resultsChan <-chan *proto.SubmitScoreTaskRequest,
-) *engine {
-	return &engine{
+) *Client {
+	return &Client{
 		lock:        structs.NewLock(),
 		ctx:         ctx,
 		ent:         entClient,
@@ -50,7 +50,7 @@ func NewEngine(
 	}
 }
 
-func (e *engine) Stop() error {
+func (e *Client) Stop() error {
 	err := e.lock.Unlock()
 	if err != nil {
 		return err
@@ -59,7 +59,7 @@ func (e *engine) Stop() error {
 	return nil
 }
 
-func (e *engine) Start() error {
+func (e *Client) Start() error {
 	err := e.lock.Lock()
 	if err != nil {
 		return err
@@ -70,15 +70,15 @@ func (e *engine) Start() error {
 	return nil
 }
 
-func (e *engine) IsStopped() bool {
+func (e *Client) IsStopped() bool {
 	return e.lock.IsUnlocked()
 }
 
-func (e *engine) IsRunning() bool {
+func (e *Client) IsRunning() bool {
 	return e.lock.IsLocked()
 }
 
-func (e *engine) State() EngineState {
+func (e *Client) State() EngineState {
 	if e.IsStopped() {
 		return Stopped
 	}
@@ -86,7 +86,7 @@ func (e *engine) State() EngineState {
 	return Running
 }
 
-func (e *engine) loop() {
+func (e *Client) loop() {
 	ticker := time.NewTicker(config.Interval)
 
 	defer ticker.Stop()
@@ -106,7 +106,7 @@ func (e *engine) loop() {
 	}
 }
 
-func (e *engine) loopRoundRunner() error {
+func (e *Client) loopRoundRunner() error {
 	err := e.lock.Lock()
 	if err != nil {
 		return err
@@ -148,7 +148,7 @@ func (e *engine) loopRoundRunner() error {
 	return e.runRound(roundCtx, entRound)
 }
 
-func (e *engine) runRound(ctx context.Context, entRound *ent.Round) error {
+func (e *Client) runRound(ctx context.Context, entRound *ent.Round) error {
 	defer e.lock.Unlock()
 
 	// Get all the tasks
@@ -262,7 +262,7 @@ func (e *engine) runRound(ctx context.Context, entRound *ent.Round) error {
 	return err
 }
 
-func (e *engine) updateStatus(ctx context.Context, roundTasks map[uuid.UUID]bool, status_id uuid.UUID, errorMessage string, _status proto.Status) {
+func (e *Client) updateStatus(ctx context.Context, roundTasks map[uuid.UUID]bool, status_id uuid.UUID, errorMessage string, _status proto.Status) {
 	_, ok := roundTasks[status_id]
 	if !ok {
 		logrus.WithField("status_id", status_id).Error("uuid not belong to round was submitted")
