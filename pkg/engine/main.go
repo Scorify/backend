@@ -221,18 +221,45 @@ func (e *engine) runRound(ctx context.Context, entRound *ent.Round) error {
 	}
 
 	for status_id := range roundTasks {
-		go func(id uuid.UUID) {
-			_, err := e.ent.Status.UpdateOneID(id).
-				SetStatus(status.StatusUnknown).
-				SetPoints(0).
-				Save(ctx)
-			if err != nil {
-				logrus.WithField("id", id).WithError(err).Error("failed to update status")
-			}
-		}(status_id)
+		_, err := e.ent.Status.UpdateOneID(status_id).
+			SetStatus(status.StatusUnknown).
+			SetPoints(0).
+			Save(ctx)
+		if err != nil {
+			logrus.WithField("id", status_id).WithError(err).Error("failed to update status")
+		}
 	}
 
-	return nil
+	var users []struct {
+		UserID uuid.UUID `json:"user_id"`
+		Points int       `json:"points"`
+	}
+
+	err = e.ent.Status.Query().
+		Where(
+			status.HasRoundWith(round.ID(entRound.ID)),
+		).
+		GroupBy(status.FieldUserID).
+		Aggregate(ent.Sum(status.FieldPoints)).
+		Scan(ctx, &users)
+	if err != nil {
+		logrus.WithError(err).Error("failed to aggregate points")
+		return err
+	}
+
+	entScoreCacheCreates := make([]*ent.ScoreCacheCreate, len(users))
+	for i, user := range users {
+		entScoreCacheCreates[i] = e.ent.ScoreCache.Create().
+			SetRound(entRound).
+			SetUserID(user.UserID).
+			SetPoints(user.Points)
+	}
+
+	_, err = e.ent.ScoreCache.CreateBulk(entScoreCacheCreates...).Save(ctx)
+	if err != nil {
+		logrus.WithError(err).Error("failed to create score cache")
+	}
+	return err
 }
 
 func (e *engine) updateStatus(ctx context.Context, roundTasks map[uuid.UUID]bool, status_id uuid.UUID, errorMessage string, _status proto.Status) {
