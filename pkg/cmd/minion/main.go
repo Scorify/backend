@@ -41,7 +41,7 @@ func run(cmd *cobra.Command, args []string) {
 	for {
 		time.Sleep(backOff)
 		minionLoop(context.Background(), heartbeatSuccess)
-		backOff *= 2
+		backOff = min(backOff*2, time.Minute)
 	}
 
 }
