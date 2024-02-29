@@ -12,13 +12,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-var (
-	Client *ent.Client
-	Ctx    context.Context = context.Background()
-)
-
-func Init() {
-	c, err := ent.Open(
+func NewClient(ctx context.Context) (*ent.Client, error) {
+	client, err := ent.Open(
 		"postgres",
 		fmt.Sprintf(
 			"host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
@@ -31,36 +26,41 @@ func Init() {
 	)
 	if err != nil {
 		logrus.WithError(err).Fatal("failed opening connection to postgres")
+		return nil, err
 	}
-
-	Client = c
 
 	// Run the auto migration tool.
-	if err := c.Schema.Create(Ctx); err != nil {
+	if err := client.Schema.Create(ctx); err != nil {
 		logrus.WithError(err).Fatalf("failed creating schema resources")
+		return nil, err
 	}
 
-	exists, err := c.User.Query().
+	exists, err := client.User.Query().
 		Where(
 			user.UsernameEQ("admin"),
-		).Exist(Ctx)
+		).Exist(ctx)
 	if err != nil {
 		logrus.WithError(err).Fatalf("failed checking if admin user exists")
+		return nil, err
 	}
 
 	if !exists {
 		hashedPassword, err := helpers.HashPassword("admin")
 		if err != nil {
 			logrus.WithError(err).Fatalf("failed hashing admin password")
+			return nil, err
 		}
 
-		_, err = c.User.Create().
+		_, err = client.User.Create().
 			SetUsername("admin").
 			SetPassword(hashedPassword).
 			SetRole(user.RoleAdmin).
-			Save(Ctx)
+			Save(ctx)
 		if err != nil {
 			logrus.WithError(err).Warnf("failed creating admin user")
+			return nil, err
 		}
 	}
+
+	return client, nil
 }
