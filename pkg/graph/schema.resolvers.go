@@ -704,6 +704,16 @@ func (r *mutationResolver) SendGlobalNotification(ctx context.Context, message s
 	return err == nil, err
 }
 
+// StartEngine is the resolver for the startEngine field.
+func (r *mutationResolver) StartEngine(ctx context.Context) (bool, error) {
+	panic(fmt.Errorf("not implemented: StartEngine - startEngine"))
+}
+
+// StopEngine is the resolver for the stopEngine field.
+func (r *mutationResolver) StopEngine(ctx context.Context) (bool, error) {
+	panic(fmt.Errorf("not implemented: StopEngine - stopEngine"))
+}
+
 // Me is the resolver for the me field.
 func (r *queryResolver) Me(ctx context.Context) (*ent.User, error) {
 	return auth.Parse(ctx)
@@ -905,6 +915,11 @@ func (r *subscriptionResolver) GlobalNotification(ctx context.Context) (<-chan *
 	}()
 
 	return notification_chan, nil
+}
+
+// EngineState is the resolver for the engineState field.
+func (r *subscriptionResolver) EngineState(ctx context.Context) (<-chan model.EngineState, error) {
+	panic(fmt.Errorf("not implemented: EngineState - engineState"))
 }
 
 // ID is the resolver for the id field.

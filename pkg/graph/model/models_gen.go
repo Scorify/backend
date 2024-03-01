@@ -31,6 +31,47 @@ type Source struct {
 type Subscription struct {
 }
 
+type EngineState string
+
+const (
+	EngineStateStopped EngineState = "stopped"
+	EngineStateRunning EngineState = "running"
+)
+
+var AllEngineState = []EngineState{
+	EngineStateStopped,
+	EngineStateRunning,
+}
+
+func (e EngineState) IsValid() bool {
+	switch e {
+	case EngineStateStopped, EngineStateRunning:
+		return true
+	}
+	return false
+}
+
+func (e EngineState) String() string {
+	return string(e)
+}
+
+func (e *EngineState) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = EngineState(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid EngineState", str)
+	}
+	return nil
+}
+
+func (e EngineState) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
 type NotificationType string
 
 const (
