@@ -23,6 +23,11 @@ enum NotificationType {
   warning
 }
 
+enum EngineState {
+  stopped
+  running
+}
+
 type LoginOutput {
   name: String!
   token: String!
@@ -124,6 +129,7 @@ type Notification {
 
 type Subscription {
   globalNotification: Notification!
+  engineState: EngineState!
 }
 
 type Query {
@@ -176,4 +182,7 @@ type Mutation {
 
   sendGlobalNotification(message: String!, type: NotificationType!): Boolean!
     @hasRole(roles: [admin])
+
+  startEngine: Boolean! @hasRole(roles: [admin])
+  stopEngine: Boolean! @hasRole(roles: [admin])
 }
