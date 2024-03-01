@@ -373,7 +373,6 @@ func (r *mutationResolver) UpdateCheck(ctx context.Context, id string, name *str
 	}
 
 	if weight != nil {
-		fmt.Println(1)
 		checkUpdate.SetWeight(*weight)
 	}
 
@@ -913,6 +912,7 @@ func (r *subscriptionResolver) GlobalNotification(ctx context.Context) (<-chan *
 				notification_chan <- &notification
 			case <-ctx.Done():
 				close(notification_chan)
+				sub.Close()
 				return
 			}
 		}
@@ -923,7 +923,33 @@ func (r *subscriptionResolver) GlobalNotification(ctx context.Context) (<-chan *
 
 // EngineState is the resolver for the engineState field.
 func (r *subscriptionResolver) EngineState(ctx context.Context) (<-chan model.EngineState, error) {
-	panic(fmt.Errorf("not implemented: EngineState - engineState"))
+	engineStateChan := make(chan model.EngineState, 1)
+
+	go func() {
+		sub := cache.SubscribeEngineState(ctx, r.Redis)
+
+		ch := sub.Channel()
+
+		if r.Engine.IsRunning() {
+			engineStateChan <- model.EngineStateRunning
+		} else {
+			engineStateChan <- model.EngineStateStopped
+		}
+
+		for {
+			select {
+			case msg := <-ch:
+				state := model.EngineState(msg.Payload)
+				engineStateChan <- state
+			case <-ctx.Done():
+				close(engineStateChan)
+				sub.Close()
+				return
+			}
+		}
+	}()
+
+	return engineStateChan, nil
 }
 
 // ID is the resolver for the id field.
