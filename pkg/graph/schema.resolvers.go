@@ -706,12 +706,16 @@ func (r *mutationResolver) SendGlobalNotification(ctx context.Context, message s
 
 // StartEngine is the resolver for the startEngine field.
 func (r *mutationResolver) StartEngine(ctx context.Context) (bool, error) {
-	panic(fmt.Errorf("not implemented: StartEngine - startEngine"))
+	err := r.Engine.Start()
+
+	return err == nil, err
 }
 
 // StopEngine is the resolver for the stopEngine field.
 func (r *mutationResolver) StopEngine(ctx context.Context) (bool, error) {
-	panic(fmt.Errorf("not implemented: StopEngine - stopEngine"))
+	err := r.Engine.Stop()
+
+	return err == nil, err
 }
 
 // Me is the resolver for the me field.
