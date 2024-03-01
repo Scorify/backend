@@ -7,11 +7,13 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
+	"github.com/scorify/backend/pkg/cache"
 	"github.com/scorify/backend/pkg/config"
 	"github.com/scorify/backend/pkg/ent"
 	"github.com/scorify/backend/pkg/ent/checkconfig"
 	"github.com/scorify/backend/pkg/ent/round"
 	"github.com/scorify/backend/pkg/ent/status"
+	"github.com/scorify/backend/pkg/graph/model"
 	"github.com/scorify/backend/pkg/grpc/proto"
 	"github.com/scorify/backend/pkg/structs"
 	"github.com/sirupsen/logrus"
@@ -56,7 +58,8 @@ func (e *Client) Stop() error {
 		return err
 	}
 
-	return nil
+	_, err = cache.PublishEngineState(context.Background(), e.redis, model.EngineStateStopped)
+	return err
 }
 
 func (e *Client) Start() error {
@@ -67,7 +70,8 @@ func (e *Client) Start() error {
 
 	go e.loop()
 
-	return nil
+	_, err = cache.PublishEngineState(context.Background(), e.redis, model.EngineStateRunning)
+	return err
 }
 
 func (e *Client) IsStopped() bool {
@@ -91,6 +95,7 @@ func (e *Client) loop() {
 
 	defer ticker.Stop()
 	defer e.lock.Unlock()
+	defer cache.PublishEngineState(context.Background(), e.redis, model.EngineStateStopped)
 
 	for {
 		select {
@@ -143,6 +148,8 @@ func (e *Client) loopRoundRunner() error {
 	if err != nil {
 		return err
 	}
+
+	logrus.Infof("Running round %d", roundNumber)
 
 	// Run round
 	return e.runRound(roundCtx, entRound)

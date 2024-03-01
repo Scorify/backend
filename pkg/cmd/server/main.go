@@ -13,7 +13,6 @@ import (
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/redis/go-redis/v9"
 	"github.com/scorify/backend/pkg/auth"
@@ -132,24 +131,6 @@ func startWebServer(wg *sync.WaitGroup, entClient *ent.Client, redisClient *redi
 
 func startGRPCServer(wg *sync.WaitGroup, scoreTaskChan chan *proto.GetScoreTaskResponse, scoreTaskReponseChan chan *proto.SubmitScoreTaskRequest) {
 	defer wg.Done()
-
-	go func() {
-		i := 0
-		for {
-			time.Sleep(2 * time.Second)
-			scoreTaskChan <- &proto.GetScoreTaskResponse{
-				StatusId:   uuid.New().String(),
-				SourceName: fmt.Sprintf("source-%d", i),
-				Config:     "{}",
-			}
-			i++
-		}
-	}()
-
-	go func() {
-		for range scoreTaskReponseChan {
-		}
-	}()
 
 	server.Serve(
 		context.Background(),
