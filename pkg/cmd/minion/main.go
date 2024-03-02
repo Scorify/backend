@@ -49,7 +49,7 @@ func run(cmd *cobra.Command, args []string) {
 func minionLoop(ctx context.Context, heartbeatSuccess chan struct{}) {
 	grpcClient, err := client.Open(ctx)
 	if err != nil {
-		logrus.WithError(err).Fatal("encountered error while opening gRPC client")
+		logrus.WithError(err).Error("encountered error while opening gRPC client")
 		return
 	}
 	defer grpcClient.Close()
@@ -74,7 +74,7 @@ func minionLoop(ctx context.Context, heartbeatSuccess chan struct{}) {
 		// recieved score task
 		task, err := grpcClient.GetScoreTask(ctx)
 		if err != nil {
-			logrus.WithError(err).Fatal("encountered error while getting score task")
+			logrus.WithError(err).Error("encountered error while getting score task")
 			ctx.Done()
 			return
 		}
@@ -86,7 +86,7 @@ func minionLoop(ctx context.Context, heartbeatSuccess chan struct{}) {
 		// parse UUID
 		uuid, err := uuid.Parse(task.GetStatusId())
 		if err != nil {
-			logrus.WithError(err).Fatal("encountered error while parsing UUID")
+			logrus.WithError(err).Error("encountered error while parsing UUID")
 			continue
 		}
 
@@ -98,7 +98,7 @@ func minionLoop(ctx context.Context, heartbeatSuccess chan struct{}) {
 
 			_, err = grpcClient.SubmitScoreTask(ctx, uuid, "source not found", status.StatusDown)
 			if err != nil {
-				logrus.WithError(err).Fatal("encountered error while submitting score task")
+				logrus.WithError(err).Error("encountered error while submitting score task")
 				ctx.Done()
 				return
 			}
@@ -128,7 +128,7 @@ func runCheck(ctx context.Context, cancel context.CancelFunc, grpcClient *client
 		_, err = grpcClient.SubmitScoreTask(ctx, uuid, checkError, status.StatusDown)
 	}
 	if err != nil {
-		logrus.WithError(err).Fatal("encountered error while submitting score task")
+		logrus.WithError(err).Error("encountered error while submitting score task")
 		ctx.Done()
 	}
 }
