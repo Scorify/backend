@@ -3,15 +3,18 @@ package engine
 import (
 	"context"
 	"encoding/json"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
+	"github.com/scorify/backend/pkg/cache"
 	"github.com/scorify/backend/pkg/config"
 	"github.com/scorify/backend/pkg/ent"
 	"github.com/scorify/backend/pkg/ent/checkconfig"
 	"github.com/scorify/backend/pkg/ent/round"
 	"github.com/scorify/backend/pkg/ent/status"
+	"github.com/scorify/backend/pkg/graph/model"
 	"github.com/scorify/backend/pkg/grpc/proto"
 	"github.com/scorify/backend/pkg/structs"
 	"github.com/sirupsen/logrus"
@@ -25,7 +28,8 @@ const (
 )
 
 type Client struct {
-	lock        *structs.Lock
+	runLock     *structs.Lock
+	RoundLock   *sync.Mutex
 	ctx         context.Context
 	ent         *ent.Client
 	redis       *redis.Client
@@ -41,7 +45,8 @@ func NewEngine(
 	resultsChan <-chan *proto.SubmitScoreTaskRequest,
 ) *Client {
 	return &Client{
-		lock:        structs.NewLock(),
+		runLock:     structs.NewLock(),
+		RoundLock:   &sync.Mutex{},
 		ctx:         ctx,
 		ent:         entClient,
 		redis:       redis,
@@ -51,31 +56,33 @@ func NewEngine(
 }
 
 func (e *Client) Stop() error {
-	err := e.lock.Unlock()
+	err := e.runLock.Unlock()
 	if err != nil {
 		return err
 	}
 
-	return nil
+	_, err = cache.PublishEngineState(context.Background(), e.redis, model.EngineStateStopped)
+	return err
 }
 
 func (e *Client) Start() error {
-	err := e.lock.Lock()
+	err := e.runLock.Lock()
 	if err != nil {
 		return err
 	}
 
 	go e.loop()
 
-	return nil
+	_, err = cache.PublishEngineState(context.Background(), e.redis, model.EngineStateRunning)
+	return err
 }
 
 func (e *Client) IsStopped() bool {
-	return e.lock.IsUnlocked()
+	return e.runLock.IsUnlocked()
 }
 
 func (e *Client) IsRunning() bool {
-	return e.lock.IsLocked()
+	return e.runLock.IsLocked()
 }
 
 func (e *Client) State() EngineState {
@@ -90,7 +97,8 @@ func (e *Client) loop() {
 	ticker := time.NewTicker(config.Interval)
 
 	defer ticker.Stop()
-	defer e.lock.Unlock()
+	defer e.runLock.Unlock()
+	defer cache.PublishEngineState(context.Background(), e.redis, model.EngineStateStopped)
 
 	for {
 		select {
@@ -107,11 +115,6 @@ func (e *Client) loop() {
 }
 
 func (e *Client) loopRoundRunner() error {
-	err := e.lock.Lock()
-	if err != nil {
-		return err
-	}
-
 	roundCtx, cancel := context.WithTimeout(e.ctx, config.Interval)
 	defer cancel()
 
@@ -121,9 +124,7 @@ func (e *Client) loopRoundRunner() error {
 		Order(
 			ent.Desc(round.FieldNumber),
 		).
-		Limit(1).
-		Select(round.FieldNumber).
-		Only(e.ctx)
+		First(e.ctx)
 	if err != nil {
 		roundNumber = 1
 	} else {
@@ -139,17 +140,20 @@ func (e *Client) loopRoundRunner() error {
 		return nil
 	}
 
-	err = e.lock.Lock()
-	if err != nil {
-		return err
+	ok := e.RoundLock.TryLock()
+	if !ok {
+		logrus.Error("failed to lock round")
+		return nil
 	}
+
+	logrus.Infof("Running round %d", roundNumber)
 
 	// Run round
 	return e.runRound(roundCtx, entRound)
 }
 
 func (e *Client) runRound(ctx context.Context, entRound *ent.Round) error {
-	defer e.lock.Unlock()
+	defer e.RoundLock.Unlock()
 
 	// Get all the tasks
 	tasks, err := e.ent.CheckConfig.Query().
@@ -181,16 +185,22 @@ func (e *Client) runRound(ctx context.Context, entRound *ent.Round) error {
 	}
 
 	// Create a map of round tasks to keep track of the tasks
-	roundTasks := make(map[uuid.UUID]bool)
+	roundTasks := structs.NewSyncMap[uuid.UUID, *ent.CheckConfig]()
 
-	for _, entStatus := range entStatuses {
-		roundTasks[entStatus.ID] = true
+	for i, entStatus := range entStatuses {
+		roundTasks.Set(entStatus.ID, tasks[i])
 	}
 
 	// Submit tasks to the workers
 	go func() {
 		for _, entStatus := range entStatuses {
-			conf, err := json.Marshal(entStatus.Edges.Check.Config)
+			entConfig, ok := roundTasks.Get(entStatus.ID)
+			if !ok {
+				logrus.WithField("id", entStatus.ID).Error("failed to get task")
+				continue
+			}
+
+			conf, err := json.Marshal(entConfig.Config)
 			if err != nil {
 				logrus.WithError(err).Error("failed to marshal check config")
 				continue
@@ -198,14 +208,14 @@ func (e *Client) runRound(ctx context.Context, entRound *ent.Round) error {
 
 			e.taskChan <- &proto.GetScoreTaskResponse{
 				StatusId:   entStatus.ID.String(),
-				SourceName: entStatus.Edges.Check.Source,
+				SourceName: entConfig.Edges.Check.Source,
 				Config:     string(conf),
 			}
 		}
 	}()
 
 	// Wait for the results
-	for len(roundTasks) > 0 {
+	for roundTasks.Legnth() > 0 {
 		select {
 		case <-ctx.Done():
 			return nil
@@ -216,18 +226,32 @@ func (e *Client) runRound(ctx context.Context, entRound *ent.Round) error {
 				continue
 			}
 
-			go e.updateStatus(ctx, roundTasks, status_id, result.Error, result.Status)
+			switch result.Status {
+			case proto.Status_up:
+				go e.updateStatus(ctx, roundTasks, status_id, result.Error, status.StatusUp)
+			case proto.Status_down:
+				go e.updateStatus(ctx, roundTasks, status_id, result.Error, status.StatusDown)
+			case proto.Status_unknown:
+				go e.updateStatus(ctx, roundTasks, status_id, result.Error, status.StatusUnknown)
+			default:
+				go e.updateStatus(ctx, roundTasks, status_id, result.Error, status.StatusUnknown)
+				logrus.WithFields(logrus.Fields{
+					"status":    result.Status,
+					"status_id": status_id,
+				}).Error("unknown status")
+			}
 		}
 	}
 
-	for status_id := range roundTasks {
-		_, err := e.ent.Status.UpdateOneID(status_id).
+	for status_id := range roundTasks.Map() {
+		entStatus, err := e.ent.Status.UpdateOneID(status_id).
 			SetStatus(status.StatusUnknown).
 			SetPoints(0).
 			Save(ctx)
 		if err != nil {
 			logrus.WithField("id", status_id).WithError(err).Error("failed to update status")
 		}
+		logrus.WithField("status", entStatus).Info("status not reported, set to 0")
 	}
 
 	var users []struct {
@@ -262,8 +286,8 @@ func (e *Client) runRound(ctx context.Context, entRound *ent.Round) error {
 	return err
 }
 
-func (e *Client) updateStatus(ctx context.Context, roundTasks map[uuid.UUID]bool, status_id uuid.UUID, errorMessage string, _status proto.Status) {
-	_, ok := roundTasks[status_id]
+func (e *Client) updateStatus(ctx context.Context, roundTasks *structs.SyncMap[uuid.UUID, *ent.CheckConfig], status_id uuid.UUID, errorMessage string, _status status.Status) {
+	_, ok := roundTasks.Get(status_id)
 	if !ok {
 		logrus.WithField("status_id", status_id).Error("uuid not belong to round was submitted")
 		return
@@ -276,15 +300,17 @@ func (e *Client) updateStatus(ctx context.Context, roundTasks map[uuid.UUID]bool
 		entStatusUpdate.SetError(errorMessage)
 	}
 
-	if _status != proto.Status_up {
+	if _status != status.StatusUp {
 		entStatusUpdate.SetPoints(0)
 	}
 
-	_, err := entStatusUpdate.Save(ctx)
+	entStatus, err := entStatusUpdate.Save(ctx)
 	if err != nil {
 		logrus.WithField("id", status_id).WithError(err).Error("failed to update status")
 		return
 	}
 
-	delete(roundTasks, status_id)
+	logrus.WithField("status", entStatus).Info("status updated")
+
+	roundTasks.Delete(status_id)
 }

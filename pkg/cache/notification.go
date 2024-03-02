@@ -9,8 +9,8 @@ import (
 )
 
 const (
-	// GlobalNotification is the key for the global notifications pub/sub in redis
-	globalNotification = "global_notification"
+	// GlobalNotificationChannel is the key for the global notifications pub/sub in redis
+	globalNotificationChannel = "global_notification_channel"
 )
 
 func PublishNotification(ctx context.Context, redisClient *redis.Client, message string, notification_type model.NotificationType) (*redis.IntCmd, error) {
@@ -22,9 +22,9 @@ func PublishNotification(ctx context.Context, redisClient *redis.Client, message
 		return nil, err
 	}
 
-	return redisClient.Publish(context.Background(), globalNotification, out), nil
+	return redisClient.Publish(ctx, globalNotificationChannel, out), nil
 }
 
 func SubscribeNotification(ctx context.Context, redisClient *redis.Client) *redis.PubSub {
-	return redisClient.Subscribe(context.Background(), globalNotification)
+	return redisClient.Subscribe(ctx, globalNotificationChannel)
 }
