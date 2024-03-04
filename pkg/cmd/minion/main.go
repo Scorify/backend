@@ -79,10 +79,6 @@ func minionLoop(ctx context.Context, heartbeatSuccess chan struct{}) {
 			return
 		}
 
-		logrus.WithField("task", task).
-			WithField("time", time.Now()).
-			Info("recieved score task")
-
 		// parse UUID
 		uuid, err := uuid.Parse(task.GetStatusId())
 		if err != nil {

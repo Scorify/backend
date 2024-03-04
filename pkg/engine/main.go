@@ -115,7 +115,7 @@ func (e *Client) loop() {
 }
 
 func (e *Client) loopRoundRunner() error {
-	roundCtx, cancel := context.WithTimeout(e.ctx, config.Interval)
+	roundCtx, cancel := context.WithTimeout(e.ctx, config.Interval-time.Second)
 	defer cancel()
 
 	// Get the current round number
@@ -140,13 +140,9 @@ func (e *Client) loopRoundRunner() error {
 		return nil
 	}
 
-	ok := e.RoundLock.TryLock()
-	if !ok {
-		logrus.Error("failed to lock round")
-		return nil
-	}
+	e.RoundLock.Lock()
 
-	logrus.Infof("Running round %d", roundNumber)
+	logrus.WithField("time", time.Now()).Infof("Running round %d", roundNumber)
 
 	// Run round
 	return e.runRound(roundCtx, entRound)
@@ -250,8 +246,14 @@ func (e *Client) runRound(ctx context.Context, entRound *ent.Round) error {
 			Save(ctx)
 		if err != nil {
 			logrus.WithField("id", status_id).WithError(err).Error("failed to update status")
+		} else {
+			logrus.WithField("status", entStatus).Info("status not reported, set to 0")
 		}
-		logrus.WithField("status", entStatus).Info("status not reported, set to 0")
+
+		_, err = cache.PublishScoreStream(ctx, e.redis, entStatus)
+		if err != nil {
+			logrus.WithError(err).Error("failed to publish score stream")
+		}
 	}
 
 	var users []struct {
@@ -313,4 +315,9 @@ func (e *Client) updateStatus(ctx context.Context, roundTasks *structs.SyncMap[u
 	logrus.WithField("status", entStatus).Info("status updated")
 
 	roundTasks.Delete(status_id)
+
+	_, err = cache.PublishScoreStream(ctx, e.redis, entStatus)
+	if err != nil {
+		logrus.WithError(err).Error("failed to publish score stream")
+	}
 }
