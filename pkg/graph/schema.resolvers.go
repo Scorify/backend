@@ -18,6 +18,7 @@ import (
 	"github.com/scorify/backend/pkg/ent/check"
 	"github.com/scorify/backend/pkg/ent/checkconfig"
 	"github.com/scorify/backend/pkg/ent/predicate"
+	"github.com/scorify/backend/pkg/ent/status"
 	"github.com/scorify/backend/pkg/ent/user"
 	"github.com/scorify/backend/pkg/graph/model"
 	"github.com/scorify/backend/pkg/helpers"
@@ -950,6 +951,45 @@ func (r *subscriptionResolver) EngineState(ctx context.Context) (<-chan model.En
 	}()
 
 	return engineStateChan, nil
+}
+
+// StatusStream is the resolver for the statusStream field.
+func (r *subscriptionResolver) StatusStream(ctx context.Context) (<-chan *ent.Status, error) {
+	scoreStreamChan := make(chan *ent.Status, 1)
+
+	go func() {
+		sub := cache.SubscribeScoreStream(ctx, r.Redis)
+
+		ch := sub.Channel()
+		for {
+			select {
+			case msg := <-ch:
+				tempStatus := &ent.Status{}
+				err := json.Unmarshal([]byte(msg.Payload), tempStatus)
+				if err != nil {
+					logrus.WithError(err).Error("failed to unmarshal status")
+					continue
+				}
+
+				entStatus, err := r.Ent.Status.Query().
+					Where(
+						status.IDEQ(tempStatus.ID),
+					).Only(ctx)
+				if err != nil {
+					logrus.WithError(err).Error("failed to get status")
+					continue
+				}
+
+				scoreStreamChan <- entStatus
+			case <-ctx.Done():
+				close(scoreStreamChan)
+				sub.Close()
+				return
+			}
+		}
+	}()
+
+	return scoreStreamChan, nil
 }
 
 // ID is the resolver for the id field.
