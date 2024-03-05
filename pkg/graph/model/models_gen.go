@@ -34,18 +34,20 @@ type Subscription struct {
 type EngineState string
 
 const (
-	EngineStateStopped EngineState = "stopped"
+	EngineStatePaused  EngineState = "paused"
+	EngineStateWaiting EngineState = "waiting"
 	EngineStateRunning EngineState = "running"
 )
 
 var AllEngineState = []EngineState{
-	EngineStateStopped,
+	EngineStatePaused,
+	EngineStateWaiting,
 	EngineStateRunning,
 }
 
 func (e EngineState) IsValid() bool {
 	switch e {
-	case EngineStateStopped, EngineStateRunning:
+	case EngineStatePaused, EngineStateWaiting, EngineStateRunning:
 		return true
 	}
 	return false
