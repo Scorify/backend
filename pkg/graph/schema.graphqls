@@ -24,7 +24,8 @@ enum NotificationType {
 }
 
 enum EngineState {
-  stopped
+  paused
+  waiting
   running
 }
 
