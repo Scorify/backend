@@ -928,14 +928,18 @@ func (r *subscriptionResolver) EngineState(ctx context.Context) (<-chan model.En
 
 	go func() {
 		sub := cache.SubscribeEngineState(ctx, r.Redis)
+		defer sub.Close()
+		defer close(engineStateChan)
 
 		ch := sub.Channel()
 
-		if r.Engine.IsRunning() {
-			engineStateChan <- model.EngineStateRunning
-		} else {
-			engineStateChan <- model.EngineStateStopped
+		state, err := r.Engine.State()
+		if err != nil {
+			logrus.WithError(err).Error("failed to get engine state")
+			return
 		}
+
+		engineStateChan <- state
 
 		for {
 			select {
@@ -943,8 +947,6 @@ func (r *subscriptionResolver) EngineState(ctx context.Context) (<-chan model.En
 				state := model.EngineState(msg.Payload)
 				engineStateChan <- state
 			case <-ctx.Done():
-				close(engineStateChan)
-				sub.Close()
 				return
 			}
 		}
