@@ -58,6 +58,13 @@ func NewEngine(
 }
 
 func (e *Client) Stop() error {
+	if e.state == EngineRunning {
+		_, err := cache.PublishEngineState(context.Background(), e.redis, model.EngineStateStopping)
+		if err != nil {
+			return err
+		}
+	}
+
 	e.lock.Lock()
 	defer e.lock.Unlock()
 
