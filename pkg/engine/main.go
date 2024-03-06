@@ -310,7 +310,7 @@ func (e *Client) runRound(ctx context.Context, entRound *ent.Round) error {
 	if err != nil {
 		logrus.WithError(err).Error("failed to create score cache")
 	}
-	logrus.Warn("Round finished, waiting for next round")
+
 	return err
 }
 
