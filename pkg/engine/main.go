@@ -230,9 +230,14 @@ func (e *Client) runRound(ctx context.Context, entRound *ent.Round) error {
 		}
 	}()
 
+	allChecksReported := make(chan struct{})
+	checksRemain := true
+
 	// Wait for the results
-	for roundTasks.Legnth() > 0 {
+	for checksRemain {
 		select {
+		case <-allChecksReported:
+			checksRemain = false
 		case <-ctx.Done():
 			return nil
 		case result := <-e.resultsChan:
@@ -244,13 +249,13 @@ func (e *Client) runRound(ctx context.Context, entRound *ent.Round) error {
 
 			switch result.Status {
 			case proto.Status_up:
-				go e.updateStatus(ctx, roundTasks, status_id, result.Error, status.StatusUp)
+				go e.updateStatus(ctx, roundTasks, status_id, result.Error, status.StatusUp, allChecksReported)
 			case proto.Status_down:
-				go e.updateStatus(ctx, roundTasks, status_id, result.Error, status.StatusDown)
+				go e.updateStatus(ctx, roundTasks, status_id, result.Error, status.StatusDown, allChecksReported)
 			case proto.Status_unknown:
-				go e.updateStatus(ctx, roundTasks, status_id, result.Error, status.StatusUnknown)
+				go e.updateStatus(ctx, roundTasks, status_id, result.Error, status.StatusUnknown, allChecksReported)
 			default:
-				go e.updateStatus(ctx, roundTasks, status_id, result.Error, status.StatusUnknown)
+				go e.updateStatus(ctx, roundTasks, status_id, result.Error, status.StatusUnknown, allChecksReported)
 				logrus.WithFields(logrus.Fields{
 					"status":    result.Status,
 					"status_id": status_id,
@@ -267,7 +272,7 @@ func (e *Client) runRound(ctx context.Context, entRound *ent.Round) error {
 		if err != nil {
 			logrus.WithField("id", status_id).WithError(err).Error("failed to update status")
 		} else {
-			logrus.WithField("status", entStatus).Info("status not reported, set to 0")
+			logrus.WithField("status", entStatus).Debug("status not reported, set to 0")
 		}
 
 		_, err = cache.PublishScoreStream(ctx, e.redis, entStatus)
@@ -278,7 +283,7 @@ func (e *Client) runRound(ctx context.Context, entRound *ent.Round) error {
 
 	var users []struct {
 		UserID uuid.UUID `json:"user_id"`
-		Points int       `json:"points"`
+		Sum    int       `json:"sum"`
 	}
 
 	err = e.ent.Status.Query().
@@ -298,7 +303,7 @@ func (e *Client) runRound(ctx context.Context, entRound *ent.Round) error {
 		entScoreCacheCreates[i] = e.ent.ScoreCache.Create().
 			SetRound(entRound).
 			SetUserID(user.UserID).
-			SetPoints(user.Points)
+			SetPoints(user.Sum)
 	}
 
 	_, err = e.ent.ScoreCache.CreateBulk(entScoreCacheCreates...).Save(ctx)
@@ -309,7 +314,7 @@ func (e *Client) runRound(ctx context.Context, entRound *ent.Round) error {
 	return err
 }
 
-func (e *Client) updateStatus(ctx context.Context, roundTasks *structs.SyncMap[uuid.UUID, *ent.CheckConfig], status_id uuid.UUID, errorMessage string, _status status.Status) {
+func (e *Client) updateStatus(ctx context.Context, roundTasks *structs.SyncMap[uuid.UUID, *ent.CheckConfig], status_id uuid.UUID, errorMessage string, _status status.Status, allChecksReported chan<- struct{}) {
 	_, ok := roundTasks.Get(status_id)
 	if !ok {
 		logrus.WithField("status_id", status_id).Error("uuid not belong to round was submitted")
@@ -333,12 +338,14 @@ func (e *Client) updateStatus(ctx context.Context, roundTasks *structs.SyncMap[u
 		return
 	}
 
-	logrus.WithField("status", entStatus).Info("status updated")
-
 	roundTasks.Delete(status_id)
 
 	_, err = cache.PublishScoreStream(ctx, e.redis, entStatus)
 	if err != nil {
 		logrus.WithError(err).Error("failed to publish score stream")
+	}
+
+	if roundTasks.Legnth() == 0 {
+		allChecksReported <- struct{}{}
 	}
 }

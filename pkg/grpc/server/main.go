@@ -50,7 +50,7 @@ func unaryInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServ
 		"took":     time.Since(start),
 		"minions":  minionServer.counter.Get(),
 		"minionID": minionID,
-	}).Info("gRPC request")
+	}).Debug("gRPC request")
 
 	return resp, err
 }
