@@ -3,6 +3,7 @@ package engine
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"sync"
 	"time"
 
@@ -20,16 +21,17 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type EngineState int
+type state int
 
 const (
-	Stopped EngineState = iota
-	Running
+	EnginePaused state = iota
+	EngineWaiting
+	EngineRunning
 )
 
 type Client struct {
-	runLock     *structs.Lock
-	RoundLock   *sync.Mutex
+	lock        *sync.Mutex
+	state       state
 	ctx         context.Context
 	ent         *ent.Client
 	redis       *redis.Client
@@ -45,8 +47,8 @@ func NewEngine(
 	resultsChan <-chan *proto.SubmitScoreTaskRequest,
 ) *Client {
 	return &Client{
-		runLock:     structs.NewLock(),
-		RoundLock:   &sync.Mutex{},
+		lock:        &sync.Mutex{},
+		state:       EnginePaused,
 		ctx:         ctx,
 		ent:         entClient,
 		redis:       redis,
@@ -56,58 +58,78 @@ func NewEngine(
 }
 
 func (e *Client) Stop() error {
-	err := e.runLock.Unlock()
-	if err != nil {
+	if e.state == EngineRunning {
+		_, err := cache.PublishEngineState(context.Background(), e.redis, model.EngineStateStopping)
+		if err != nil {
+			return err
+		}
+	}
+
+	e.lock.Lock()
+	defer e.lock.Unlock()
+
+	if e.state == EngineWaiting {
+		e.state = EnginePaused
+		_, err := cache.PublishEngineState(context.Background(), e.redis, model.EngineStatePaused)
 		return err
 	}
 
-	_, err = cache.PublishEngineState(context.Background(), e.redis, model.EngineStateStopped)
-	return err
+	return fmt.Errorf("cannot stop engine from state %q", e.state)
 }
 
 func (e *Client) Start() error {
-	err := e.runLock.Lock()
-	if err != nil {
-		return err
+	if e.state == EngineRunning {
+		return fmt.Errorf("engine already running")
 	}
 
 	go e.loop()
 
-	_, err = cache.PublishEngineState(context.Background(), e.redis, model.EngineStateRunning)
+	e.state = EngineWaiting
+	_, err := cache.PublishEngineState(context.Background(), e.redis, model.EngineStateWaiting)
 	return err
 }
 
-func (e *Client) IsStopped() bool {
-	return e.runLock.IsUnlocked()
-}
-
-func (e *Client) IsRunning() bool {
-	return e.runLock.IsLocked()
-}
-
-func (e *Client) State() EngineState {
-	if e.IsStopped() {
-		return Stopped
+func (e *Client) State() (model.EngineState, error) {
+	switch e.state {
+	case EnginePaused:
+		return model.EngineStatePaused, nil
+	case EngineWaiting:
+		return model.EngineStateWaiting, nil
+	case EngineRunning:
+		return model.EngineStateRunning, nil
 	}
 
-	return Running
+	return "", fmt.Errorf("unknown engine state %q", e.state)
 }
 
 func (e *Client) loop() {
 	ticker := time.NewTicker(config.Interval)
 
-	defer ticker.Stop()
-	defer e.runLock.Unlock()
-	defer cache.PublishEngineState(context.Background(), e.redis, model.EngineStateStopped)
+	defer func() {
+		ticker.Stop()
+		e.state = EnginePaused
+		cache.PublishEngineState(context.Background(), e.redis, model.EngineStatePaused)
+	}()
 
 	for {
 		select {
 		case <-e.ctx.Done():
 			return
 		case <-ticker.C:
+			if e.state == EnginePaused {
+				return
+			}
+
 			err := e.loopRoundRunner()
 			if err != nil {
 				logrus.WithError(err).Error("failed to run round")
+				return
+			}
+
+			e.state = EngineWaiting
+			_, err = cache.PublishEngineState(context.Background(), e.redis, model.EngineStateWaiting)
+			if err != nil {
+				logrus.WithError(err).Error("failed to publish engine state")
 				return
 			}
 		}
@@ -115,7 +137,16 @@ func (e *Client) loop() {
 }
 
 func (e *Client) loopRoundRunner() error {
-	roundCtx, cancel := context.WithTimeout(e.ctx, config.Interval-time.Second)
+	e.lock.Lock()
+	defer e.lock.Unlock()
+
+	e.state = EngineRunning
+	_, err := cache.PublishEngineState(context.Background(), e.redis, model.EngineStateRunning)
+	if err != nil {
+		return err
+	}
+
+	roundCtx, cancel := context.WithTimeout(e.ctx, config.Interval-time.Millisecond*500)
 	defer cancel()
 
 	// Get the current round number
@@ -140,8 +171,6 @@ func (e *Client) loopRoundRunner() error {
 		return nil
 	}
 
-	e.RoundLock.Lock()
-
 	logrus.WithField("time", time.Now()).Infof("Running round %d", roundNumber)
 
 	// Run round
@@ -149,8 +178,6 @@ func (e *Client) loopRoundRunner() error {
 }
 
 func (e *Client) runRound(ctx context.Context, entRound *ent.Round) error {
-	defer e.RoundLock.Unlock()
-
 	// Get all the tasks
 	tasks, err := e.ent.CheckConfig.Query().
 		WithUser().
@@ -210,9 +237,14 @@ func (e *Client) runRound(ctx context.Context, entRound *ent.Round) error {
 		}
 	}()
 
+	allChecksReported := make(chan struct{})
+	checksRemain := true
+
 	// Wait for the results
-	for roundTasks.Legnth() > 0 {
+	for checksRemain {
 		select {
+		case <-allChecksReported:
+			checksRemain = false
 		case <-ctx.Done():
 			return nil
 		case result := <-e.resultsChan:
@@ -224,13 +256,13 @@ func (e *Client) runRound(ctx context.Context, entRound *ent.Round) error {
 
 			switch result.Status {
 			case proto.Status_up:
-				go e.updateStatus(ctx, roundTasks, status_id, result.Error, status.StatusUp)
+				go e.updateStatus(ctx, roundTasks, status_id, result.Error, status.StatusUp, allChecksReported)
 			case proto.Status_down:
-				go e.updateStatus(ctx, roundTasks, status_id, result.Error, status.StatusDown)
+				go e.updateStatus(ctx, roundTasks, status_id, result.Error, status.StatusDown, allChecksReported)
 			case proto.Status_unknown:
-				go e.updateStatus(ctx, roundTasks, status_id, result.Error, status.StatusUnknown)
+				go e.updateStatus(ctx, roundTasks, status_id, result.Error, status.StatusUnknown, allChecksReported)
 			default:
-				go e.updateStatus(ctx, roundTasks, status_id, result.Error, status.StatusUnknown)
+				go e.updateStatus(ctx, roundTasks, status_id, result.Error, status.StatusUnknown, allChecksReported)
 				logrus.WithFields(logrus.Fields{
 					"status":    result.Status,
 					"status_id": status_id,
@@ -247,7 +279,7 @@ func (e *Client) runRound(ctx context.Context, entRound *ent.Round) error {
 		if err != nil {
 			logrus.WithField("id", status_id).WithError(err).Error("failed to update status")
 		} else {
-			logrus.WithField("status", entStatus).Info("status not reported, set to 0")
+			logrus.WithField("status", entStatus).Debug("status not reported, set to 0")
 		}
 
 		_, err = cache.PublishScoreStream(ctx, e.redis, entStatus)
@@ -258,7 +290,7 @@ func (e *Client) runRound(ctx context.Context, entRound *ent.Round) error {
 
 	var users []struct {
 		UserID uuid.UUID `json:"user_id"`
-		Points int       `json:"points"`
+		Sum    int       `json:"sum"`
 	}
 
 	err = e.ent.Status.Query().
@@ -278,17 +310,18 @@ func (e *Client) runRound(ctx context.Context, entRound *ent.Round) error {
 		entScoreCacheCreates[i] = e.ent.ScoreCache.Create().
 			SetRound(entRound).
 			SetUserID(user.UserID).
-			SetPoints(user.Points)
+			SetPoints(user.Sum)
 	}
 
 	_, err = e.ent.ScoreCache.CreateBulk(entScoreCacheCreates...).Save(ctx)
 	if err != nil {
 		logrus.WithError(err).Error("failed to create score cache")
 	}
+
 	return err
 }
 
-func (e *Client) updateStatus(ctx context.Context, roundTasks *structs.SyncMap[uuid.UUID, *ent.CheckConfig], status_id uuid.UUID, errorMessage string, _status status.Status) {
+func (e *Client) updateStatus(ctx context.Context, roundTasks *structs.SyncMap[uuid.UUID, *ent.CheckConfig], status_id uuid.UUID, errorMessage string, _status status.Status, allChecksReported chan<- struct{}) {
 	_, ok := roundTasks.Get(status_id)
 	if !ok {
 		logrus.WithField("status_id", status_id).Error("uuid not belong to round was submitted")
@@ -312,12 +345,14 @@ func (e *Client) updateStatus(ctx context.Context, roundTasks *structs.SyncMap[u
 		return
 	}
 
-	logrus.WithField("status", entStatus).Info("status updated")
-
 	roundTasks.Delete(status_id)
 
 	_, err = cache.PublishScoreStream(ctx, e.redis, entStatus)
 	if err != nil {
 		logrus.WithError(err).Error("failed to publish score stream")
+	}
+
+	if roundTasks.Legnth() == 0 {
+		allChecksReported <- struct{}{}
 	}
 }

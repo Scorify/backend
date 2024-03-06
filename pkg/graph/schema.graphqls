@@ -24,8 +24,10 @@ enum NotificationType {
 }
 
 enum EngineState {
-  stopped
+  paused
+  waiting
   running
+  stopping
 }
 
 type LoginOutput {
