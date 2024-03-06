@@ -27,6 +27,7 @@ enum EngineState {
   paused
   waiting
   running
+  stopping
 }
 
 type LoginOutput {
