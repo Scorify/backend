@@ -274,7 +274,7 @@ type StatusResolver interface {
 type SubscriptionResolver interface {
 	GlobalNotification(ctx context.Context) (<-chan *model.Notification, error)
 	EngineState(ctx context.Context) (<-chan model.EngineState, error)
-	StatusStream(ctx context.Context) (<-chan *ent.Status, error)
+	StatusStream(ctx context.Context) (<-chan []*ent.Status, error)
 }
 type UserResolver interface {
 	ID(ctx context.Context, obj *ent.User) (string, error)
@@ -6537,7 +6537,7 @@ func (ec *executionContext) _Subscription_statusStream(ctx context.Context, fiel
 	}
 	return func(ctx context.Context) graphql.Marshaler {
 		select {
-		case res, ok := <-resTmp.(<-chan *ent.Status):
+		case res, ok := <-resTmp.(<-chan []*ent.Status):
 			if !ok {
 				return nil
 			}
@@ -6545,7 +6545,7 @@ func (ec *executionContext) _Subscription_statusStream(ctx context.Context, fiel
 				w.Write([]byte{'{'})
 				graphql.MarshalString(field.Alias).MarshalGQL(w)
 				w.Write([]byte{':'})
-				ec.marshalNStatus2ᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚐStatus(ctx, field.Selections, res).MarshalGQL(w)
+				ec.marshalNStatus2ᚕᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚐStatus(ctx, field.Selections, res).MarshalGQL(w)
 				w.Write([]byte{'}'})
 			})
 		case <-ctx.Done():
@@ -11743,8 +11743,42 @@ func (ec *executionContext) marshalNSource2ᚖgithubᚗcomᚋscorifyᚋbackend�
 	return ec._Source(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNStatus2githubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚐStatus(ctx context.Context, sel ast.SelectionSet, v ent.Status) graphql.Marshaler {
-	return ec._Status(ctx, sel, &v)
+func (ec *executionContext) marshalNStatus2ᚕᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚐStatus(ctx context.Context, sel ast.SelectionSet, v []*ent.Status) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOStatus2ᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚐStatus(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
 }
 
 func (ec *executionContext) marshalNStatus2ᚕᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚐStatusᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.Status) graphql.Marshaler {
@@ -12350,6 +12384,13 @@ func (ec *executionContext) marshalORole2ᚖgithubᚗcomᚋscorifyᚋbackendᚋp
 	}
 	res := graphql.MarshalString(string(*v))
 	return res
+}
+
+func (ec *executionContext) marshalOStatus2ᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚐStatus(ctx context.Context, sel ast.SelectionSet, v *ent.Status) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Status(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOString2string(ctx context.Context, v interface{}) (string, error) {
