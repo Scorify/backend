@@ -8,6 +8,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/scorify/backend/pkg/auth"
@@ -956,15 +957,25 @@ func (r *subscriptionResolver) EngineState(ctx context.Context) (<-chan model.En
 }
 
 // StatusStream is the resolver for the statusStream field.
-func (r *subscriptionResolver) StatusStream(ctx context.Context) (<-chan *ent.Status, error) {
-	scoreStreamChan := make(chan *ent.Status, 1)
+func (r *subscriptionResolver) StatusStream(ctx context.Context) (<-chan []*ent.Status, error) {
+	scoreStreamChan := make(chan []*ent.Status, 1)
 
 	go func() {
+		ticker := time.NewTicker(250 * time.Millisecond)
+		defer ticker.Stop()
+
+		statuses := []*ent.Status{}
+
 		sub := cache.SubscribeScoreStream(ctx, r.Redis)
 
 		ch := sub.Channel()
 		for {
 			select {
+			case <-ticker.C:
+				if len(statuses) > 0 {
+					scoreStreamChan <- statuses
+					statuses = []*ent.Status{}
+				}
 			case msg := <-ch:
 				tempStatus := &ent.Status{}
 				err := json.Unmarshal([]byte(msg.Payload), tempStatus)
@@ -982,7 +993,7 @@ func (r *subscriptionResolver) StatusStream(ctx context.Context) (<-chan *ent.St
 					continue
 				}
 
-				scoreStreamChan <- entStatus
+				statuses = append(statuses, entStatus)
 			case <-ctx.Done():
 				close(scoreStreamChan)
 				sub.Close()

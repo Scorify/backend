@@ -132,7 +132,7 @@ type Notification {
 type Subscription {
   globalNotification: Notification!
   engineState: EngineState!
-  statusStream: Status!
+  statusStream: [Status]!
 }
 
 type Query {
