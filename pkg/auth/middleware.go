@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"github.com/scorify/backend/pkg/config"
 	"github.com/scorify/backend/pkg/ent"
 	"github.com/scorify/backend/pkg/ent/user"
@@ -37,24 +38,84 @@ func JWTMiddleware(entClient *ent.Client) gin.HandlerFunc {
 			return
 		}
 
-		entUser, err := entClient.User.
-			Query().
-			Where(
-				user.UsernameEQ(claims.Username),
-			).
-			Only(ctx.Request.Context())
-		if err != nil {
-			ctx.Next()
-			return
-		}
+		if claims.Become != "" {
+			// Add Become User to Context
+			becomeUUID, err := uuid.Parse(claims.Become)
+			if err != nil {
+				ctx.Next()
+				return
+			}
 
-		ctx.Request = ctx.Request.WithContext(
-			context.WithValue(
-				ctx.Request.Context(),
-				structs.USER_CTX_KEY,
-				entUser,
-			),
-		)
+			entUser, err := entClient.User.
+				Query().
+				Where(
+					user.IDEQ(becomeUUID),
+				).
+				Only(ctx.Request.Context())
+			if err != nil {
+				ctx.Next()
+				return
+			}
+
+			ctx.Request = ctx.Request.WithContext(
+				context.WithValue(
+					ctx.Request.Context(),
+					structs.USER_CTX_KEY,
+					entUser,
+				),
+			)
+
+			// Add Admin User to Context
+			uuid, err := uuid.Parse(claims.ID)
+			if err != nil {
+				ctx.Next()
+				return
+			}
+
+			entUser, err = entClient.User.
+				Query().
+				Where(
+					user.IDEQ(uuid),
+				).
+				Only(ctx.Request.Context())
+			if err != nil {
+				ctx.Next()
+				return
+			}
+
+			ctx.Request = ctx.Request.WithContext(
+				context.WithValue(
+					ctx.Request.Context(),
+					structs.ADMIN_CTX_KEY,
+					entUser,
+				),
+			)
+		} else {
+			uuid, err := uuid.Parse(claims.ID)
+			if err != nil {
+				ctx.Next()
+				return
+			}
+
+			entUser, err := entClient.User.
+				Query().
+				Where(
+					user.IDEQ(uuid),
+				).
+				Only(ctx.Request.Context())
+			if err != nil {
+				ctx.Next()
+				return
+			}
+
+			ctx.Request = ctx.Request.WithContext(
+				context.WithValue(
+					ctx.Request.Context(),
+					structs.USER_CTX_KEY,
+					entUser,
+				),
+			)
+		}
 
 		ctx.Next()
 	}
@@ -62,6 +123,14 @@ func JWTMiddleware(entClient *ent.Client) gin.HandlerFunc {
 
 func Parse(ctx context.Context) (*ent.User, error) {
 	user, ok := ctx.Value(structs.USER_CTX_KEY).(*ent.User)
+	if !ok {
+		return nil, fmt.Errorf("invalid user")
+	}
+	return user, nil
+}
+
+func ParseAdmin(ctx context.Context) (*ent.User, error) {
+	user, ok := ctx.Value(structs.ADMIN_CTX_KEY).(*ent.User)
 	if !ok {
 		return nil, fmt.Errorf("invalid user")
 	}
