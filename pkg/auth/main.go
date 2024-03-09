@@ -9,16 +9,18 @@ import (
 	"github.com/scorify/backend/pkg/structs"
 )
 
-func GenerateJWT(username string, id uuid.UUID, role string) (string, int, error) {
+func GenerateJWT(username string, id uuid.UUID, become *uuid.UUID) (string, int, error) {
 	expiration := time.Now().Add(config.JWT.Timeout)
 
 	claims := &structs.Claims{
-		Username: username,
-		Role:     role,
-		ID:       id.String(),
+		ID: id.String(),
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(expiration),
 		},
+	}
+
+	if become != nil {
+		claims.Become = become.String()
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)

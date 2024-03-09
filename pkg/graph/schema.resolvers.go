@@ -140,7 +140,7 @@ func (r *mutationResolver) Login(ctx context.Context, username string, password 
 		return nil, fmt.Errorf("invalid username or password")
 	}
 
-	token, expiration, err := auth.GenerateJWT(username, entUser.ID, string(entUser.Role))
+	token, expiration, err := auth.GenerateJWT(username, entUser.ID, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -171,7 +171,47 @@ func (r *mutationResolver) AdminLogin(ctx context.Context, id string) (*model.Lo
 		return nil, fmt.Errorf("user id does not exist: %s", id)
 	}
 
-	token, expiration, err := auth.GenerateJWT(entUser.Username, entUser.ID, string(entUser.Role))
+	token, expiration, err := auth.GenerateJWT(entUser.Username, entUser.ID, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.LoginOutput{
+		Name:     "auth",
+		Token:    token,
+		Expires:  expiration,
+		Path:     "/",
+		Domain:   config.Domain,
+		Secure:   false,
+		HTTPOnly: false,
+	}, nil
+}
+
+// AdminBecome is the resolver for the adminBecome field.
+func (r *mutationResolver) AdminBecome(ctx context.Context, id string) (*model.LoginOutput, error) {
+	entUser, err := auth.Parse(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("invalid user")
+	}
+
+	becomeUuid, err := uuid.Parse(id)
+	if err != nil {
+		return nil, fmt.Errorf("encounter error while parsing id: %v", err)
+	}
+
+	exists, err := r.Ent.User.Query().
+		Where(
+			user.IDEQ(becomeUuid),
+		).Exist(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("user id does not exist: %s", id)
+	}
+
+	if !exists {
+		return nil, fmt.Errorf("user id does not exist: %s", id)
+	}
+
+	token, expiration, err := auth.GenerateJWT(entUser.Username, entUser.ID, &becomeUuid)
 	if err != nil {
 		return nil, err
 	}

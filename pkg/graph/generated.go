@@ -104,6 +104,7 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
+		AdminBecome            func(childComplexity int, id string) int
 		AdminLogin             func(childComplexity int, id string) int
 		ChangePassword         func(childComplexity int, oldPassword string, newPassword string) int
 		CreateCheck            func(childComplexity int, name string, source string, weight int, config string, editableFields []string) int
@@ -223,6 +224,7 @@ type ConfigResolver interface {
 type MutationResolver interface {
 	Login(ctx context.Context, username string, password string) (*model.LoginOutput, error)
 	AdminLogin(ctx context.Context, id string) (*model.LoginOutput, error)
+	AdminBecome(ctx context.Context, id string) (*model.LoginOutput, error)
 	ChangePassword(ctx context.Context, oldPassword string, newPassword string) (bool, error)
 	CreateCheck(ctx context.Context, name string, source string, weight int, config string, editableFields []string) (*ent.Check, error)
 	UpdateCheck(ctx context.Context, id string, name *string, weight *int, config *string, editableFields []string) (*ent.Check, error)
@@ -505,6 +507,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.LoginOutput.Token(childComplexity), true
+
+	case "Mutation.adminBecome":
+		if e.complexity.Mutation.AdminBecome == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_adminBecome_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.AdminBecome(childComplexity, args["id"].(string)), true
 
 	case "Mutation.adminLogin":
 		if e.complexity.Mutation.AdminLogin == nil {
@@ -1176,6 +1190,21 @@ func (ec *executionContext) dir_hasRole_args(ctx context.Context, rawArgs map[st
 		}
 	}
 	args["roles"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_adminBecome_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
 	return args, nil
 }
 
@@ -3231,6 +3260,101 @@ func (ec *executionContext) fieldContext_Mutation_adminLogin(ctx context.Context
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_adminLogin_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_adminBecome(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_adminBecome(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().AdminBecome(rctx, fc.Args["id"].(string))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			roles, err := ec.unmarshalORole2ᚕᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚋuserᚐRole(ctx, []interface{}{"admin"})
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.HasRole == nil {
+				return nil, errors.New("directive hasRole is not implemented")
+			}
+			return ec.directives.HasRole(ctx, nil, directive0, roles)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*model.LoginOutput); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/scorify/backend/pkg/graph/model.LoginOutput`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.LoginOutput)
+	fc.Result = res
+	return ec.marshalNLoginOutput2ᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋgraphᚋmodelᚐLoginOutput(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_adminBecome(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "name":
+				return ec.fieldContext_LoginOutput_name(ctx, field)
+			case "token":
+				return ec.fieldContext_LoginOutput_token(ctx, field)
+			case "expires":
+				return ec.fieldContext_LoginOutput_expires(ctx, field)
+			case "path":
+				return ec.fieldContext_LoginOutput_path(ctx, field)
+			case "domain":
+				return ec.fieldContext_LoginOutput_domain(ctx, field)
+			case "secure":
+				return ec.fieldContext_LoginOutput_secure(ctx, field)
+			case "httpOnly":
+				return ec.fieldContext_LoginOutput_httpOnly(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LoginOutput", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_adminBecome_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -9656,6 +9780,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "adminLogin":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_adminLogin(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "adminBecome":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_adminBecome(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
