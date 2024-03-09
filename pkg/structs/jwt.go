@@ -5,9 +5,8 @@ import (
 )
 
 type Claims struct {
-	Username string `json:"username"`
-	Role     string `json:"role"`
-	ID       string `json:"id"`
+	ID     string `json:"id"`
+	Become string `json:"become"`
 	jwt.RegisteredClaims
 }
 
@@ -15,4 +14,7 @@ type contextKey struct {
 	name string
 }
 
-var USER_CTX_KEY = &contextKey{"username"}
+var (
+	USER_CTX_KEY  = &contextKey{"user"}
+	ADMIN_CTX_KEY = &contextKey{"admin"}
+)
