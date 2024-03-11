@@ -761,7 +761,11 @@ func (r *mutationResolver) StopEngine(ctx context.Context) (bool, error) {
 
 // Me is the resolver for the me field.
 func (r *queryResolver) Me(ctx context.Context) (*ent.User, error) {
-	return auth.Parse(ctx)
+	entUser, err := auth.Parse(ctx)
+	if err != nil {
+		return &ent.User{}, nil
+	}
+	return entUser, nil
 }
 
 // Users is the resolver for the users field.
