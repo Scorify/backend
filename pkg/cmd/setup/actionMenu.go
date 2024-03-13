@@ -1,105 +1,103 @@
 package setup
 
 import (
-	"fmt"
-
+	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/sirupsen/logrus"
+	"github.com/charmbracelet/lipgloss"
 )
 
-type actionChoice int
+var actionDocStyle = lipgloss.NewStyle()
+
+type actionChoice string
 
 const (
-	actionNone actionChoice = iota
-	actionCreate
-	actionUpdate
-	actionDelete
-	actionView
+	actionNone   actionChoice = ""
+	actionCreate actionChoice = "create"
+	actionUpdate actionChoice = "update"
+	actionDelete actionChoice = "delete"
+	actionView   actionChoice = "view"
 )
 
+type actionItem struct {
+	choice      actionChoice
+	label       string
+	description string
+}
+
+func (i actionItem) Title() string {
+	return i.label
+}
+
+func (i actionItem) Description() string {
+	return i.description
+}
+
+func (i actionItem) ID() string {
+	return string(i.choice)
+}
+
+func (i actionItem) FilterValue() string {
+	return i.label + " " + i.description
+}
+
 type actionModel struct {
-	actions  []actionChoice
-	cursor   int
-	selected actionChoice
+	list     list.Model
+	selected *actionChoice
 }
 
-func newActionModel() *actionModel {
-	return &actionModel{
-		actions: []actionChoice{
-			actionCreate,
-			actionUpdate,
-			actionDelete,
-			actionView,
-		},
-		selected: actionNone,
-	}
-}
-
-func (m *actionModel) Init() tea.Cmd {
+func (m actionModel) Init() tea.Cmd {
 	return nil
 }
 
-func (m *actionModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m actionModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
+
 	switch msg := msg.(type) {
-
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "ctrl+c":
+		if msg.String() == "ctrl+c" {
+			*m.selected = actionNone
 			return m, tea.Quit
-		case "up", "k":
-			if m.cursor > 0 {
-				m.cursor--
-			}
-		case "down", "j":
-			if m.cursor < len(m.actions)-1 {
-				m.cursor++
-			}
-		case "enter", " ":
-			if m.cursor < 0 || m.cursor >= len(m.actions) {
-				m.cursor = 0
-			} else {
-				m.selected = m.actions[m.cursor]
-
-				return m, tea.Quit
-			}
 		}
+
+		if msg.String() == "enter" {
+			return m, tea.Quit
+		}
+
+	case tea.WindowSizeMsg:
+		h, v := actionDocStyle.GetFrameSize()
+		m.list.SetSize(msg.Width-h, msg.Height-v)
 	}
 
-	return m, nil
+	m.list, cmd = m.list.Update(msg)
+	*m.selected = m.list.SelectedItem().(actionItem).choice
+
+	return m, cmd
 }
 
-func (m *actionModel) View() string {
-	s := "\n"
-	for i, choice := range m.actions {
-		cursor := " "
-		if m.cursor == i {
-			cursor = ">"
-		}
-
-		var out string
-		switch choice {
-		case actionCreate:
-			out = "Create a new config"
-		case actionUpdate:
-			out = "Update existing config"
-		case actionDelete:
-			out = "Delete existing config"
-		case actionView:
-			out = "View existing config"
-		}
-
-		s += fmt.Sprintf("%s %s\n", cursor, out)
-	}
-
-	return s
+func (m actionModel) View() string {
+	return actionDocStyle.Render(m.list.View())
 }
 
-func actionMenu() actionChoice {
-	aModel := newActionModel()
-	_, err := tea.NewProgram(aModel).Run()
-	if err != nil {
-		logrus.WithError(err).Fatal("encountered an error while running the TUI")
+func actionMenu() (actionChoice, error) {
+	items := []list.Item{
+		actionItem{choice: actionCreate, label: "Create", description: "Create a new configuration"},
+		actionItem{choice: actionUpdate, label: "Update", description: "Update existing configuration"},
+		actionItem{choice: actionDelete, label: "Delete", description: "Delete existing configuration"},
+		actionItem{choice: actionView, label: "View", description: "View existing configuration"},
 	}
 
-	return aModel.selected
+	selected := actionNone
+
+	m := actionModel{
+		list:     list.New(items, list.NewDefaultDelegate(), 0, 0),
+		selected: &selected,
+	}
+	m.list.Title = "Select action to setup Scorify Configuration"
+
+	p := tea.NewProgram(m, tea.WithAltScreen())
+	if _, err := p.Run(); err != nil {
+		return actionNone, err
+	}
+
+	return *m.selected, nil
 }
