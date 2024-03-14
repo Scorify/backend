@@ -2,13 +2,8 @@ package setup
 
 import (
 	"bufio"
-	"crypto/rand"
-	"fmt"
 	"html/template"
-	"math/big"
 	"os"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -24,91 +19,31 @@ var Cmd = &cobra.Command{
 	Run: run,
 }
 
-const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-
-func generatePassword() (string, error) {
-	s := make([]byte, 64)
-	for i := range s {
-		idx, err := rand.Int(rand.Reader, big.NewInt(int64(len(charset))))
-		if err != nil {
-			return "", err
-		}
-		s[i] = charset[idx.Int64()]
-	}
-	return string(s), nil
-}
-
-func prompt(reader *bufio.Reader, defaultValue string, message string) (string, error) {
-	fmt.Print(message)
-	text, err := reader.ReadString('\n')
-	if err != nil {
-		return "", err
-	}
-
-	if text == "\n" {
-		return defaultValue, nil
-	}
-
-	return strings.TrimSpace(text), nil
-}
-
-func promptPassword(reader *bufio.Reader, message string) (string, error) {
-	fmt.Print(message)
-	text, err := reader.ReadString('\n')
-	if err != nil {
-		return "", err
-	}
-
-	if text == "\n" {
-		password, err := generatePassword()
-		if err != nil {
-			return "", err
-		}
-
-		return password, nil
-	}
-
-	return strings.TrimSpace(text), nil
-}
-
-func promptDuration(reader *bufio.Reader, defaultValue time.Duration, minValue time.Duration, message string) (time.Duration, error) {
-	fmt.Print(message)
-	text, err := reader.ReadString('\n')
-	if err != nil {
-		return 0, err
-	}
-
-	if text == "\n" {
-		return defaultValue, nil
-	}
-
-	out, err := time.ParseDuration(strings.TrimSpace(text))
-	if err != nil {
-		return 0, err
-	}
-
-	if out < minValue {
-		return 0, fmt.Errorf("duration must be greater than %s", minValue)
-	}
-
-	return out, nil
-}
-
-func promptInt(reader *bufio.Reader, defaultValue int, message string) (int, error) {
-	fmt.Print(message)
-	text, err := reader.ReadString('\n')
-	if err != nil {
-		return 0, err
-	}
-
-	if text == "\n" {
-		return defaultValue, nil
-	}
-
-	return strconv.Atoi(strings.TrimSpace(text))
-}
-
 func run(cmd *cobra.Command, args []string) {
+	choice, err := actionMenu()
+	if err != nil {
+		logrus.WithError(err).Fatal("failed to show action menu")
+	}
+
+	switch choice {
+	case actionCreate:
+		createMenu()
+	case actionUpdate:
+		logrus.Fatal("update menu not implemented")
+	case actionDelete:
+		err = deleteMenu()
+		if err != nil {
+			logrus.WithError(err).Fatal("failed to show delete menu")
+		}
+	case actionView:
+		err = viewMenu()
+		if err != nil {
+			logrus.WithError(err).Fatal("failed to show view menu")
+		}
+	}
+}
+
+func createMenu() {
 	reader := bufio.NewReader(os.Stdin)
 
 	// DOMAIN
