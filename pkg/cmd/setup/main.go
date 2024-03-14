@@ -20,6 +20,30 @@ var Cmd = &cobra.Command{
 }
 
 func run(cmd *cobra.Command, args []string) {
+	choice, err := actionMenu()
+	if err != nil {
+		logrus.WithError(err).Fatal("failed to show action menu")
+	}
+
+	switch choice {
+	case actionCreate:
+		createMenu()
+	case actionUpdate:
+		logrus.Fatal("update menu not implemented")
+	case actionDelete:
+		err = deleteMenu()
+		if err != nil {
+			logrus.WithError(err).Fatal("failed to show delete menu")
+		}
+	case actionView:
+		err = viewMenu()
+		if err != nil {
+			logrus.WithError(err).Fatal("failed to show view menu")
+		}
+	}
+}
+
+func createMenu() {
 	reader := bufio.NewReader(os.Stdin)
 
 	// DOMAIN
