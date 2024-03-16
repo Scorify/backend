@@ -17,12 +17,14 @@ var (
 	Port int
 
 	// Scoring Interval is the interval for the scoring in seconds
-	Interval time.Duration
+	IntervalStr string
+	Interval    time.Duration
 
 	// JWT is the configuration for the JWT token
 	JWT struct {
 		// Timeout is the timeout for the JWT token in hours
-		Timeout time.Duration
+		TimeoutStr string
+		Timeout    time.Duration
 
 		// Key is the secret key for the JWT token
 		Secret string
@@ -87,7 +89,8 @@ func Init() {
 		logrus.WithError(err).Fatal("failed to parse PORT")
 	}
 
-	Interval, err = time.ParseDuration(os.Getenv("INTERVAL"))
+	IntervalStr = os.Getenv("INTERVAL")
+	Interval, err = time.ParseDuration(IntervalStr)
 	if err != nil {
 		logrus.WithError(err).Fatal("failed to parse INTERVAL")
 	}
@@ -95,7 +98,8 @@ func Init() {
 		logrus.Fatal("INTERVAL must be greater than 1 second")
 	}
 
-	JWT.Timeout, err = time.ParseDuration(os.Getenv("JWT_TIMEOUT"))
+	JWT.TimeoutStr = os.Getenv("JWT_TIMEOUT")
+	JWT.Timeout, err = time.ParseDuration(JWT.TimeoutStr)
 	if err != nil {
 		logrus.WithError(err).Fatal("failed to parse JWT_TIMEOUT")
 	}

@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/scorify/backend/pkg/config"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -15,6 +16,9 @@ var Cmd = &cobra.Command{
 	Short:   "Setup configuration for the server",
 	Long:    "Setup configuration for the server",
 	Aliases: []string{"init", "i"},
+	PreRun: func(cmd *cobra.Command, args []string) {
+		config.Init()
+	},
 
 	Run: run,
 }
@@ -29,7 +33,7 @@ func run(cmd *cobra.Command, args []string) {
 	case actionCreate:
 		createMenu()
 	case actionUpdate:
-		logrus.Fatal("update menu not implemented")
+		editMenu()
 	case actionDelete:
 		err = deleteMenu()
 		if err != nil {
@@ -204,7 +208,44 @@ func createMenu() {
 		logrus.WithError(err).Fatal("failed to read gRPC secret")
 	}
 
-	// Write .env file
+	writeConfig(
+		domain,
+		port,
+		interval,
+		jwtTimeout,
+		jwtSecret,
+		postgresHost,
+		postgresPort,
+		postgresUser,
+		postgresPassword,
+		postgresDB,
+		redisHost,
+		redisPort,
+		redisPassword,
+		grpcHost,
+		grpcPort,
+		grpcSecret,
+	)
+}
+
+func writeConfig(
+	domain string,
+	port int,
+	interval time.Duration,
+	jwtTimeout time.Duration,
+	jwtSecret string,
+	postgresHost string,
+	postgresPort int,
+	postgresUser string,
+	postgresPassword string,
+	postgresDB string,
+	redisHost string,
+	redisPort int,
+	redisPassword string,
+	grpcHost string,
+	grpcPort int,
+	grpcSecret string,
+) {
 	envTmpl, err := os.ReadFile(".env.tmpl")
 	if err != nil {
 		logrus.WithError(err).Fatal("failed to read .env.tmpl")
