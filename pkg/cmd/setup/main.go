@@ -2,6 +2,7 @@ package setup
 
 import (
 	"bufio"
+	"fmt"
 	"html/template"
 	"os"
 	"time"
@@ -49,7 +50,7 @@ func run(cmd *cobra.Command, args []string) {
 	}
 }
 
-func createMenu() {
+func createMenu() error {
 	reader := bufio.NewReader(os.Stdin)
 
 	// DOMAIN
@@ -59,7 +60,7 @@ func createMenu() {
 		"Enter the domain of the server [localhost]: ",
 	)
 	if err != nil {
-		logrus.WithError(err).Fatal("failed to read domain")
+		return fmt.Errorf("failed to read domain: %w", err)
 	}
 
 	// PORT
@@ -69,7 +70,7 @@ func createMenu() {
 		"Enter the port of the server [8080]: ",
 	)
 	if err != nil {
-		logrus.WithError(err).Fatal("failed to read port")
+		return fmt.Errorf("failed to read port: %w", err)
 	}
 
 	// INTERVAL
@@ -80,7 +81,7 @@ func createMenu() {
 		"Enter the interval of the score task in seconds [30s]: ",
 	)
 	if err != nil {
-		logrus.WithError(err).Fatal("failed to read interval")
+		return fmt.Errorf("failed to read interval: %w", err)
 	}
 
 	// JWT_TIMEOUT
@@ -91,7 +92,7 @@ func createMenu() {
 		"Enter the timeout of the JWT (session length) in hours [6h]: ",
 	)
 	if err != nil {
-		logrus.WithError(err).Fatal("failed to read JWT timeout")
+		return fmt.Errorf("failed to read JWT timeout: %w", err)
 	}
 
 	// JWT_SECRET
@@ -100,7 +101,7 @@ func createMenu() {
 		"Enter the secret key for the JWT token [randomly generate]: ",
 	)
 	if err != nil {
-		logrus.WithError(err).Fatal("failed to read JWT secret")
+		return fmt.Errorf("failed to read JWT secret: %w", err)
 	}
 
 	// POSTGRES_HOST
@@ -110,7 +111,7 @@ func createMenu() {
 		"Enter the host of the postgres database [postgres]: ",
 	)
 	if err != nil {
-		logrus.WithError(err).Fatal("failed to read postgres host")
+		return fmt.Errorf("failed to read postgres host: %w", err)
 	}
 
 	// POSTGRES_PORT
@@ -120,7 +121,7 @@ func createMenu() {
 		"Enter the port of the postgres database [5432]: ",
 	)
 	if err != nil {
-		logrus.WithError(err).Fatal("failed to read postgres port")
+		return fmt.Errorf("failed to read postgres port: %w", err)
 	}
 
 	// POSTGRES_USER
@@ -130,7 +131,7 @@ func createMenu() {
 		"Enter the user of the postgres database [scorify]: ",
 	)
 	if err != nil {
-		logrus.WithError(err).Fatal("failed to read postgres user")
+		return fmt.Errorf("failed to read postgres user: %w", err)
 	}
 
 	// POSTGRES_PASSWORD
@@ -139,7 +140,7 @@ func createMenu() {
 		"Enter the password of the postgres database [randomly generate]: ",
 	)
 	if err != nil {
-		logrus.WithError(err).Fatal("failed to read postgres password")
+		return fmt.Errorf("failed to read postgres password: %w", err)
 	}
 
 	// POSTGRES_DB
@@ -149,7 +150,7 @@ func createMenu() {
 		"Enter the name of the postgres database [scorify]: ",
 	)
 	if err != nil {
-		logrus.WithError(err).Fatal("failed to read postgres database")
+		return fmt.Errorf("failed to read postgres database: %w", err)
 	}
 
 	// REDIS_HOST
@@ -159,7 +160,7 @@ func createMenu() {
 		"Enter the host of the redis server [redis]: ",
 	)
 	if err != nil {
-		logrus.WithError(err).Fatal("failed to read redis host")
+		return fmt.Errorf("failed to read redis host: %w", err)
 	}
 
 	// REDIS_PORT
@@ -169,7 +170,7 @@ func createMenu() {
 		"Enter the port of the redis server [6379]: ",
 	)
 	if err != nil {
-		logrus.WithError(err).Fatal("failed to read redis port")
+		return fmt.Errorf("failed to read redis port: %w", err)
 	}
 
 	// REDIS_PASSWORD
@@ -178,7 +179,7 @@ func createMenu() {
 		"Enter the password of the redis server [randomly generate]: ",
 	)
 	if err != nil {
-		logrus.WithError(err).Fatal("failed to read redis password")
+		return fmt.Errorf("failed to read redis password: %w", err)
 	}
 
 	// GRPC_HOST
@@ -188,7 +189,7 @@ func createMenu() {
 		"Enter the host of the gRPC server [localhost]: ",
 	)
 	if err != nil {
-		logrus.WithError(err).Fatal("failed to read gRPC host")
+		return fmt.Errorf("failed to read gRPC host: %w", err)
 	}
 
 	// GRPC_PORT
@@ -198,7 +199,7 @@ func createMenu() {
 		"Enter the port of the gRPC server [50051]: ",
 	)
 	if err != nil {
-		logrus.WithError(err).Fatal("failed to read gRPC port")
+		return fmt.Errorf("failed to read gRPC port: %w", err)
 	}
 
 	// GRPC_SECRET
@@ -207,10 +208,10 @@ func createMenu() {
 		"Enter the secret key for the gRPC server [randomly generate]: ",
 	)
 	if err != nil {
-		logrus.WithError(err).Fatal("failed to read gRPC secret")
+		return fmt.Errorf("failed to read gRPC secret: %w", err)
 	}
 
-	writeConfig(
+	err = writeConfig(
 		domain,
 		port,
 		interval,
@@ -228,6 +229,11 @@ func createMenu() {
 		grpcPort,
 		grpcSecret,
 	)
+	if err != nil {
+		return fmt.Errorf("failed to write config: %w", err)
+	}
+
+	return nil
 }
 
 func writeConfig(
@@ -247,20 +253,20 @@ func writeConfig(
 	grpcHost string,
 	grpcPort int,
 	grpcSecret string,
-) {
+) error {
 	envTmpl, err := os.ReadFile(".env.tmpl")
 	if err != nil {
-		logrus.WithError(err).Fatal("failed to read .env.tmpl")
+		return fmt.Errorf("failed to read .env.tmpl: %w", err)
 	}
 
 	tmpl, err := template.New("env").Parse(string(envTmpl))
 	if err != nil {
-		logrus.WithError(err).Fatal("failed to parse .env.tmpl")
+		return fmt.Errorf("failed to parse .env.tmpl: %w", err)
 	}
 
 	envFile, err := os.Create(".env")
 	if err != nil {
-		logrus.WithError(err).Fatal("failed to create .env")
+		return fmt.Errorf("failed to create .env: %w", err)
 	}
 
 	err = tmpl.Execute(envFile, struct {
@@ -305,6 +311,8 @@ func writeConfig(
 		GRPCSecret: grpcSecret,
 	})
 	if err != nil {
-		logrus.WithError(err).Fatal("failed to write .env")
+		return fmt.Errorf("failed to execute .env.tmpl: %w", err)
 	}
+
+	return nil
 }

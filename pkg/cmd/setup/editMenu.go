@@ -222,7 +222,7 @@ func saveConfig(m editModel) error {
 	}
 	grpcSecret := m.items[15].value
 
-	writeConfig(
+	return writeConfig(
 		domain,
 		port,
 		interval,
@@ -240,6 +240,4 @@ func saveConfig(m editModel) error {
 		grpcPort,
 		grpcSecret,
 	)
-
-	return nil
 }
