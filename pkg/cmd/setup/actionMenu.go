@@ -84,6 +84,7 @@ func actionMenu() (actionChoice, error) {
 		actionItem{choice: actionUpdate, label: "Update", description: "Update existing configuration"},
 		actionItem{choice: actionDelete, label: "Delete", description: "Delete existing configuration"},
 		actionItem{choice: actionView, label: "View", description: "View existing configuration"},
+		actionItem{choice: actionNone, label: "Exit", description: "Cancel and exit"},
 	}
 
 	selected := actionNone
