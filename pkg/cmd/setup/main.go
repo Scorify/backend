@@ -16,9 +16,6 @@ var Cmd = &cobra.Command{
 	Short:   "Setup configuration for the server",
 	Long:    "Setup configuration for the server",
 	Aliases: []string{"init", "i"},
-	PreRun: func(cmd *cobra.Command, args []string) {
-		config.Init()
-	},
 
 	Run: run,
 }
@@ -33,13 +30,18 @@ func run(cmd *cobra.Command, args []string) {
 	case actionCreate:
 		createMenu()
 	case actionUpdate:
-		editMenu()
+		config.Init()
+		err = editMenu()
+		if err != nil {
+			logrus.WithError(err).Fatal("failed to show edit menu")
+		}
 	case actionDelete:
 		err = deleteMenu()
 		if err != nil {
 			logrus.WithError(err).Fatal("failed to show delete menu")
 		}
 	case actionView:
+		config.Init()
 		err = viewMenu()
 		if err != nil {
 			logrus.WithError(err).Fatal("failed to show view menu")
