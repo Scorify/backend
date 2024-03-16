@@ -22,6 +22,21 @@ var Cmd = &cobra.Command{
 }
 
 func run(cmd *cobra.Command, args []string) {
+	// Create .env file if it doesn't exist
+	_, err := os.Stat(".env")
+	if os.IsNotExist(err) {
+		fmt.Println("[X] .env file not found")
+		fmt.Println("[*] Creating .env file")
+		fmt.Println()
+		err = createMenu()
+		if err != nil {
+			logrus.WithError(err).Fatal("failed to show create menu")
+		}
+		return
+	} else if err != nil {
+		logrus.WithError(err).Fatal("failed to check .env file")
+	}
+
 	choice, err := actionMenu()
 	if err != nil {
 		logrus.WithError(err).Fatal("failed to show action menu")
@@ -29,7 +44,10 @@ func run(cmd *cobra.Command, args []string) {
 
 	switch choice {
 	case actionCreate:
-		createMenu()
+		err = createMenu()
+		if err != nil {
+			logrus.WithError(err).Fatal("failed to show create menu")
+		}
 	case actionUpdate:
 		config.Init()
 		err = editMenu()
@@ -47,6 +65,8 @@ func run(cmd *cobra.Command, args []string) {
 		if err != nil {
 			logrus.WithError(err).Fatal("failed to show view menu")
 		}
+	case actionNone:
+		return
 	}
 }
 
