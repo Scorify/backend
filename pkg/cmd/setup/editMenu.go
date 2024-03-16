@@ -13,6 +13,7 @@ type item struct {
 	label   string
 	value   string
 	private bool
+	prev    string
 }
 
 type editModel struct {
@@ -27,22 +28,22 @@ var cursorFmt = color.New(color.FgBlack, color.BgWhite).SprintFunc()
 func newEditModel() editModel {
 	return editModel{
 		items: []item{
-			{label: "Domain", value: config.Domain},
-			{label: "Port", value: fmt.Sprintf("%d", config.Port)},
-			{label: "Interval", value: config.IntervalStr},
-			{label: "JWT Timeout", value: config.JWT.TimeoutStr},
-			{label: "JWT Secret", value: config.JWT.Secret, private: true},
-			{label: "Postgres Host", value: config.Postgres.Host},
-			{label: "Postgres Port", value: fmt.Sprintf("%d", config.Postgres.Port)},
-			{label: "Postgres User", value: config.Postgres.User},
-			{label: "Postgres Password", value: config.Postgres.Password, private: true},
-			{label: "Postgres DB", value: config.Postgres.DB},
-			{label: "Redis Host", value: config.Redis.Host},
-			{label: "Redis Port", value: fmt.Sprintf("%d", config.Redis.Port)},
-			{label: "Redis Password", value: config.Redis.Password, private: true},
-			{label: "GRPC Host", value: config.GRPC.Host},
-			{label: "GRPC Port", value: fmt.Sprintf("%d", config.GRPC.Port)},
-			{label: "GRPC Secret", value: config.GRPC.Secret, private: true},
+			{label: "Domain", value: config.Domain, prev: config.Domain},
+			{label: "Port", value: fmt.Sprintf("%d", config.Port), prev: fmt.Sprintf("%d", config.Port)},
+			{label: "Interval", value: config.IntervalStr, prev: config.IntervalStr},
+			{label: "JWT Timeout", value: config.JWT.TimeoutStr, prev: config.JWT.TimeoutStr},
+			{label: "JWT Secret", value: config.JWT.Secret, private: true, prev: config.JWT.Secret},
+			{label: "Postgres Host", value: config.Postgres.Host, prev: config.Postgres.Host},
+			{label: "Postgres Port", value: fmt.Sprintf("%d", config.Postgres.Port), prev: fmt.Sprintf("%d", config.Postgres.Port)},
+			{label: "Postgres User", value: config.Postgres.User, prev: config.Postgres.User},
+			{label: "Postgres Password", value: config.Postgres.Password, private: true, prev: config.Postgres.Password},
+			{label: "Postgres DB", value: config.Postgres.DB, prev: config.Postgres.DB},
+			{label: "Redis Host", value: config.Redis.Host, prev: config.Redis.Host},
+			{label: "Redis Port", value: fmt.Sprintf("%d", config.Redis.Port), prev: fmt.Sprintf("%d", config.Redis.Port)},
+			{label: "Redis Password", value: config.Redis.Password, private: true, prev: config.Redis.Password},
+			{label: "GRPC Host", value: config.GRPC.Host, prev: config.GRPC.Host},
+			{label: "GRPC Port", value: fmt.Sprintf("%d", config.GRPC.Port), prev: fmt.Sprintf("%d", config.GRPC.Port)},
+			{label: "GRPC Secret", value: config.GRPC.Secret, private: true, prev: config.GRPC.Secret},
 		},
 	}
 }
@@ -114,6 +115,9 @@ func (m editModel) View() string {
 	s := ""
 	for i, item := range m.items {
 		prefix := "[ ]"
+		if item.value != item.prev {
+			prefix = "[+]"
+		}
 		if i == m.itemCursor {
 			if m.editting {
 				prefix = "[*]"
