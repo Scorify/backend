@@ -65,8 +65,8 @@ func (m editModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.items[m.itemCursor].value = m.items[m.itemCursor].value[:m.editCursor-1] + m.items[m.itemCursor].value[m.editCursor:]
 				} else if m.editCursor == len(m.items[m.itemCursor].value) {
 					m.items[m.itemCursor].value = m.items[m.itemCursor].value[:m.editCursor-1]
-					m.editCursor--
 				}
+				m.editCursor--
 			}
 		case "esc":
 			if m.editting {
@@ -76,7 +76,7 @@ func (m editModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		default:
 			if m.editting {
-				m.items[m.itemCursor].value += string(msg.Runes)
+				m.items[m.itemCursor].value = m.items[m.itemCursor].value[:m.editCursor] + msg.String() + m.items[m.itemCursor].value[m.editCursor:]
 				m.editCursor++
 			} else {
 				switch msg.String() {
@@ -113,7 +113,6 @@ func (m editModel) View() string {
 			} else {
 				s += fmt.Sprintf("%s %s: %s\n", prefix, item.label, item.value[:m.editCursor]+cursorFmt(string(item.value[m.editCursor]))+item.value[m.editCursor+1:])
 			}
-
 		} else {
 			s += fmt.Sprintf("%s %s: %s\n", prefix, item.label, item.value)
 		}
