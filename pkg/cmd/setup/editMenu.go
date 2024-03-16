@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/fatih/color"
 )
 
 type item struct {
@@ -17,6 +18,8 @@ type editModel struct {
 	items      []item
 	editting   bool
 }
+
+var cursorFmt = color.New(color.FgBlack, color.BgWhite).SprintFunc()
 
 func newEditModel() editModel {
 	return editModel{
@@ -65,6 +68,12 @@ func (m editModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.editCursor--
 				}
 			}
+		case "esc":
+			if m.editting {
+				m.editting = false
+			} else {
+				return m, tea.Quit
+			}
 		default:
 			if m.editting {
 				m.items[m.itemCursor].value += string(msg.Runes)
@@ -75,10 +84,6 @@ func (m editModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.itemCursor = min(m.itemCursor+1, len(m.items)-1)
 				case "k":
 					m.itemCursor = max(m.itemCursor-1, 0)
-				case "h":
-					m.editCursor = max(m.editCursor-1, 0)
-				case "l":
-					m.editCursor = min(m.editCursor+1, len(m.items[m.itemCursor].value))
 				case "q":
 					return m, tea.Quit
 				}
@@ -101,7 +106,14 @@ func (m editModel) View() string {
 		}
 
 		if m.editting && i == m.itemCursor {
-			s += fmt.Sprintf("%s %s: %s\n", prefix, item.label, item.value[:m.editCursor]+"|"+item.value[m.editCursor:])
+			if m.editCursor == len(item.value) {
+				s += fmt.Sprintf("%s %s: %s%s\n", prefix, item.label, item.value, cursorFmt(" "))
+			} else if m.editCursor == len(item.value)-1 {
+				s += fmt.Sprintf("%s %s: %s\n", prefix, item.label, item.value[:m.editCursor]+cursorFmt(string(item.value[m.editCursor])))
+			} else {
+				s += fmt.Sprintf("%s %s: %s\n", prefix, item.label, item.value[:m.editCursor]+cursorFmt(string(item.value[m.editCursor]))+item.value[m.editCursor+1:])
+			}
+
 		} else {
 			s += fmt.Sprintf("%s %s: %s\n", prefix, item.label, item.value)
 		}
