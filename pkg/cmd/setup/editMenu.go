@@ -2,11 +2,14 @@ package setup
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
+	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/fatih/color"
 	"github.com/scorify/backend/pkg/config"
+	"github.com/sirupsen/logrus"
 )
 
 type item struct {
@@ -23,7 +26,7 @@ type editModel struct {
 	editting   bool
 }
 
-var cursorFmt = color.New(color.FgBlack, color.BgWhite).SprintFunc()
+var selected = color.New(color.FgBlack, color.BgWhite).SprintFunc()
 
 func newEditModel() editModel {
 	return editModel{
@@ -62,23 +65,43 @@ func (m editModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		case "down":
 			if !m.editting {
-				m.itemCursor = min(m.itemCursor+1, len(m.items)-1)
+				m.itemCursor = min(m.itemCursor+1, len(m.items))
 			}
 		case "left":
-			if m.editting {
-				m.editCursor = max(m.editCursor-1, 0)
+			if len(m.items) == m.itemCursor {
+				m.editCursor = 0
+			} else {
+				if m.editting {
+					m.editCursor = max(m.editCursor-1, 0)
+				}
 			}
 		case "right":
-			if m.editting {
-				m.editCursor = min(m.editCursor+1, len(m.items[m.itemCursor].value))
+			if len(m.items) == m.itemCursor {
+				m.editCursor = 1
+			} else {
+				if m.editting {
+					m.editCursor = min(m.editCursor+1, len(m.items[m.itemCursor].value))
+				}
 			}
 		case "enter":
 			m.editting = !m.editting
-			m.editCursor = len(m.items[m.itemCursor].value)
+			if len(m.items) == m.itemCursor {
+				if m.editCursor == 0 {
+					return m, tea.Quit
+				} else {
+					err := saveConfig(m)
+					if err != nil {
+						logrus.WithError(err).Fatal("failed to save config")
+					}
+					return m, tea.Quit
+				}
+			} else {
+				m.editCursor = len(m.items[m.itemCursor].value)
+			}
 		case "ctrl+c":
 			return m, tea.Quit
 		case "backspace", "delete":
-			if m.editting {
+			if m.editting && m.editCursor != len(m.items) {
 				if m.editCursor < len(m.items[m.itemCursor].value) {
 					m.items[m.itemCursor].value = m.items[m.itemCursor].value[:m.editCursor-1] + m.items[m.itemCursor].value[m.editCursor:]
 				} else if m.editCursor == len(m.items[m.itemCursor].value) {
@@ -93,13 +116,13 @@ func (m editModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, tea.Quit
 			}
 		default:
-			if m.editting {
+			if m.editting && len(m.items) != m.editCursor {
 				m.items[m.itemCursor].value = m.items[m.itemCursor].value[:m.editCursor] + msg.String() + m.items[m.itemCursor].value[m.editCursor:]
 				m.editCursor++
 			} else {
 				switch msg.String() {
 				case "j":
-					m.itemCursor = min(m.itemCursor+1, len(m.items)-1)
+					m.itemCursor = min(m.itemCursor+1, len(m.items))
 				case "k":
 					m.itemCursor = max(m.itemCursor-1, 0)
 				case "q":
@@ -128,11 +151,11 @@ func (m editModel) View() string {
 
 		if m.editting && i == m.itemCursor {
 			if m.editCursor == len(item.value) {
-				s += fmt.Sprintf("%s %s: %s%s\n", prefix, item.label, item.value, cursorFmt(" "))
+				s += fmt.Sprintf("%s %s: %s%s\n", prefix, item.label, item.value, selected(" "))
 			} else if m.editCursor == len(item.value)-1 {
-				s += fmt.Sprintf("%s %s: %s\n", prefix, item.label, item.value[:m.editCursor]+cursorFmt(string(item.value[m.editCursor])))
+				s += fmt.Sprintf("%s %s: %s\n", prefix, item.label, item.value[:m.editCursor]+selected(string(item.value[m.editCursor])))
 			} else {
-				s += fmt.Sprintf("%s %s: %s\n", prefix, item.label, item.value[:m.editCursor]+cursorFmt(string(item.value[m.editCursor]))+item.value[m.editCursor+1:])
+				s += fmt.Sprintf("%s %s: %s\n", prefix, item.label, item.value[:m.editCursor]+selected(string(item.value[m.editCursor]))+item.value[m.editCursor+1:])
 			}
 		} else {
 			if item.private {
@@ -142,6 +165,18 @@ func (m editModel) View() string {
 			}
 		}
 	}
+	exit := " EXIT "
+	save := " SAVE "
+
+	if len(m.items) == m.itemCursor {
+		if m.editCursor == 0 {
+			exit = selected(exit)
+		} else {
+			save = selected(save)
+		}
+	}
+
+	s += fmt.Sprintf("\n[%s] [%s]\n", exit, save)
 	return s
 }
 
@@ -149,4 +184,62 @@ func editMenu() error {
 	p := tea.NewProgram(newEditModel())
 	_, err := p.Run()
 	return err
+}
+
+func saveConfig(m editModel) error {
+	domain := m.items[0].value
+	port, err := strconv.Atoi(m.items[1].value)
+	if err != nil {
+		return err
+	}
+	interval, err := time.ParseDuration(m.items[2].value)
+	if err != nil {
+		return err
+	}
+	jwtTimeout, err := time.ParseDuration(m.items[3].value)
+	if err != nil {
+		return err
+	}
+	jwtSecret := m.items[4].value
+	postgresHost := m.items[5].value
+	postgresPort, err := strconv.Atoi(m.items[6].value)
+	if err != nil {
+		return err
+	}
+	postgresUser := m.items[7].value
+	postgresPassword := m.items[8].value
+	postgresDB := m.items[9].value
+	redisHost := m.items[10].value
+	redisPort, err := strconv.Atoi(m.items[11].value)
+	if err != nil {
+		return err
+	}
+	redisPassword := m.items[12].value
+	grpcHost := m.items[13].value
+	grpcPort, err := strconv.Atoi(m.items[14].value)
+	if err != nil {
+		return err
+	}
+	grpcSecret := m.items[15].value
+
+	writeConfig(
+		domain,
+		port,
+		interval,
+		jwtTimeout,
+		jwtSecret,
+		postgresHost,
+		postgresPort,
+		postgresUser,
+		postgresPassword,
+		postgresDB,
+		redisHost,
+		redisPort,
+		redisPassword,
+		grpcHost,
+		grpcPort,
+		grpcSecret,
+	)
+
+	return nil
 }
