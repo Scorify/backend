@@ -137,15 +137,15 @@ func (m editModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m editModel) View() string {
 	s := ""
 	for i, item := range m.items {
-		prefix := "[ ]"
+		prefix := " "
 		if item.value != item.prev {
-			prefix = "[+]"
+			prefix = "+"
 		}
 		if i == m.itemCursor {
 			if m.editting {
-				prefix = "[*]"
+				prefix = "*"
 			} else {
-				prefix = "[>]"
+				prefix = ">"
 			}
 		}
 
