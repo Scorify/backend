@@ -12,7 +12,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type item struct {
+type editItem struct {
 	label   string
 	value   string
 	private bool
@@ -22,7 +22,7 @@ type item struct {
 type editModel struct {
 	itemCursor int
 	editCursor int
-	items      []item
+	items      []editItem
 	editting   bool
 }
 
@@ -30,7 +30,7 @@ var selected = color.New(color.FgBlack, color.BgWhite).SprintFunc()
 
 func newEditModel() editModel {
 	return editModel{
-		items: []item{
+		items: []editItem{
 			{label: "Domain", value: config.Domain, prev: config.Domain},
 			{label: "Port", value: fmt.Sprintf("%d", config.Port), prev: fmt.Sprintf("%d", config.Port)},
 			{label: "Interval", value: config.IntervalStr, prev: config.IntervalStr},
