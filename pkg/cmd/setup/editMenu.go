@@ -12,7 +12,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type item struct {
+type editItem struct {
 	label   string
 	value   string
 	private bool
@@ -22,7 +22,7 @@ type item struct {
 type editModel struct {
 	itemCursor int
 	editCursor int
-	items      []item
+	items      []editItem
 	editting   bool
 }
 
@@ -30,7 +30,7 @@ var selected = color.New(color.FgBlack, color.BgWhite).SprintFunc()
 
 func newEditModel() editModel {
 	return editModel{
-		items: []item{
+		items: []editItem{
 			{label: "Domain", value: config.Domain, prev: config.Domain},
 			{label: "Port", value: fmt.Sprintf("%d", config.Port), prev: fmt.Sprintf("%d", config.Port)},
 			{label: "Interval", value: config.IntervalStr, prev: config.IntervalStr},
@@ -137,15 +137,15 @@ func (m editModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m editModel) View() string {
 	s := ""
 	for i, item := range m.items {
-		prefix := "[ ]"
+		prefix := " "
 		if item.value != item.prev {
-			prefix = "[+]"
+			prefix = "+"
 		}
 		if i == m.itemCursor {
 			if m.editting {
-				prefix = "[*]"
+				prefix = "*"
 			} else {
-				prefix = "[>]"
+				prefix = ">"
 			}
 		}
 
@@ -222,7 +222,7 @@ func saveConfig(m editModel) error {
 	}
 	grpcSecret := m.items[15].value
 
-	writeConfig(
+	return writeConfig(
 		domain,
 		port,
 		interval,
@@ -240,6 +240,4 @@ func saveConfig(m editModel) error {
 		grpcPort,
 		grpcSecret,
 	)
-
-	return nil
 }
