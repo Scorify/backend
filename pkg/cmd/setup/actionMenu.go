@@ -79,6 +79,8 @@ func (m actionModel) View() string {
 		s += fmt.Sprintf("%s %s: %s\n", cursor, item.label, item.description)
 	}
 
+	s += "\nPress 'q' to exit or 'enter' to select\n"
+
 	return s
 }
 

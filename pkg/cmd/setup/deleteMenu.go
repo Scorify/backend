@@ -1,14 +1,11 @@
 package setup
 
 import (
+	"fmt"
 	"os"
 
-	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 )
-
-var deleteDocStyle = lipgloss.NewStyle()
 
 type deleteActionChoice string
 
@@ -23,25 +20,21 @@ type deleteItem struct {
 	description string
 }
 
-func (i deleteItem) Title() string {
-	return i.label
-}
-
-func (i deleteItem) Description() string {
-	return i.description
-}
-
-func (i deleteItem) ID() string {
-	return string(i.choice)
-}
-
-func (i deleteItem) FilterValue() string {
-	return i.label
-}
-
 type deleteModel struct {
-	list     list.Model
-	selected *deleteActionChoice
+	cursor int
+	items  []deleteItem
+	action *deleteActionChoice
+}
+
+func newDeleteModel(action *deleteActionChoice) deleteModel {
+	return deleteModel{
+		cursor: 0,
+		items: []deleteItem{
+			{choice: deleteYes, label: "Yes", description: "Delete the configuration"},
+			{choice: deleteNo, label: "No", description: "Do not delete the configuration"},
+		},
+		action: action,
+	}
 }
 
 func (m deleteModel) Init() tea.Cmd {
@@ -53,50 +46,50 @@ func (m deleteModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		if msg.String() == "ctrl+c" {
-			*m.selected = deleteNo
+		switch msg.String() {
+		case "q", "esc", "ctrl+c":
+			*m.action = deleteNo
+			return m, tea.Quit
+		case "up", "k":
+			m.cursor = max(m.cursor-1, 0)
+		case "down", "j":
+			m.cursor = min(m.cursor+1, len(m.items)-1)
+		case "enter":
+			*m.action = m.items[m.cursor].choice
 			return m, tea.Quit
 		}
-
-		if msg.String() == "enter" {
-			return m, tea.Quit
-		}
-
-	case tea.WindowSizeMsg:
-		h, v := deleteDocStyle.GetFrameSize()
-		m.list.SetSize(msg.Width-h, msg.Height-v)
 	}
-
-	m.list, cmd = m.list.Update(msg)
-	*m.selected = m.list.SelectedItem().(deleteItem).choice
 
 	return m, cmd
 }
 
 func (m deleteModel) View() string {
-	return deleteDocStyle.Render(m.list.View())
+	s := "Are you sure you want to delete the configuration?\n\n"
+
+	for i, item := range m.items {
+		cursor := " "
+		if m.cursor == i {
+			cursor = ">"
+		}
+
+		s += fmt.Sprintf("%s %s: %s\n", cursor, item.label, item.description)
+	}
+
+	s += "\nPress 'Enter' to confirm or 'q' to cancel"
+
+	return s
 }
 
 func deleteMenu() error {
-	items := []list.Item{
-		deleteItem{choice: deleteYes, label: "Yes", description: "Delete the configuration"},
-		deleteItem{choice: deleteNo, label: "No", description: "Do not delete the configuration"},
-	}
-
-	selected := deleteNo
-
-	m := deleteModel{
-		list:     list.New(items, list.NewDefaultDelegate(), 0, 0),
-		selected: &selected,
-	}
-	m.list.Title = "Are you sure you want to delete the configuration?"
+	action := deleteNo
+	m := newDeleteModel(&action)
 
 	p := tea.NewProgram(m, tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
 		return err
 	}
 
-	if *m.selected == deleteYes {
+	if *m.action == deleteYes {
 		return os.Remove(".env")
 	}
 
