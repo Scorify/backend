@@ -77,6 +77,7 @@ autobind:
 models:
   ID:
     model:
+      - github.com/scorify/backend/pkg/graph/model.UUID
       - github.com/99designs/gqlgen/graphql.ID
       - github.com/99designs/gqlgen/graphql.Int
       - github.com/99designs/gqlgen/graphql.Int64
