@@ -26,11 +26,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// ID is the resolver for the id field.
-func (r *checkResolver) ID(ctx context.Context, obj *ent.Check) (string, error) {
-	return obj.ID.String(), nil
-}
-
 // Source is the resolver for the source field.
 func (r *checkResolver) Source(ctx context.Context, obj *ent.Check) (*model.Source, error) {
 	schema, ok := checks.Checks[obj.Source]
@@ -61,26 +56,11 @@ func (r *checkResolver) Statuses(ctx context.Context, obj *ent.Check) ([]*ent.St
 	return obj.QueryStatuses().All(ctx)
 }
 
-// ID is the resolver for the id field.
-func (r *checkConfigResolver) ID(ctx context.Context, obj *ent.CheckConfig) (string, error) {
-	return obj.ID.String(), nil
-}
-
 // Config is the resolver for the config field.
 func (r *checkConfigResolver) Config(ctx context.Context, obj *ent.CheckConfig) (string, error) {
 	out, err := json.Marshal(obj.Config)
 
 	return string(out), err
-}
-
-// CheckID is the resolver for the check_id field.
-func (r *checkConfigResolver) CheckID(ctx context.Context, obj *ent.CheckConfig) (string, error) {
-	return obj.ID.String(), nil
-}
-
-// UserID is the resolver for the user_id field.
-func (r *checkConfigResolver) UserID(ctx context.Context, obj *ent.CheckConfig) (string, error) {
-	return obj.ID.String(), nil
 }
 
 // Check is the resolver for the check field.
@@ -91,11 +71,6 @@ func (r *checkConfigResolver) Check(ctx context.Context, obj *ent.CheckConfig) (
 // User is the resolver for the user field.
 func (r *checkConfigResolver) User(ctx context.Context, obj *ent.CheckConfig) (*ent.User, error) {
 	return obj.QueryUser().Only(ctx)
-}
-
-// ID is the resolver for the id field.
-func (r *configResolver) ID(ctx context.Context, obj *ent.CheckConfig) (string, error) {
-	return obj.ID.String(), nil
 }
 
 // Config is the resolver for the config field.
@@ -157,7 +132,7 @@ func (r *mutationResolver) Login(ctx context.Context, username string, password 
 }
 
 // AdminLogin is the resolver for the adminLogin field.
-func (r *mutationResolver) AdminLogin(ctx context.Context, id string) (*model.LoginOutput, error) {
+func (r *mutationResolver) AdminLogin(ctx context.Context, id uuid.UUID) (*model.LoginOutput, error) {
 	uuid, err := uuid.Parse(id)
 	if err != nil {
 		return nil, fmt.Errorf("encounter error while parsing id: %v", err)
@@ -188,7 +163,7 @@ func (r *mutationResolver) AdminLogin(ctx context.Context, id string) (*model.Lo
 }
 
 // AdminBecome is the resolver for the adminBecome field.
-func (r *mutationResolver) AdminBecome(ctx context.Context, id string) (*model.LoginOutput, error) {
+func (r *mutationResolver) AdminBecome(ctx context.Context, id uuid.UUID) (*model.LoginOutput, error) {
 	entUser, err := auth.Parse(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("invalid user")
@@ -388,7 +363,7 @@ func (r *mutationResolver) CreateCheck(ctx context.Context, name string, source 
 }
 
 // UpdateCheck is the resolver for the updateCheck field.
-func (r *mutationResolver) UpdateCheck(ctx context.Context, id string, name *string, weight *int, config *string, editableFields []string) (*ent.Check, error) {
+func (r *mutationResolver) UpdateCheck(ctx context.Context, id uuid.UUID, name *string, weight *int, config *string, editableFields []string) (*ent.Check, error) {
 	tx, err := r.Ent.Tx(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to start transaction: %v", err)
@@ -568,7 +543,7 @@ func (r *mutationResolver) UpdateCheck(ctx context.Context, id string, name *str
 }
 
 // DeleteCheck is the resolver for the deleteCheck field.
-func (r *mutationResolver) DeleteCheck(ctx context.Context, id string) (bool, error) {
+func (r *mutationResolver) DeleteCheck(ctx context.Context, id uuid.UUID) (bool, error) {
 	uuid, err := uuid.Parse(id)
 	if err != nil {
 		return false, fmt.Errorf("encounter error while parsing id: %v", err)
@@ -647,7 +622,7 @@ func (r *mutationResolver) CreateUser(ctx context.Context, username string, pass
 }
 
 // UpdateUser is the resolver for the updateUser field.
-func (r *mutationResolver) UpdateUser(ctx context.Context, id string, username *string, password *string, number *int) (*ent.User, error) {
+func (r *mutationResolver) UpdateUser(ctx context.Context, id uuid.UUID, username *string, password *string, number *int) (*ent.User, error) {
 	uuid, err := uuid.Parse(id)
 	if err != nil {
 		return nil, fmt.Errorf("encounter error while parsing id: %v", err)
@@ -676,7 +651,7 @@ func (r *mutationResolver) UpdateUser(ctx context.Context, id string, username *
 }
 
 // DeleteUser is the resolver for the deleteUser field.
-func (r *mutationResolver) DeleteUser(ctx context.Context, id string) (bool, error) {
+func (r *mutationResolver) DeleteUser(ctx context.Context, id uuid.UUID) (bool, error) {
 	uuid, err := uuid.Parse(id)
 	if err != nil {
 		return false, fmt.Errorf("encounter error while parsing id: %v", err)
@@ -697,7 +672,7 @@ func (r *mutationResolver) DeleteUser(ctx context.Context, id string) (bool, err
 }
 
 // EditConfig is the resolver for the editConfig field.
-func (r *mutationResolver) EditConfig(ctx context.Context, id string, config string) (*ent.CheckConfig, error) {
+func (r *mutationResolver) EditConfig(ctx context.Context, id uuid.UUID, config string) (*ent.CheckConfig, error) {
 	entUser, err := auth.Parse(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("invalid user")
@@ -806,7 +781,7 @@ func (r *queryResolver) Checks(ctx context.Context) ([]*ent.Check, error) {
 }
 
 // Check is the resolver for the check field.
-func (r *queryResolver) Check(ctx context.Context, id *string, name *string) (*ent.Check, error) {
+func (r *queryResolver) Check(ctx context.Context, id *uuid.UUID, name *string) (*ent.Check, error) {
 	checkQueryPredicates := []predicate.Check{}
 
 	if id != nil {
@@ -850,7 +825,7 @@ func (r *queryResolver) Configs(ctx context.Context) ([]*ent.CheckConfig, error)
 }
 
 // Config is the resolver for the config field.
-func (r *queryResolver) Config(ctx context.Context, id string) (*ent.CheckConfig, error) {
+func (r *queryResolver) Config(ctx context.Context, id uuid.UUID) (*ent.CheckConfig, error) {
 	uuid, err := uuid.Parse(id)
 	if err != nil {
 		return nil, fmt.Errorf("encounter error while parsing id: %v", err)
@@ -860,11 +835,6 @@ func (r *queryResolver) Config(ctx context.Context, id string) (*ent.CheckConfig
 		Where(
 			checkconfig.IDEQ(uuid),
 		).Only(ctx)
-}
-
-// ID is the resolver for the id field.
-func (r *roundResolver) ID(ctx context.Context, obj *ent.Round) (string, error) {
-	return obj.ID.String(), nil
 }
 
 // Statuses is the resolver for the statuses field.
@@ -877,21 +847,6 @@ func (r *roundResolver) ScoreCaches(ctx context.Context, obj *ent.Round) ([]*ent
 	return obj.QueryScoreCaches().All(ctx)
 }
 
-// ID is the resolver for the id field.
-func (r *scoreCacheResolver) ID(ctx context.Context, obj *ent.ScoreCache) (string, error) {
-	return obj.ID.String(), nil
-}
-
-// RoundID is the resolver for the round_id field.
-func (r *scoreCacheResolver) RoundID(ctx context.Context, obj *ent.ScoreCache) (string, error) {
-	return obj.RoundID.String(), nil
-}
-
-// UserID is the resolver for the user_id field.
-func (r *scoreCacheResolver) UserID(ctx context.Context, obj *ent.ScoreCache) (string, error) {
-	return obj.UserID.String(), nil
-}
-
 // Round is the resolver for the round field.
 func (r *scoreCacheResolver) Round(ctx context.Context, obj *ent.ScoreCache) (*ent.Round, error) {
 	return obj.QueryRound().Only(ctx)
@@ -900,26 +855,6 @@ func (r *scoreCacheResolver) Round(ctx context.Context, obj *ent.ScoreCache) (*e
 // User is the resolver for the user field.
 func (r *scoreCacheResolver) User(ctx context.Context, obj *ent.ScoreCache) (*ent.User, error) {
 	return obj.QueryUser().Only(ctx)
-}
-
-// ID is the resolver for the id field.
-func (r *statusResolver) ID(ctx context.Context, obj *ent.Status) (string, error) {
-	return obj.ID.String(), nil
-}
-
-// CheckID is the resolver for the check_id field.
-func (r *statusResolver) CheckID(ctx context.Context, obj *ent.Status) (string, error) {
-	return obj.CheckID.String(), nil
-}
-
-// RoundID is the resolver for the round_id field.
-func (r *statusResolver) RoundID(ctx context.Context, obj *ent.Status) (string, error) {
-	return obj.RoundID.String(), nil
-}
-
-// UserID is the resolver for the user_id field.
-func (r *statusResolver) UserID(ctx context.Context, obj *ent.Status) (string, error) {
-	return obj.UserID.String(), nil
 }
 
 // Check is the resolver for the check field.
@@ -1049,11 +984,6 @@ func (r *subscriptionResolver) StatusStream(ctx context.Context) (<-chan []*ent.
 	return scoreStreamChan, nil
 }
 
-// ID is the resolver for the id field.
-func (r *userResolver) ID(ctx context.Context, obj *ent.User) (string, error) {
-	return obj.ID.String(), nil
-}
-
 // Configs is the resolver for the configs field.
 func (r *userResolver) Configs(ctx context.Context, obj *ent.User) ([]*ent.CheckConfig, error) {
 	return obj.QueryConfigs().All(ctx)
@@ -1109,3 +1039,52 @@ type scoreCacheResolver struct{ *Resolver }
 type statusResolver struct{ *Resolver }
 type subscriptionResolver struct{ *Resolver }
 type userResolver struct{ *Resolver }
+
+// !!! WARNING !!!
+// The code below was going to be deleted when updating resolvers. It has been copied here so you have
+// one last chance to move it out of harms way if you want. There are two reasons this happens:
+//   - When renaming or deleting a resolver the old code will be put in here. You can safely delete
+//     it when you're done.
+//   - You have helper methods in this file. Move them out to keep these resolver files clean.
+func (r *checkResolver) ID(ctx context.Context, obj *ent.Check) (string, error) {
+	return obj.ID.String(), nil
+}
+func (r *checkConfigResolver) ID(ctx context.Context, obj *ent.CheckConfig) (string, error) {
+	return obj.ID.String(), nil
+}
+func (r *checkConfigResolver) CheckID(ctx context.Context, obj *ent.CheckConfig) (string, error) {
+	return obj.ID.String(), nil
+}
+func (r *checkConfigResolver) UserID(ctx context.Context, obj *ent.CheckConfig) (string, error) {
+	return obj.ID.String(), nil
+}
+func (r *configResolver) ID(ctx context.Context, obj *ent.CheckConfig) (string, error) {
+	return obj.ID.String(), nil
+}
+func (r *roundResolver) ID(ctx context.Context, obj *ent.Round) (string, error) {
+	return obj.ID.String(), nil
+}
+func (r *scoreCacheResolver) ID(ctx context.Context, obj *ent.ScoreCache) (string, error) {
+	return obj.ID.String(), nil
+}
+func (r *scoreCacheResolver) RoundID(ctx context.Context, obj *ent.ScoreCache) (string, error) {
+	return obj.RoundID.String(), nil
+}
+func (r *scoreCacheResolver) UserID(ctx context.Context, obj *ent.ScoreCache) (string, error) {
+	return obj.UserID.String(), nil
+}
+func (r *statusResolver) ID(ctx context.Context, obj *ent.Status) (string, error) {
+	return obj.ID.String(), nil
+}
+func (r *statusResolver) CheckID(ctx context.Context, obj *ent.Status) (string, error) {
+	return obj.CheckID.String(), nil
+}
+func (r *statusResolver) RoundID(ctx context.Context, obj *ent.Status) (string, error) {
+	return obj.RoundID.String(), nil
+}
+func (r *statusResolver) UserID(ctx context.Context, obj *ent.Status) (string, error) {
+	return obj.UserID.String(), nil
+}
+func (r *userResolver) ID(ctx context.Context, obj *ent.User) (string, error) {
+	return obj.ID.String(), nil
+}
