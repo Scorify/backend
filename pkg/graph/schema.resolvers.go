@@ -133,14 +133,9 @@ func (r *mutationResolver) Login(ctx context.Context, username string, password 
 
 // AdminLogin is the resolver for the adminLogin field.
 func (r *mutationResolver) AdminLogin(ctx context.Context, id uuid.UUID) (*model.LoginOutput, error) {
-	uuid, err := uuid.Parse(id)
-	if err != nil {
-		return nil, fmt.Errorf("encounter error while parsing id: %v", err)
-	}
-
 	entUser, err := r.Ent.User.Query().
 		Where(
-			user.IDEQ(uuid),
+			user.IDEQ(id),
 		).Only(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("user id does not exist: %s", id)
@@ -169,14 +164,9 @@ func (r *mutationResolver) AdminBecome(ctx context.Context, id uuid.UUID) (*mode
 		return nil, fmt.Errorf("invalid user")
 	}
 
-	becomeUuid, err := uuid.Parse(id)
-	if err != nil {
-		return nil, fmt.Errorf("encounter error while parsing id: %v", err)
-	}
-
 	exists, err := r.Ent.User.Query().
 		Where(
-			user.IDEQ(becomeUuid),
+			user.IDEQ(id),
 		).Exist(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("user id does not exist: %s", id)
@@ -186,7 +176,7 @@ func (r *mutationResolver) AdminBecome(ctx context.Context, id uuid.UUID) (*mode
 		return nil, fmt.Errorf("user id does not exist: %s", id)
 	}
 
-	token, expiration, err := auth.GenerateJWT(entUser.Username, entUser.ID, &becomeUuid)
+	token, expiration, err := auth.GenerateJWT(entUser.Username, entUser.ID, &id)
 	if err != nil {
 		return nil, err
 	}
@@ -370,20 +360,15 @@ func (r *mutationResolver) UpdateCheck(ctx context.Context, id uuid.UUID, name *
 	}
 	defer tx.Rollback()
 
-	uuid, err := uuid.Parse(id)
-	if err != nil {
-		return nil, fmt.Errorf("encounter error while parsing id: %v", err)
-	}
-
 	entCheck, err := tx.Check.Query().
 		Where(
-			check.IDEQ(uuid),
+			check.IDEQ(id),
 		).Only(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("error encounted while getting check: %v", err)
 	}
 
-	checkUpdate := tx.Check.UpdateOneID(uuid)
+	checkUpdate := tx.Check.UpdateOneID(id)
 
 	if name != nil {
 		checkUpdate.SetName(*name)
@@ -488,7 +473,7 @@ func (r *mutationResolver) UpdateCheck(ctx context.Context, id uuid.UUID, name *
 			WithUser().
 			Where(
 				checkconfig.HasCheckWith(
-					check.IDEQ(uuid),
+					check.IDEQ(id),
 				),
 			).
 			All(ctx)
@@ -544,13 +529,7 @@ func (r *mutationResolver) UpdateCheck(ctx context.Context, id uuid.UUID, name *
 
 // DeleteCheck is the resolver for the deleteCheck field.
 func (r *mutationResolver) DeleteCheck(ctx context.Context, id uuid.UUID) (bool, error) {
-	uuid, err := uuid.Parse(id)
-	if err != nil {
-		return false, fmt.Errorf("encounter error while parsing id: %v", err)
-	}
-
-	err = r.Ent.Check.DeleteOneID(uuid).Exec(ctx)
-
+	err := r.Ent.Check.DeleteOneID(id).Exec(ctx)
 	return err == nil, err
 }
 
@@ -623,12 +602,7 @@ func (r *mutationResolver) CreateUser(ctx context.Context, username string, pass
 
 // UpdateUser is the resolver for the updateUser field.
 func (r *mutationResolver) UpdateUser(ctx context.Context, id uuid.UUID, username *string, password *string, number *int) (*ent.User, error) {
-	uuid, err := uuid.Parse(id)
-	if err != nil {
-		return nil, fmt.Errorf("encounter error while parsing id: %v", err)
-	}
-
-	userUpdate := r.Ent.User.UpdateOneID(uuid)
+	userUpdate := r.Ent.User.UpdateOneID(id)
 
 	if username != nil {
 		userUpdate.SetUsername(*username)
@@ -652,21 +626,16 @@ func (r *mutationResolver) UpdateUser(ctx context.Context, id uuid.UUID, usernam
 
 // DeleteUser is the resolver for the deleteUser field.
 func (r *mutationResolver) DeleteUser(ctx context.Context, id uuid.UUID) (bool, error) {
-	uuid, err := uuid.Parse(id)
-	if err != nil {
-		return false, fmt.Errorf("encounter error while parsing id: %v", err)
-	}
-
 	entUser, err := auth.Parse(ctx)
 	if err != nil {
 		return false, fmt.Errorf("invalid user")
 	}
 
-	if entUser.ID == uuid {
+	if entUser.ID == id {
 		return false, fmt.Errorf("cannot delete yourself")
 	}
 
-	err = r.Ent.User.DeleteOneID(uuid).Exec(ctx)
+	err = r.Ent.User.DeleteOneID(id).Exec(ctx)
 
 	return err == nil, err
 }
@@ -678,14 +647,9 @@ func (r *mutationResolver) EditConfig(ctx context.Context, id uuid.UUID, config 
 		return nil, fmt.Errorf("invalid user")
 	}
 
-	uuid, err := uuid.Parse(id)
-	if err != nil {
-		return nil, fmt.Errorf("encounter error while parsing id: %v", err)
-	}
-
 	entCheckConfig, err := r.Ent.CheckConfig.Query().
 		Where(
-			checkconfig.IDEQ(uuid),
+			checkconfig.IDEQ(id),
 			checkconfig.HasUserWith(
 				user.IDEQ(
 					entUser.ID,
@@ -709,7 +673,7 @@ func (r *mutationResolver) EditConfig(ctx context.Context, id uuid.UUID, config 
 		oldConfig[key] = value
 	}
 
-	return r.Ent.CheckConfig.UpdateOneID(uuid).
+	return r.Ent.CheckConfig.UpdateOneID(id).
 		SetConfig(oldConfig).
 		Save(ctx)
 }
@@ -785,12 +749,7 @@ func (r *queryResolver) Check(ctx context.Context, id *uuid.UUID, name *string) 
 	checkQueryPredicates := []predicate.Check{}
 
 	if id != nil {
-		uuid, err := uuid.Parse(*id)
-		if err != nil {
-			return nil, fmt.Errorf("encounter error while parsing id: %v", err)
-		}
-
-		checkQueryPredicates = append(checkQueryPredicates, check.IDEQ(uuid))
+		checkQueryPredicates = append(checkQueryPredicates, check.IDEQ(*id))
 	}
 
 	if name != nil {
@@ -826,14 +785,9 @@ func (r *queryResolver) Configs(ctx context.Context) ([]*ent.CheckConfig, error)
 
 // Config is the resolver for the config field.
 func (r *queryResolver) Config(ctx context.Context, id uuid.UUID) (*ent.CheckConfig, error) {
-	uuid, err := uuid.Parse(id)
-	if err != nil {
-		return nil, fmt.Errorf("encounter error while parsing id: %v", err)
-	}
-
 	return r.Ent.CheckConfig.Query().
 		Where(
-			checkconfig.IDEQ(uuid),
+			checkconfig.IDEQ(id),
 		).Only(ctx)
 }
 
