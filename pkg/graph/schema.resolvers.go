@@ -802,6 +802,16 @@ func (r *roundResolver) ScoreCaches(ctx context.Context, obj *ent.Round) ([]*ent
 }
 
 // Round is the resolver for the round field.
+func (r *roundUpdateResolver) Round(ctx context.Context, obj *ent.RoundUpdate) (int, error) {
+	panic(fmt.Errorf("not implemented: Round - round"))
+}
+
+// Complete is the resolver for the complete field.
+func (r *roundUpdateResolver) Complete(ctx context.Context, obj *ent.RoundUpdate) (bool, error) {
+	panic(fmt.Errorf("not implemented: Complete - complete"))
+}
+
+// Round is the resolver for the round field.
 func (r *scoreCacheResolver) Round(ctx context.Context, obj *ent.ScoreCache) (*ent.Round, error) {
 	return obj.QueryRound().Only(ctx)
 }
@@ -824,6 +834,26 @@ func (r *statusResolver) Round(ctx context.Context, obj *ent.Status) (*ent.Round
 // User is the resolver for the user field.
 func (r *statusResolver) User(ctx context.Context, obj *ent.Status) (*ent.User, error) {
 	return obj.QueryUser().Only(ctx)
+}
+
+// Team is the resolver for the team field.
+func (r *statusUpdateResolver) Team(ctx context.Context, obj *ent.StatusUpdate) (int, error) {
+	panic(fmt.Errorf("not implemented: Team - team"))
+}
+
+// Round is the resolver for the round field.
+func (r *statusUpdateResolver) Round(ctx context.Context, obj *ent.StatusUpdate) (int, error) {
+	panic(fmt.Errorf("not implemented: Round - round"))
+}
+
+// Check is the resolver for the check field.
+func (r *statusUpdateResolver) Check(ctx context.Context, obj *ent.StatusUpdate) (string, error) {
+	panic(fmt.Errorf("not implemented: Check - check"))
+}
+
+// Status is the resolver for the status field.
+func (r *statusUpdateResolver) Status(ctx context.Context, obj *ent.StatusUpdate) (status.Status, error) {
+	panic(fmt.Errorf("not implemented: Status - status"))
 }
 
 // GlobalNotification is the resolver for the globalNotification field.
@@ -971,11 +1001,17 @@ func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 // Round returns RoundResolver implementation.
 func (r *Resolver) Round() RoundResolver { return &roundResolver{r} }
 
+// RoundUpdate returns RoundUpdateResolver implementation.
+func (r *Resolver) RoundUpdate() RoundUpdateResolver { return &roundUpdateResolver{r} }
+
 // ScoreCache returns ScoreCacheResolver implementation.
 func (r *Resolver) ScoreCache() ScoreCacheResolver { return &scoreCacheResolver{r} }
 
 // Status returns StatusResolver implementation.
 func (r *Resolver) Status() StatusResolver { return &statusResolver{r} }
+
+// StatusUpdate returns StatusUpdateResolver implementation.
+func (r *Resolver) StatusUpdate() StatusUpdateResolver { return &statusUpdateResolver{r} }
 
 // Subscription returns SubscriptionResolver implementation.
 func (r *Resolver) Subscription() SubscriptionResolver { return &subscriptionResolver{r} }
@@ -989,8 +1025,10 @@ type configResolver struct{ *Resolver }
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
 type roundResolver struct{ *Resolver }
+type roundUpdateResolver struct{ *Resolver }
 type scoreCacheResolver struct{ *Resolver }
 type statusResolver struct{ *Resolver }
+type statusUpdateResolver struct{ *Resolver }
 type subscriptionResolver struct{ *Resolver }
 type userResolver struct{ *Resolver }
 

@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io"
 	"strconv"
+
+	"github.com/scorify/backend/pkg/ent"
 )
 
 type LoginOutput struct {
@@ -21,6 +23,18 @@ type LoginOutput struct {
 type Notification struct {
 	Message string           `json:"message"`
 	Type    NotificationType `json:"type"`
+}
+
+type ScoreUpdate struct {
+	Team   int `json:"team"`
+	Round  int `json:"round"`
+	Points int `json:"points"`
+}
+
+type ScoreboardUpdate struct {
+	StatusUpdate []*ent.StatusUpdate `json:"statusUpdate,omitempty"`
+	RoundUpdate  []*ent.RoundUpdate  `json:"roundUpdate,omitempty"`
+	ScoreUpdate  []*ScoreUpdate      `json:"scoreUpdate,omitempty"`
 }
 
 type Source struct {

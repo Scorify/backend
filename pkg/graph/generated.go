@@ -51,8 +51,10 @@ type ResolverRoot interface {
 	Mutation() MutationResolver
 	Query() QueryResolver
 	Round() RoundResolver
+	RoundUpdate() RoundUpdateResolver
 	ScoreCache() ScoreCacheResolver
 	Status() StatusResolver
+	StatusUpdate() StatusUpdateResolver
 	Subscription() SubscriptionResolver
 	User() UserResolver
 }
@@ -147,6 +149,11 @@ type ComplexityRoot struct {
 		UpdateTime  func(childComplexity int) int
 	}
 
+	RoundUpdate struct {
+		Complete func(childComplexity int) int
+		Round    func(childComplexity int) int
+	}
+
 	ScoreCache struct {
 		CreateTime func(childComplexity int) int
 		ID         func(childComplexity int) int
@@ -156,6 +163,18 @@ type ComplexityRoot struct {
 		UpdateTime func(childComplexity int) int
 		User       func(childComplexity int) int
 		UserID     func(childComplexity int) int
+	}
+
+	ScoreUpdate struct {
+		Points func(childComplexity int) int
+		Round  func(childComplexity int) int
+		Team   func(childComplexity int) int
+	}
+
+	ScoreboardUpdate struct {
+		RoundUpdate  func(childComplexity int) int
+		ScoreUpdate  func(childComplexity int) int
+		StatusUpdate func(childComplexity int) int
 	}
 
 	Source struct {
@@ -176,6 +195,13 @@ type ComplexityRoot struct {
 		UpdateTime func(childComplexity int) int
 		User       func(childComplexity int) int
 		UserID     func(childComplexity int) int
+	}
+
+	StatusUpdate struct {
+		Check  func(childComplexity int) int
+		Round  func(childComplexity int) int
+		Status func(childComplexity int) int
+		Team   func(childComplexity int) int
 	}
 
 	Subscription struct {
@@ -246,6 +272,10 @@ type RoundResolver interface {
 	Statuses(ctx context.Context, obj *ent.Round) ([]*ent.Status, error)
 	ScoreCaches(ctx context.Context, obj *ent.Round) ([]*ent.ScoreCache, error)
 }
+type RoundUpdateResolver interface {
+	Round(ctx context.Context, obj *ent.RoundUpdate) (int, error)
+	Complete(ctx context.Context, obj *ent.RoundUpdate) (bool, error)
+}
 type ScoreCacheResolver interface {
 	Round(ctx context.Context, obj *ent.ScoreCache) (*ent.Round, error)
 	User(ctx context.Context, obj *ent.ScoreCache) (*ent.User, error)
@@ -254,6 +284,12 @@ type StatusResolver interface {
 	Check(ctx context.Context, obj *ent.Status) (*ent.Check, error)
 	Round(ctx context.Context, obj *ent.Status) (*ent.Round, error)
 	User(ctx context.Context, obj *ent.Status) (*ent.User, error)
+}
+type StatusUpdateResolver interface {
+	Team(ctx context.Context, obj *ent.StatusUpdate) (int, error)
+	Round(ctx context.Context, obj *ent.StatusUpdate) (int, error)
+	Check(ctx context.Context, obj *ent.StatusUpdate) (string, error)
+	Status(ctx context.Context, obj *ent.StatusUpdate) (status.Status, error)
 }
 type SubscriptionResolver interface {
 	GlobalNotification(ctx context.Context) (<-chan *model.Notification, error)
@@ -780,6 +816,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Round.UpdateTime(childComplexity), true
 
+	case "RoundUpdate.complete":
+		if e.complexity.RoundUpdate.Complete == nil {
+			break
+		}
+
+		return e.complexity.RoundUpdate.Complete(childComplexity), true
+
+	case "RoundUpdate.round":
+		if e.complexity.RoundUpdate.Round == nil {
+			break
+		}
+
+		return e.complexity.RoundUpdate.Round(childComplexity), true
+
 	case "ScoreCache.create_time":
 		if e.complexity.ScoreCache.CreateTime == nil {
 			break
@@ -835,6 +885,48 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ScoreCache.UserID(childComplexity), true
+
+	case "ScoreUpdate.points":
+		if e.complexity.ScoreUpdate.Points == nil {
+			break
+		}
+
+		return e.complexity.ScoreUpdate.Points(childComplexity), true
+
+	case "ScoreUpdate.round":
+		if e.complexity.ScoreUpdate.Round == nil {
+			break
+		}
+
+		return e.complexity.ScoreUpdate.Round(childComplexity), true
+
+	case "ScoreUpdate.team":
+		if e.complexity.ScoreUpdate.Team == nil {
+			break
+		}
+
+		return e.complexity.ScoreUpdate.Team(childComplexity), true
+
+	case "ScoreboardUpdate.roundUpdate":
+		if e.complexity.ScoreboardUpdate.RoundUpdate == nil {
+			break
+		}
+
+		return e.complexity.ScoreboardUpdate.RoundUpdate(childComplexity), true
+
+	case "ScoreboardUpdate.scoreUpdate":
+		if e.complexity.ScoreboardUpdate.ScoreUpdate == nil {
+			break
+		}
+
+		return e.complexity.ScoreboardUpdate.ScoreUpdate(childComplexity), true
+
+	case "ScoreboardUpdate.statusUpdate":
+		if e.complexity.ScoreboardUpdate.StatusUpdate == nil {
+			break
+		}
+
+		return e.complexity.ScoreboardUpdate.StatusUpdate(childComplexity), true
 
 	case "Source.name":
 		if e.complexity.Source.Name == nil {
@@ -933,6 +1025,34 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Status.UserID(childComplexity), true
+
+	case "StatusUpdate.check":
+		if e.complexity.StatusUpdate.Check == nil {
+			break
+		}
+
+		return e.complexity.StatusUpdate.Check(childComplexity), true
+
+	case "StatusUpdate.round":
+		if e.complexity.StatusUpdate.Round == nil {
+			break
+		}
+
+		return e.complexity.StatusUpdate.Round(childComplexity), true
+
+	case "StatusUpdate.status":
+		if e.complexity.StatusUpdate.Status == nil {
+			break
+		}
+
+		return e.complexity.StatusUpdate.Status(childComplexity), true
+
+	case "StatusUpdate.team":
+		if e.complexity.StatusUpdate.Team == nil {
+			break
+		}
+
+		return e.complexity.StatusUpdate.Team(childComplexity), true
 
 	case "Subscription.engineState":
 		if e.complexity.Subscription.EngineState == nil {
@@ -5432,6 +5552,94 @@ func (ec *executionContext) fieldContext_Round_score_caches(ctx context.Context,
 	return fc, nil
 }
 
+func (ec *executionContext) _RoundUpdate_round(ctx context.Context, field graphql.CollectedField, obj *ent.RoundUpdate) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RoundUpdate_round(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.RoundUpdate().Round(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RoundUpdate_round(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RoundUpdate",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RoundUpdate_complete(ctx context.Context, field graphql.CollectedField, obj *ent.RoundUpdate) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RoundUpdate_complete(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.RoundUpdate().Complete(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RoundUpdate_complete(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RoundUpdate",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _ScoreCache_id(ctx context.Context, field graphql.CollectedField, obj *ent.ScoreCache) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_ScoreCache_id(ctx, field)
 	if err != nil {
@@ -5815,6 +6023,285 @@ func (ec *executionContext) fieldContext_ScoreCache_user(ctx context.Context, fi
 				return ec.fieldContext_User_score_caches(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ScoreUpdate_team(ctx context.Context, field graphql.CollectedField, obj *model.ScoreUpdate) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ScoreUpdate_team(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Team, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ScoreUpdate_team(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ScoreUpdate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ScoreUpdate_round(ctx context.Context, field graphql.CollectedField, obj *model.ScoreUpdate) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ScoreUpdate_round(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Round, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ScoreUpdate_round(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ScoreUpdate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ScoreUpdate_points(ctx context.Context, field graphql.CollectedField, obj *model.ScoreUpdate) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ScoreUpdate_points(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Points, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ScoreUpdate_points(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ScoreUpdate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ScoreboardUpdate_statusUpdate(ctx context.Context, field graphql.CollectedField, obj *model.ScoreboardUpdate) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ScoreboardUpdate_statusUpdate(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.StatusUpdate, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*ent.StatusUpdate)
+	fc.Result = res
+	return ec.marshalOStatusUpdate2ᚕᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚐStatusUpdateᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ScoreboardUpdate_statusUpdate(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ScoreboardUpdate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "team":
+				return ec.fieldContext_StatusUpdate_team(ctx, field)
+			case "round":
+				return ec.fieldContext_StatusUpdate_round(ctx, field)
+			case "check":
+				return ec.fieldContext_StatusUpdate_check(ctx, field)
+			case "status":
+				return ec.fieldContext_StatusUpdate_status(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type StatusUpdate", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ScoreboardUpdate_roundUpdate(ctx context.Context, field graphql.CollectedField, obj *model.ScoreboardUpdate) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ScoreboardUpdate_roundUpdate(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RoundUpdate, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*ent.RoundUpdate)
+	fc.Result = res
+	return ec.marshalORoundUpdate2ᚕᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚐRoundUpdateᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ScoreboardUpdate_roundUpdate(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ScoreboardUpdate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "round":
+				return ec.fieldContext_RoundUpdate_round(ctx, field)
+			case "complete":
+				return ec.fieldContext_RoundUpdate_complete(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type RoundUpdate", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ScoreboardUpdate_scoreUpdate(ctx context.Context, field graphql.CollectedField, obj *model.ScoreboardUpdate) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ScoreboardUpdate_scoreUpdate(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ScoreUpdate, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.ScoreUpdate)
+	fc.Result = res
+	return ec.marshalOScoreUpdate2ᚕᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋgraphᚋmodelᚐScoreUpdateᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ScoreboardUpdate_scoreUpdate(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ScoreboardUpdate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "team":
+				return ec.fieldContext_ScoreUpdate_team(ctx, field)
+			case "round":
+				return ec.fieldContext_ScoreUpdate_round(ctx, field)
+			case "points":
+				return ec.fieldContext_ScoreUpdate_points(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ScoreUpdate", field.Name)
 		},
 	}
 	return fc, nil
@@ -6486,6 +6973,182 @@ func (ec *executionContext) fieldContext_Status_user(ctx context.Context, field 
 				return ec.fieldContext_User_score_caches(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _StatusUpdate_team(ctx context.Context, field graphql.CollectedField, obj *ent.StatusUpdate) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_StatusUpdate_team(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.StatusUpdate().Team(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_StatusUpdate_team(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "StatusUpdate",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _StatusUpdate_round(ctx context.Context, field graphql.CollectedField, obj *ent.StatusUpdate) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_StatusUpdate_round(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.StatusUpdate().Round(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_StatusUpdate_round(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "StatusUpdate",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _StatusUpdate_check(ctx context.Context, field graphql.CollectedField, obj *ent.StatusUpdate) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_StatusUpdate_check(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.StatusUpdate().Check(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_StatusUpdate_check(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "StatusUpdate",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _StatusUpdate_status(ctx context.Context, field graphql.CollectedField, obj *ent.StatusUpdate) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_StatusUpdate_status(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.StatusUpdate().Status(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(status.Status)
+	fc.Result = res
+	return ec.marshalNStatusEnum2githubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚋstatusᚐStatus(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_StatusUpdate_status(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "StatusUpdate",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type StatusEnum does not have child fields")
 		},
 	}
 	return fc, nil
@@ -10117,6 +10780,112 @@ func (ec *executionContext) _Round(ctx context.Context, sel ast.SelectionSet, ob
 	return out
 }
 
+var roundUpdateImplementors = []string{"RoundUpdate"}
+
+func (ec *executionContext) _RoundUpdate(ctx context.Context, sel ast.SelectionSet, obj *ent.RoundUpdate) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, roundUpdateImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("RoundUpdate")
+		case "round":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._RoundUpdate_round(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "complete":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._RoundUpdate_complete(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var scoreCacheImplementors = []string{"ScoreCache"}
 
 func (ec *executionContext) _ScoreCache(ctx context.Context, sel ast.SelectionSet, obj *ent.ScoreCache) graphql.Marshaler {
@@ -10230,6 +10999,95 @@ func (ec *executionContext) _ScoreCache(ctx context.Context, sel ast.SelectionSe
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var scoreUpdateImplementors = []string{"ScoreUpdate"}
+
+func (ec *executionContext) _ScoreUpdate(ctx context.Context, sel ast.SelectionSet, obj *model.ScoreUpdate) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, scoreUpdateImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ScoreUpdate")
+		case "team":
+			out.Values[i] = ec._ScoreUpdate_team(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "round":
+			out.Values[i] = ec._ScoreUpdate_round(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "points":
+			out.Values[i] = ec._ScoreUpdate_points(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var scoreboardUpdateImplementors = []string{"ScoreboardUpdate"}
+
+func (ec *executionContext) _ScoreboardUpdate(ctx context.Context, sel ast.SelectionSet, obj *model.ScoreboardUpdate) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, scoreboardUpdateImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ScoreboardUpdate")
+		case "statusUpdate":
+			out.Values[i] = ec._ScoreboardUpdate_statusUpdate(ctx, field, obj)
+		case "roundUpdate":
+			out.Values[i] = ec._ScoreboardUpdate_roundUpdate(ctx, field, obj)
+		case "scoreUpdate":
+			out.Values[i] = ec._ScoreboardUpdate_scoreUpdate(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -10432,6 +11290,184 @@ func (ec *executionContext) _Status(ctx context.Context, sel ast.SelectionSet, o
 					}
 				}()
 				res = ec._Status_user(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var statusUpdateImplementors = []string{"StatusUpdate"}
+
+func (ec *executionContext) _StatusUpdate(ctx context.Context, sel ast.SelectionSet, obj *ent.StatusUpdate) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, statusUpdateImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("StatusUpdate")
+		case "team":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._StatusUpdate_team(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "round":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._StatusUpdate_round(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "check":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._StatusUpdate_check(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "status":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._StatusUpdate_status(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -11308,6 +12344,16 @@ func (ec *executionContext) marshalNRound2ᚖgithubᚗcomᚋscorifyᚋbackendᚋ
 	return ec._Round(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNRoundUpdate2ᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚐRoundUpdate(ctx context.Context, sel ast.SelectionSet, v *ent.RoundUpdate) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._RoundUpdate(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNScoreCache2ᚕᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚐScoreCacheᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.ScoreCache) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
@@ -11360,6 +12406,16 @@ func (ec *executionContext) marshalNScoreCache2ᚖgithubᚗcomᚋscorifyᚋbacke
 		return graphql.Null
 	}
 	return ec._ScoreCache(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNScoreUpdate2ᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋgraphᚋmodelᚐScoreUpdate(ctx context.Context, sel ast.SelectionSet, v *model.ScoreUpdate) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._ScoreUpdate(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNSource2githubᚗcomᚋscorifyᚋbackendᚋpkgᚋgraphᚋmodelᚐSource(ctx context.Context, sel ast.SelectionSet, v model.Source) graphql.Marshaler {
@@ -11526,6 +12582,16 @@ func (ec *executionContext) marshalNStatusEnum2githubᚗcomᚋscorifyᚋbackend�
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) marshalNStatusUpdate2ᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚐStatusUpdate(ctx context.Context, sel ast.SelectionSet, v *ent.StatusUpdate) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._StatusUpdate(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v interface{}) (string, error) {
@@ -12063,11 +13129,152 @@ func (ec *executionContext) marshalORole2ᚖgithubᚗcomᚋscorifyᚋbackendᚋp
 	return res
 }
 
+func (ec *executionContext) marshalORoundUpdate2ᚕᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚐRoundUpdateᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.RoundUpdate) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNRoundUpdate2ᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚐRoundUpdate(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalOScoreUpdate2ᚕᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋgraphᚋmodelᚐScoreUpdateᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.ScoreUpdate) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNScoreUpdate2ᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋgraphᚋmodelᚐScoreUpdate(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
 func (ec *executionContext) marshalOStatus2ᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚐStatus(ctx context.Context, sel ast.SelectionSet, v *ent.Status) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._Status(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOStatusUpdate2ᚕᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚐStatusUpdateᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.StatusUpdate) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNStatusUpdate2ᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚐStatusUpdate(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) unmarshalOString2string(ctx context.Context, v interface{}) (string, error) {
