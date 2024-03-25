@@ -7,7 +7,7 @@ import (
 	"io"
 	"strconv"
 
-	"github.com/scorify/backend/pkg/ent"
+	"github.com/scorify/backend/pkg/ent/status"
 )
 
 type LoginOutput struct {
@@ -25,21 +25,33 @@ type Notification struct {
 	Type    NotificationType `json:"type"`
 }
 
-type ScoreUpdate struct {
+type RoundUpdateScoreboard struct {
+	Round    int  `json:"round"`
+	Complete bool `json:"complete"`
+}
+
+type ScoreUpdateScoreboard struct {
 	Team   int `json:"team"`
 	Round  int `json:"round"`
 	Points int `json:"points"`
 }
 
 type ScoreboardUpdate struct {
-	StatusUpdate []*ent.StatusUpdate `json:"statusUpdate,omitempty"`
-	RoundUpdate  []*ent.RoundUpdate  `json:"roundUpdate,omitempty"`
-	ScoreUpdate  []*ScoreUpdate      `json:"scoreUpdate,omitempty"`
+	StatusUpdate []*StatusUpdateScoreboard `json:"statusUpdate,omitempty"`
+	RoundUpdate  []*RoundUpdateScoreboard  `json:"roundUpdate,omitempty"`
+	ScoreUpdate  []*ScoreUpdateScoreboard  `json:"scoreUpdate,omitempty"`
 }
 
 type Source struct {
 	Name   string `json:"name"`
 	Schema string `json:"schema"`
+}
+
+type StatusUpdateScoreboard struct {
+	Team   int           `json:"team"`
+	Round  int           `json:"round"`
+	Check  string        `json:"check"`
+	Status status.Status `json:"status"`
 }
 
 type Subscription struct {
