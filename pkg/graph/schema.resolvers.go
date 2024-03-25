@@ -938,6 +938,90 @@ func (r *subscriptionResolver) StatusStream(ctx context.Context) (<-chan []*ent.
 	return scoreStreamChan, nil
 }
 
+// ScoreboardUpdate is the resolver for the scoreboardUpdate field.
+func (r *subscriptionResolver) ScoreboardUpdate(ctx context.Context) (<-chan *model.ScoreboardUpdate, error) {
+	scoreboardUpdateChan := make(chan *model.ScoreboardUpdate, 1)
+
+	go func() {
+		ticket := time.NewTicker(250 * time.Millisecond)
+		defer ticket.Stop()
+
+		scoreboardUpdate := &model.ScoreboardUpdate{}
+
+		roundSub := cache.SubscribeScoreboardRoundUpdate(ctx, r.Redis)
+		statusSub := cache.SubscribeScoreboardStatusUpdate(ctx, r.Redis)
+		scoreSub := cache.SubscribeScoreboardScoreUpdate(ctx, r.Redis)
+
+		roundCh := roundSub.Channel()
+		statusCh := statusSub.Channel()
+		scoreCh := scoreSub.Channel()
+
+		for {
+			select {
+			case <-ticket.C:
+				if scoreboardUpdate.RoundUpdate != nil || scoreboardUpdate.StatusUpdate != nil || scoreboardUpdate.ScoreUpdate != nil {
+					scoreboardUpdateChan <- scoreboardUpdate
+					scoreboardUpdate = &model.ScoreboardUpdate{}
+				}
+			case msg := <-roundCh:
+				roundUpdate := &model.RoundUpdateScoreboard{}
+				err := json.Unmarshal([]byte(msg.Payload), roundUpdate)
+				if err != nil {
+					logrus.WithError(err).Error("failed to unmarshal round update")
+					continue
+				}
+
+				if scoreboardUpdate.RoundUpdate == nil {
+					scoreboardUpdate.RoundUpdate = []*model.RoundUpdateScoreboard{
+						roundUpdate,
+					}
+				} else {
+					scoreboardUpdate.RoundUpdate = append(scoreboardUpdate.RoundUpdate, roundUpdate)
+				}
+
+			case msg := <-statusCh:
+				statusUpdate := &model.StatusUpdateScoreboard{}
+				err := json.Unmarshal([]byte(msg.Payload), statusUpdate)
+				if err != nil {
+					logrus.WithError(err).Error("failed to unmarshal status update")
+					continue
+				}
+
+				if scoreboardUpdate.StatusUpdate == nil {
+					scoreboardUpdate.StatusUpdate = []*model.StatusUpdateScoreboard{
+						statusUpdate,
+					}
+				} else {
+					scoreboardUpdate.StatusUpdate = append(scoreboardUpdate.StatusUpdate, statusUpdate)
+				}
+			case msg := <-scoreCh:
+				scoreUpdate := &model.ScoreUpdateScoreboard{}
+				err := json.Unmarshal([]byte(msg.Payload), scoreUpdate)
+				if err != nil {
+					logrus.WithError(err).Error("failed to unmarshal score update")
+					continue
+				}
+
+				if scoreboardUpdate.ScoreUpdate == nil {
+					scoreboardUpdate.ScoreUpdate = []*model.ScoreUpdateScoreboard{
+						scoreUpdate,
+					}
+				} else {
+					scoreboardUpdate.ScoreUpdate = append(scoreboardUpdate.ScoreUpdate, scoreUpdate)
+				}
+			case <-ctx.Done():
+				close(scoreboardUpdateChan)
+				roundSub.Close()
+				statusSub.Close()
+				scoreSub.Close()
+				return
+			}
+		}
+	}()
+
+	return scoreboardUpdateChan, nil
+}
+
 // Configs is the resolver for the configs field.
 func (r *userResolver) Configs(ctx context.Context, obj *ent.User) ([]*ent.CheckConfig, error) {
 	return obj.QueryConfigs().All(ctx)
@@ -993,52 +1077,3 @@ type scoreCacheResolver struct{ *Resolver }
 type statusResolver struct{ *Resolver }
 type subscriptionResolver struct{ *Resolver }
 type userResolver struct{ *Resolver }
-
-// !!! WARNING !!!
-// The code below was going to be deleted when updating resolvers. It has been copied here so you have
-// one last chance to move it out of harms way if you want. There are two reasons this happens:
-//   - When renaming or deleting a resolver the old code will be put in here. You can safely delete
-//     it when you're done.
-//   - You have helper methods in this file. Move them out to keep these resolver files clean.
-func (r *checkResolver) ID(ctx context.Context, obj *ent.Check) (string, error) {
-	return obj.ID.String(), nil
-}
-func (r *checkConfigResolver) ID(ctx context.Context, obj *ent.CheckConfig) (string, error) {
-	return obj.ID.String(), nil
-}
-func (r *checkConfigResolver) CheckID(ctx context.Context, obj *ent.CheckConfig) (string, error) {
-	return obj.ID.String(), nil
-}
-func (r *checkConfigResolver) UserID(ctx context.Context, obj *ent.CheckConfig) (string, error) {
-	return obj.ID.String(), nil
-}
-func (r *configResolver) ID(ctx context.Context, obj *ent.CheckConfig) (string, error) {
-	return obj.ID.String(), nil
-}
-func (r *roundResolver) ID(ctx context.Context, obj *ent.Round) (string, error) {
-	return obj.ID.String(), nil
-}
-func (r *scoreCacheResolver) ID(ctx context.Context, obj *ent.ScoreCache) (string, error) {
-	return obj.ID.String(), nil
-}
-func (r *scoreCacheResolver) RoundID(ctx context.Context, obj *ent.ScoreCache) (string, error) {
-	return obj.RoundID.String(), nil
-}
-func (r *scoreCacheResolver) UserID(ctx context.Context, obj *ent.ScoreCache) (string, error) {
-	return obj.UserID.String(), nil
-}
-func (r *statusResolver) ID(ctx context.Context, obj *ent.Status) (string, error) {
-	return obj.ID.String(), nil
-}
-func (r *statusResolver) CheckID(ctx context.Context, obj *ent.Status) (string, error) {
-	return obj.CheckID.String(), nil
-}
-func (r *statusResolver) RoundID(ctx context.Context, obj *ent.Status) (string, error) {
-	return obj.RoundID.String(), nil
-}
-func (r *statusResolver) UserID(ctx context.Context, obj *ent.Status) (string, error) {
-	return obj.UserID.String(), nil
-}
-func (r *userResolver) ID(ctx context.Context, obj *ent.User) (string, error) {
-	return obj.ID.String(), nil
-}

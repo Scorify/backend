@@ -124,6 +124,30 @@ type Round {
   score_caches: [ScoreCache!]!
 }
 
+type StatusUpdate_Scoreboard {
+  team: Int!
+  round: Int!
+  check: String!
+  status: StatusEnum!
+}
+
+type RoundUpdate_Scoreboard {
+  round: Int!
+  complete: Boolean!
+}
+
+type ScoreUpdate_Scoreboard {
+  team: Int!
+  round: Int!
+  points: Int!
+}
+
+type ScoreboardUpdate {
+  statusUpdate: [StatusUpdate_Scoreboard!]
+  roundUpdate: [RoundUpdate_Scoreboard!]
+  scoreUpdate: [ScoreUpdate_Scoreboard!]
+}
+
 type Notification {
   message: String!
   type: NotificationType!
@@ -133,6 +157,7 @@ type Subscription {
   globalNotification: Notification!
   engineState: EngineState!
   statusStream: [Status]!
+  scoreboardUpdate: ScoreboardUpdate!
 }
 
 type Query {
