@@ -938,6 +938,11 @@ func (r *subscriptionResolver) StatusStream(ctx context.Context) (<-chan []*ent.
 	return scoreStreamChan, nil
 }
 
+// ScoreboardUpdate is the resolver for the scoreboardUpdate field.
+func (r *subscriptionResolver) ScoreboardUpdate(ctx context.Context) (<-chan *model.ScoreboardUpdate, error) {
+	panic(fmt.Errorf("not implemented: ScoreboardUpdate - scoreboardUpdate"))
+}
+
 // Configs is the resolver for the configs field.
 func (r *userResolver) Configs(ctx context.Context, obj *ent.User) ([]*ent.CheckConfig, error) {
 	return obj.QueryConfigs().All(ctx)
