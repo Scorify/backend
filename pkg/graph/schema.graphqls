@@ -157,6 +157,7 @@ type Subscription {
   globalNotification: Notification!
   engineState: EngineState!
   statusStream: [Status]!
+  scoreboardUpdate: ScoreboardUpdate!
 }
 
 type Query {
