@@ -940,7 +940,86 @@ func (r *subscriptionResolver) StatusStream(ctx context.Context) (<-chan []*ent.
 
 // ScoreboardUpdate is the resolver for the scoreboardUpdate field.
 func (r *subscriptionResolver) ScoreboardUpdate(ctx context.Context) (<-chan *model.ScoreboardUpdate, error) {
-	panic(fmt.Errorf("not implemented: ScoreboardUpdate - scoreboardUpdate"))
+	scoreboardUpdateChan := make(chan *model.ScoreboardUpdate, 1)
+
+	go func() {
+		ticket := time.NewTicker(250 * time.Millisecond)
+		defer ticket.Stop()
+
+		scoreboardUpdate := &model.ScoreboardUpdate{}
+
+		roundSub := cache.SubscribeScoreboardRoundUpdate(ctx, r.Redis)
+		statusSub := cache.SubscribeScoreboardStatusUpdate(ctx, r.Redis)
+		scoreSub := cache.SubscribeScoreboardScoreUpdate(ctx, r.Redis)
+
+		roundCh := roundSub.Channel()
+		statusCh := statusSub.Channel()
+		scoreCh := scoreSub.Channel()
+
+		for {
+			select {
+			case <-ticket.C:
+				if scoreboardUpdate.RoundUpdate != nil || scoreboardUpdate.StatusUpdate != nil || scoreboardUpdate.ScoreUpdate != nil {
+					scoreboardUpdateChan <- scoreboardUpdate
+					scoreboardUpdate = &model.ScoreboardUpdate{}
+				}
+			case msg := <-roundCh:
+				roundUpdate := &model.RoundUpdateScoreboard{}
+				err := json.Unmarshal([]byte(msg.Payload), roundUpdate)
+				if err != nil {
+					logrus.WithError(err).Error("failed to unmarshal round update")
+					continue
+				}
+
+				if scoreboardUpdate.RoundUpdate == nil {
+					scoreboardUpdate.RoundUpdate = []*model.RoundUpdateScoreboard{
+						roundUpdate,
+					}
+				} else {
+					scoreboardUpdate.RoundUpdate = append(scoreboardUpdate.RoundUpdate, roundUpdate)
+				}
+
+			case msg := <-statusCh:
+				statusUpdate := &model.StatusUpdateScoreboard{}
+				err := json.Unmarshal([]byte(msg.Payload), statusUpdate)
+				if err != nil {
+					logrus.WithError(err).Error("failed to unmarshal status update")
+					continue
+				}
+
+				if scoreboardUpdate.StatusUpdate == nil {
+					scoreboardUpdate.StatusUpdate = []*model.StatusUpdateScoreboard{
+						statusUpdate,
+					}
+				} else {
+					scoreboardUpdate.StatusUpdate = append(scoreboardUpdate.StatusUpdate, statusUpdate)
+				}
+			case msg := <-scoreCh:
+				scoreUpdate := &model.ScoreUpdateScoreboard{}
+				err := json.Unmarshal([]byte(msg.Payload), scoreUpdate)
+				if err != nil {
+					logrus.WithError(err).Error("failed to unmarshal score update")
+					continue
+				}
+
+				if scoreboardUpdate.ScoreUpdate == nil {
+					scoreboardUpdate.ScoreUpdate = []*model.ScoreUpdateScoreboard{
+						scoreUpdate,
+					}
+				} else {
+					scoreboardUpdate.ScoreUpdate = append(scoreboardUpdate.ScoreUpdate, scoreUpdate)
+				}
+			case <-ctx.Done():
+				close(scoreboardUpdateChan)
+				roundSub.Close()
+				statusSub.Close()
+				scoreSub.Close()
+				return
+			}
+		}
+	}()
+
+	return scoreboardUpdateChan, nil
 }
 
 // Configs is the resolver for the configs field.
