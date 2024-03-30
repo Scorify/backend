@@ -153,6 +153,13 @@ type Notification {
   type: NotificationType!
 }
 
+type Scoreboard {
+  teams: [User!]!
+  checks: [Check!]!
+  round: Round!
+  statuses: [[Status!]!]!
+}
+
 type Subscription {
   globalNotification: Notification!
   engineState: EngineState!
@@ -172,6 +179,8 @@ type Query {
 
   configs: [Config!]! @isAuthenticated
   config(id: ID!): Config! @isAuthenticated
+
+  scoreboard: Scoreboard!
 }
 
 type Mutation {

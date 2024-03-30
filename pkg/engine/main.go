@@ -316,6 +316,14 @@ func (e *Client) runRound(ctx context.Context, entRound *ent.Round) error {
 	_, err = e.ent.ScoreCache.CreateBulk(entScoreCacheCreates...).Save(ctx)
 	if err != nil {
 		logrus.WithError(err).Error("failed to create score cache")
+		return err
+	}
+
+	_, err = entRound.Update().
+		SetComplete(true).
+		Save(ctx)
+	if err != nil {
+		logrus.WithError(err).Error("failed to set round as complete")
 	}
 
 	return err

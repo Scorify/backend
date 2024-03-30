@@ -7,6 +7,7 @@ import (
 	"io"
 	"strconv"
 
+	"github.com/scorify/backend/pkg/ent"
 	"github.com/scorify/backend/pkg/ent/status"
 )
 
@@ -34,6 +35,13 @@ type ScoreUpdateScoreboard struct {
 	Team   int `json:"team"`
 	Round  int `json:"round"`
 	Points int `json:"points"`
+}
+
+type Scoreboard struct {
+	Teams    []*ent.User     `json:"teams"`
+	Checks   []*ent.Check    `json:"checks"`
+	Round    *ent.Round      `json:"round"`
+	Statuses [][]*ent.Status `json:"statuses"`
 }
 
 type ScoreboardUpdate struct {
