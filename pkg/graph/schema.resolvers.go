@@ -869,8 +869,6 @@ func (r *queryResolver) Scoreboard(ctx context.Context) (*model.Scoreboard, erro
 		scoreboard.Statuses[check_index][user_index] = entStatus
 	}
 
-	fmt.Println(scoreboard.Statuses)
-
 	return scoreboard, nil
 }
 
