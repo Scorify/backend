@@ -157,7 +157,7 @@ type Scoreboard {
   teams: [User!]!
   checks: [Check!]!
   round: Round!
-  statuses: [[Status!]!]!
+  statuses: [[Status]!]!
 }
 
 type Subscription {
