@@ -12841,7 +12841,7 @@ func (ec *executionContext) marshalNStatus2ᚕᚕᚖgithubᚗcomᚋscorifyᚋbac
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNStatus2ᚕᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚐStatusᚄ(ctx, sel, v[i])
+			ret[i] = ec.marshalNStatus2ᚕᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚐStatus(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
