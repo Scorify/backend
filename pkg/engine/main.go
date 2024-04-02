@@ -171,13 +171,34 @@ func (e *Client) loopRoundRunner() error {
 		return nil
 	}
 
+	// Create lookup table
+	entUsers, err := e.ent.User.Query().All(e.ctx)
+	if err != nil {
+		logrus.WithError(err).Error("failed to get statuses")
+	}
+
+	userLookup := make(map[uuid.UUID]*ent.User)
+	for _, user := range entUsers {
+		userLookup[user.ID] = user
+	}
+
+	entChecks, err := e.ent.Check.Query().All(e.ctx)
+	if err != nil {
+		logrus.WithError(err).Error("failed to get checks")
+	}
+
+	checkLookup := make(map[uuid.UUID]*ent.Check)
+	for _, check := range entChecks {
+		checkLookup[check.ID] = check
+	}
+
 	logrus.WithField("time", time.Now()).Infof("Running round %d", roundNumber)
 
 	// Run round
-	return e.runRound(roundCtx, entRound)
+	return e.runRound(roundCtx, entRound, userLookup, checkLookup)
 }
 
-func (e *Client) runRound(ctx context.Context, entRound *ent.Round) error {
+func (e *Client) runRound(ctx context.Context, entRound *ent.Round, userLookup map[uuid.UUID]*ent.User, checkLookup map[uuid.UUID]*ent.Check) error {
 	// Get all the tasks
 	tasks, err := e.ent.CheckConfig.Query().
 		WithUser().
@@ -256,13 +277,13 @@ func (e *Client) runRound(ctx context.Context, entRound *ent.Round) error {
 
 			switch result.Status {
 			case proto.Status_up:
-				go e.updateStatus(ctx, roundTasks, status_id, result.Error, status.StatusUp, allChecksReported)
+				go e.updateStatus(ctx, roundTasks, status_id, result.Error, status.StatusUp, entRound, userLookup, checkLookup, allChecksReported)
 			case proto.Status_down:
-				go e.updateStatus(ctx, roundTasks, status_id, result.Error, status.StatusDown, allChecksReported)
+				go e.updateStatus(ctx, roundTasks, status_id, result.Error, status.StatusDown, entRound, userLookup, checkLookup, allChecksReported)
 			case proto.Status_unknown:
-				go e.updateStatus(ctx, roundTasks, status_id, result.Error, status.StatusUnknown, allChecksReported)
+				go e.updateStatus(ctx, roundTasks, status_id, result.Error, status.StatusUnknown, entRound, userLookup, checkLookup, allChecksReported)
 			default:
-				go e.updateStatus(ctx, roundTasks, status_id, result.Error, status.StatusUnknown, allChecksReported)
+				go e.updateStatus(ctx, roundTasks, status_id, result.Error, status.StatusUnknown, entRound, userLookup, checkLookup, allChecksReported)
 				logrus.WithFields(logrus.Fields{
 					"status":    result.Status,
 					"status_id": status_id,
@@ -329,7 +350,7 @@ func (e *Client) runRound(ctx context.Context, entRound *ent.Round) error {
 	return err
 }
 
-func (e *Client) updateStatus(ctx context.Context, roundTasks *structs.SyncMap[uuid.UUID, *ent.CheckConfig], status_id uuid.UUID, errorMessage string, _status status.Status, allChecksReported chan<- struct{}) {
+func (e *Client) updateStatus(ctx context.Context, roundTasks *structs.SyncMap[uuid.UUID, *ent.CheckConfig], status_id uuid.UUID, errorMessage string, _status status.Status, entRound *ent.Round, userLookup map[uuid.UUID]*ent.User, checkLookup map[uuid.UUID]*ent.Check, allChecksReported chan<- struct{}) {
 	_, ok := roundTasks.Get(status_id)
 	if !ok {
 		logrus.WithField("status_id", status_id).Error("uuid not belong to round was submitted")
@@ -358,6 +379,16 @@ func (e *Client) updateStatus(ctx context.Context, roundTasks *structs.SyncMap[u
 	_, err = cache.PublishScoreStream(ctx, e.redis, entStatus)
 	if err != nil {
 		logrus.WithError(err).Error("failed to publish score stream")
+	}
+
+	_, err = cache.PublishScoreboardStatusUpdate(ctx, e.redis, &model.StatusUpdateScoreboard{
+		Round:  entRound.Number,
+		Team:   userLookup[entStatus.UserID].Number,
+		Check:  checkLookup[entStatus.CheckID].Name,
+		Status: entStatus.Status,
+	})
+	if err != nil {
+		logrus.WithError(err).Error("failed to publish scoreboard status update")
 	}
 
 	if roundTasks.Legnth() == 0 {
