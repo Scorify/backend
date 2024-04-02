@@ -171,6 +171,15 @@ func (e *Client) loopRoundRunner() error {
 		return nil
 	}
 
+	// Publish round update
+	_, err = cache.PublishScoreboardRoundUpdate(e.ctx, e.redis, &model.RoundUpdateScoreboard{
+		Round:    roundNumber,
+		Complete: false,
+	})
+	if err != nil {
+		logrus.WithError(err).Error("failed to publish scoreboard round update")
+	}
+
 	// Create lookup table
 	entUsers, err := e.ent.User.Query().All(e.ctx)
 	if err != nil {
@@ -345,6 +354,15 @@ func (e *Client) runRound(ctx context.Context, entRound *ent.Round, userLookup m
 		Save(ctx)
 	if err != nil {
 		logrus.WithError(err).Error("failed to set round as complete")
+	}
+
+	// Publish round update
+	_, err = cache.PublishScoreboardRoundUpdate(ctx, e.redis, &model.RoundUpdateScoreboard{
+		Round:    entRound.Number,
+		Complete: true,
+	})
+	if err != nil {
+		logrus.WithError(err).Error("failed to publish scoreboard round update")
 	}
 
 	return err
