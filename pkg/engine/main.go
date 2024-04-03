@@ -14,6 +14,7 @@ import (
 	"github.com/scorify/backend/pkg/ent"
 	"github.com/scorify/backend/pkg/ent/checkconfig"
 	"github.com/scorify/backend/pkg/ent/round"
+	"github.com/scorify/backend/pkg/ent/scorecache"
 	"github.com/scorify/backend/pkg/ent/status"
 	"github.com/scorify/backend/pkg/graph/model"
 	"github.com/scorify/backend/pkg/grpc/proto"
@@ -365,7 +366,27 @@ func (e *Client) runRound(ctx context.Context, entRound *ent.Round, userLookup m
 		logrus.WithError(err).Error("failed to publish scoreboard round update")
 	}
 
-	return err
+	var TeamScore []struct {
+		TeamID uuid.UUID `json:"user_id"`
+		Sum    int       `json:"sum"`
+	}
+
+	err = e.ent.ScoreCache.Query().
+		GroupBy(
+			scorecache.FieldUserID,
+		).
+		Aggregate(
+			ent.Sum(
+				scorecache.FieldPoints,
+			),
+		).
+		Scan(ctx, &TeamScore)
+	if err != nil {
+		logrus.WithError(err).Error("failed to get team scores")
+		return err
+	}
+
+	return nil
 }
 
 func (e *Client) updateStatus(ctx context.Context, roundTasks *structs.SyncMap[uuid.UUID, *ent.CheckConfig], status_id uuid.UUID, errorMessage string, _status status.Status, entRound *ent.Round, userLookup map[uuid.UUID]*ent.User, checkLookup map[uuid.UUID]*ent.Check, allChecksReported chan<- struct{}) {
