@@ -980,7 +980,7 @@ func (r *subscriptionResolver) StatusStream(ctx context.Context) (<-chan []*ent.
 
 		statuses := []*ent.Status{}
 
-		sub := cache.SubscribeScoreStream(ctx, r.Redis)
+		sub := cache.SubscribeScoreboardStatusUpdate(ctx, r.Redis)
 
 		ch := sub.Channel()
 		for {
@@ -991,8 +991,8 @@ func (r *subscriptionResolver) StatusStream(ctx context.Context) (<-chan []*ent.
 					statuses = []*ent.Status{}
 				}
 			case msg := <-ch:
-				tempStatus := &ent.Status{}
-				err := json.Unmarshal([]byte(msg.Payload), tempStatus)
+				statusUpdate := &model.StatusUpdateScoreboard{}
+				err := json.Unmarshal([]byte(msg.Payload), statusUpdate)
 				if err != nil {
 					logrus.WithError(err).Error("failed to unmarshal status")
 					continue
@@ -1000,8 +1000,16 @@ func (r *subscriptionResolver) StatusStream(ctx context.Context) (<-chan []*ent.
 
 				entStatus, err := r.Ent.Status.Query().
 					Where(
-						status.IDEQ(tempStatus.ID),
-					).Only(ctx)
+						status.HasCheckWith(
+							check.NameEQ(statusUpdate.Check),
+						),
+						status.HasUserWith(
+							user.NumberEQ(statusUpdate.Team),
+						),
+						status.HasRoundWith(
+							round.NumberEQ(statusUpdate.Round),
+						),
+					).Only(context.WithoutCancel(ctx))
 				if err != nil {
 					logrus.WithError(err).Error("failed to get status")
 					continue
