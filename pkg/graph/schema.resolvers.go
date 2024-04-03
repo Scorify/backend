@@ -980,7 +980,7 @@ func (r *subscriptionResolver) StatusStream(ctx context.Context) (<-chan []*ent.
 
 		statuses := []*ent.Status{}
 
-		sub := cache.SubscribeScoreStream(ctx, r.Redis)
+		sub := cache.SubscribeScoreboardStatusUpdate(ctx, r.Redis)
 
 		ch := sub.Channel()
 		for {
