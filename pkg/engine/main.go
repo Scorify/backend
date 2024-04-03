@@ -386,6 +386,17 @@ func (e *Client) runRound(ctx context.Context, entRound *ent.Round, userLookup m
 		return err
 	}
 
+	for _, team := range TeamScore {
+		_, err = cache.PublishScoreboardScoreUpdate(ctx, e.redis, &model.ScoreUpdateScoreboard{
+			Team:   userLookup[team.TeamID].Number,
+			Round:  entRound.Number,
+			Points: team.Sum,
+		})
+		if err != nil {
+			logrus.WithError(err).Error("failed to publish scoreboard team update")
+		}
+	}
+
 	return nil
 }
 
