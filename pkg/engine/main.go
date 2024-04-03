@@ -313,9 +313,14 @@ func (e *Client) runRound(ctx context.Context, entRound *ent.Round, userLookup m
 			logrus.WithField("status", entStatus).Debug("status not reported, set to 0")
 		}
 
-		_, err = cache.PublishScoreStream(ctx, e.redis, entStatus)
+		_, err = cache.PublishScoreboardStatusUpdate(ctx, e.redis, &model.StatusUpdateScoreboard{
+			Round:  entRound.Number,
+			Team:   userLookup[entStatus.UserID].Number,
+			Check:  checkLookup[entStatus.CheckID].Name,
+			Status: status.StatusUnknown,
+		})
 		if err != nil {
-			logrus.WithError(err).Error("failed to publish score stream")
+			logrus.WithError(err).Error("failed to publish scoreboard score update")
 		}
 	}
 
@@ -425,11 +430,6 @@ func (e *Client) updateStatus(ctx context.Context, roundTasks *structs.SyncMap[u
 	}
 
 	roundTasks.Delete(status_id)
-
-	_, err = cache.PublishScoreStream(ctx, e.redis, entStatus)
-	if err != nil {
-		logrus.WithError(err).Error("failed to publish score stream")
-	}
 
 	_, err = cache.PublishScoreboardStatusUpdate(ctx, e.redis, &model.StatusUpdateScoreboard{
 		Round:  entRound.Number,
