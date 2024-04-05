@@ -7491,9 +7491,9 @@ func (ec *executionContext) _StatusUpdate_Scoreboard_status(ctx context.Context,
 		}
 		return graphql.Null
 	}
-	res := resTmp.(status.Status)
+	res := resTmp.(*ent.Status)
 	fc.Result = res
-	return ec.marshalNStatusEnum2githubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚋstatusᚐStatus(ctx, field.Selections, res)
+	return ec.marshalNStatus2ᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚐStatus(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_StatusUpdate_Scoreboard_status(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -7503,7 +7503,33 @@ func (ec *executionContext) fieldContext_StatusUpdate_Scoreboard_status(ctx cont
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type StatusEnum does not have child fields")
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Status_id(ctx, field)
+			case "error":
+				return ec.fieldContext_Status_error(ctx, field)
+			case "status":
+				return ec.fieldContext_Status_status(ctx, field)
+			case "points":
+				return ec.fieldContext_Status_points(ctx, field)
+			case "check_id":
+				return ec.fieldContext_Status_check_id(ctx, field)
+			case "round_id":
+				return ec.fieldContext_Status_round_id(ctx, field)
+			case "user_id":
+				return ec.fieldContext_Status_user_id(ctx, field)
+			case "create_time":
+				return ec.fieldContext_Status_create_time(ctx, field)
+			case "update_time":
+				return ec.fieldContext_Status_update_time(ctx, field)
+			case "check":
+				return ec.fieldContext_Status_check(ctx, field)
+			case "round":
+				return ec.fieldContext_Status_round(ctx, field)
+			case "user":
+				return ec.fieldContext_Status_user(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Status", field.Name)
 		},
 	}
 	return fc, nil
