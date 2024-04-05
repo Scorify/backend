@@ -317,7 +317,7 @@ func (e *Client) runRound(ctx context.Context, entRound *ent.Round, userLookup m
 			Round:  entRound.Number,
 			Team:   userLookup[entStatus.UserID].Number,
 			Check:  checkLookup[entStatus.CheckID].Name,
-			Status: status.StatusUnknown,
+			Status: entStatus,
 		})
 		if err != nil {
 			logrus.WithError(err).Error("failed to publish scoreboard score update")
@@ -435,7 +435,7 @@ func (e *Client) updateStatus(ctx context.Context, roundTasks *structs.SyncMap[u
 		Round:  entRound.Number,
 		Team:   userLookup[entStatus.UserID].Number,
 		Check:  checkLookup[entStatus.CheckID].Name,
-		Status: entStatus.Status,
+		Status: entStatus,
 	})
 	if err != nil {
 		logrus.WithError(err).Error("failed to publish scoreboard status update")
