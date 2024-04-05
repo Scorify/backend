@@ -8,7 +8,6 @@ import (
 	"strconv"
 
 	"github.com/scorify/backend/pkg/ent"
-	"github.com/scorify/backend/pkg/ent/status"
 )
 
 type LoginOutput struct {
@@ -56,10 +55,10 @@ type Source struct {
 }
 
 type StatusUpdateScoreboard struct {
-	Team   int           `json:"team"`
-	Round  int           `json:"round"`
-	Check  string        `json:"check"`
-	Status status.Status `json:"status"`
+	Team   int         `json:"team"`
+	Round  int         `json:"round"`
+	Check  string      `json:"check"`
+	Status *ent.Status `json:"status"`
 }
 
 type Subscription struct {
