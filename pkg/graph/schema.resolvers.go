@@ -8,7 +8,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/scorify/backend/pkg/auth"
@@ -1055,65 +1054,3 @@ type scoreCacheResolver struct{ *Resolver }
 type statusResolver struct{ *Resolver }
 type subscriptionResolver struct{ *Resolver }
 type userResolver struct{ *Resolver }
-
-// !!! WARNING !!!
-// The code below was going to be deleted when updating resolvers. It has been copied here so you have
-// one last chance to move it out of harms way if you want. There are two reasons this happens:
-//   - When renaming or deleting a resolver the old code will be put in here. You can safely delete
-//     it when you're done.
-//   - You have helper methods in this file. Move them out to keep these resolver files clean.
-func (r *subscriptionResolver) StatusStream(ctx context.Context) (<-chan []*ent.Status, error) {
-	scoreStreamChan := make(chan []*ent.Status, 1)
-
-	go func() {
-		ticker := time.NewTicker(250 * time.Millisecond)
-		defer ticker.Stop()
-
-		statuses := []*ent.Status{}
-
-		sub := cache.SubscribeScoreboardStatusUpdate(ctx, r.Redis)
-
-		ch := sub.Channel()
-		for {
-			select {
-			case <-ticker.C:
-				if len(statuses) > 0 {
-					scoreStreamChan <- statuses
-					statuses = []*ent.Status{}
-				}
-			case msg := <-ch:
-				statusUpdate := &model.StatusUpdateScoreboard{}
-				err := json.Unmarshal([]byte(msg.Payload), statusUpdate)
-				if err != nil {
-					logrus.WithError(err).Error("failed to unmarshal status")
-					continue
-				}
-
-				entStatus, err := r.Ent.Status.Query().
-					Where(
-						status.HasCheckWith(
-							check.NameEQ(statusUpdate.Check),
-						),
-						status.HasUserWith(
-							user.NumberEQ(statusUpdate.Team),
-						),
-						status.HasRoundWith(
-							round.NumberEQ(statusUpdate.Round),
-						),
-					).Only(context.WithoutCancel(ctx))
-				if err != nil {
-					logrus.WithError(err).Error("failed to get status")
-					continue
-				}
-
-				statuses = append(statuses, entStatus)
-			case <-ctx.Done():
-				close(scoreStreamChan)
-				sub.Close()
-				return
-			}
-		}
-	}()
-
-	return scoreStreamChan, nil
-}
