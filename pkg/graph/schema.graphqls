@@ -139,7 +139,6 @@ type Scoreboard {
 type Subscription {
   globalNotification: Notification!
   engineState: EngineState!
-  statusStream: [Status]!
   scoreboardUpdate: Scoreboard!
 }
 
