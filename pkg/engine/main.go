@@ -17,6 +17,7 @@ import (
 	"github.com/scorify/backend/pkg/ent/status"
 	"github.com/scorify/backend/pkg/graph/model"
 	"github.com/scorify/backend/pkg/grpc/proto"
+	"github.com/scorify/backend/pkg/helpers"
 	"github.com/scorify/backend/pkg/structs"
 	"github.com/sirupsen/logrus"
 )
@@ -319,6 +320,18 @@ func (e *Client) runRound(ctx context.Context, entRound *ent.Round) error {
 		Save(ctx)
 	if err != nil {
 		logrus.WithError(err).Error("failed to set round as complete")
+		return err
+	}
+
+	scoreboard, err := helpers.Scoreboard(ctx, e.ent)
+	if err != nil {
+		logrus.WithError(err).Error("failed to get scoreboard")
+		return err
+	}
+
+	_, err = cache.PublishScoreboardUpdate(ctx, e.redis, scoreboard)
+	if err != nil {
+		logrus.WithError(err).Error("failed to publish scoreboard")
 		return err
 	}
 
