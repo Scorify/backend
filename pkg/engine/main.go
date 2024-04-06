@@ -172,15 +172,6 @@ func (e *Client) loopRoundRunner() error {
 		return nil
 	}
 
-	// Publish round update
-	_, err = cache.PublishScoreboardRoundUpdate(e.ctx, e.redis, &model.RoundUpdateScoreboard{
-		Round:    roundNumber,
-		Complete: false,
-	})
-	if err != nil {
-		logrus.WithError(err).Error("failed to publish scoreboard round update")
-	}
-
 	// Create lookup table
 	entUsers, err := e.ent.User.Query().All(e.ctx)
 	if err != nil {
@@ -312,16 +303,6 @@ func (e *Client) runRound(ctx context.Context, entRound *ent.Round, userLookup m
 		} else {
 			logrus.WithField("status", entStatus).Debug("status not reported, set to 0")
 		}
-
-		_, err = cache.PublishScoreboardStatusUpdate(ctx, e.redis, &model.StatusUpdateScoreboard{
-			Round:  entRound.Number,
-			Team:   userLookup[entStatus.UserID].Number,
-			Check:  checkLookup[entStatus.CheckID].Name,
-			Status: entStatus,
-		})
-		if err != nil {
-			logrus.WithError(err).Error("failed to publish scoreboard score update")
-		}
 	}
 
 	var users []struct {
@@ -362,15 +343,6 @@ func (e *Client) runRound(ctx context.Context, entRound *ent.Round, userLookup m
 		logrus.WithError(err).Error("failed to set round as complete")
 	}
 
-	// Publish round update
-	_, err = cache.PublishScoreboardRoundUpdate(ctx, e.redis, &model.RoundUpdateScoreboard{
-		Round:    entRound.Number,
-		Complete: true,
-	})
-	if err != nil {
-		logrus.WithError(err).Error("failed to publish scoreboard round update")
-	}
-
 	var TeamScore []struct {
 		TeamID uuid.UUID `json:"user_id"`
 		Sum    int       `json:"sum"`
@@ -389,17 +361,6 @@ func (e *Client) runRound(ctx context.Context, entRound *ent.Round, userLookup m
 	if err != nil {
 		logrus.WithError(err).Error("failed to get team scores")
 		return err
-	}
-
-	for _, team := range TeamScore {
-		_, err = cache.PublishScoreboardScoreUpdate(ctx, e.redis, &model.ScoreUpdateScoreboard{
-			Team:   userLookup[team.TeamID].Number,
-			Round:  entRound.Number,
-			Points: team.Sum,
-		})
-		if err != nil {
-			logrus.WithError(err).Error("failed to publish scoreboard team update")
-		}
 	}
 
 	return nil
@@ -423,23 +384,13 @@ func (e *Client) updateStatus(ctx context.Context, roundTasks *structs.SyncMap[u
 		entStatusUpdate.SetPoints(0)
 	}
 
-	entStatus, err := entStatusUpdate.Save(ctx)
+	_, err := entStatusUpdate.Save(ctx)
 	if err != nil {
 		logrus.WithField("id", status_id).WithError(err).Error("failed to update status")
 		return
 	}
 
 	roundTasks.Delete(status_id)
-
-	_, err = cache.PublishScoreboardStatusUpdate(ctx, e.redis, &model.StatusUpdateScoreboard{
-		Round:  entRound.Number,
-		Team:   userLookup[entStatus.UserID].Number,
-		Check:  checkLookup[entStatus.CheckID].Name,
-		Status: entStatus,
-	})
-	if err != nil {
-		logrus.WithError(err).Error("failed to publish scoreboard status update")
-	}
 
 	if roundTasks.Legnth() == 0 {
 		allChecksReported <- struct{}{}
