@@ -1028,7 +1028,7 @@ func (r *subscriptionResolver) StatusStream(ctx context.Context) (<-chan []*ent.
 }
 
 // ScoreboardUpdate is the resolver for the scoreboardUpdate field.
-func (r *subscriptionResolver) ScoreboardUpdate(ctx context.Context) (<-chan *model.ScoreboardUpdate, error) {
+func (r *subscriptionResolver) ScoreboardUpdate(ctx context.Context) (<-chan *model.Scoreboard, error) {
 	scoreboardUpdateChan := make(chan *model.ScoreboardUpdate, 1)
 
 	go func() {

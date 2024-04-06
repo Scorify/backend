@@ -25,17 +25,6 @@ type Notification struct {
 	Type    NotificationType `json:"type"`
 }
 
-type RoundUpdateScoreboard struct {
-	Round    int  `json:"round"`
-	Complete bool `json:"complete"`
-}
-
-type ScoreUpdateScoreboard struct {
-	Team   int `json:"team"`
-	Round  int `json:"round"`
-	Points int `json:"points"`
-}
-
 type Scoreboard struct {
 	Teams    []*ent.User     `json:"teams"`
 	Checks   []*ent.Check    `json:"checks"`
@@ -43,22 +32,9 @@ type Scoreboard struct {
 	Statuses [][]*ent.Status `json:"statuses"`
 }
 
-type ScoreboardUpdate struct {
-	StatusUpdate []*StatusUpdateScoreboard `json:"statusUpdate,omitempty"`
-	RoundUpdate  []*RoundUpdateScoreboard  `json:"roundUpdate,omitempty"`
-	ScoreUpdate  []*ScoreUpdateScoreboard  `json:"scoreUpdate,omitempty"`
-}
-
 type Source struct {
 	Name   string `json:"name"`
 	Schema string `json:"schema"`
-}
-
-type StatusUpdateScoreboard struct {
-	Team   int         `json:"team"`
-	Round  int         `json:"round"`
-	Check  string      `json:"check"`
-	Status *ent.Status `json:"status"`
 }
 
 type Subscription struct {
