@@ -134,6 +134,7 @@ type Scoreboard {
   checks: [Check!]!
   round: Round!
   statuses: [[Status]!]!
+  scores: [Int!]!
 }
 
 type Subscription {
