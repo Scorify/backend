@@ -30,6 +30,7 @@ type Scoreboard struct {
 	Checks   []*ent.Check    `json:"checks"`
 	Round    *ent.Round      `json:"round"`
 	Statuses [][]*ent.Status `json:"statuses"`
+	Scores   []int           `json:"scores"`
 }
 
 type Source struct {

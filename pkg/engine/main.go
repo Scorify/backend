@@ -14,7 +14,6 @@ import (
 	"github.com/scorify/backend/pkg/ent"
 	"github.com/scorify/backend/pkg/ent/checkconfig"
 	"github.com/scorify/backend/pkg/ent/round"
-	"github.com/scorify/backend/pkg/ent/scorecache"
 	"github.com/scorify/backend/pkg/ent/status"
 	"github.com/scorify/backend/pkg/graph/model"
 	"github.com/scorify/backend/pkg/grpc/proto"
@@ -172,34 +171,13 @@ func (e *Client) loopRoundRunner() error {
 		return nil
 	}
 
-	// Create lookup table
-	entUsers, err := e.ent.User.Query().All(e.ctx)
-	if err != nil {
-		logrus.WithError(err).Error("failed to get statuses")
-	}
-
-	userLookup := make(map[uuid.UUID]*ent.User)
-	for _, user := range entUsers {
-		userLookup[user.ID] = user
-	}
-
-	entChecks, err := e.ent.Check.Query().All(e.ctx)
-	if err != nil {
-		logrus.WithError(err).Error("failed to get checks")
-	}
-
-	checkLookup := make(map[uuid.UUID]*ent.Check)
-	for _, check := range entChecks {
-		checkLookup[check.ID] = check
-	}
-
 	logrus.WithField("time", time.Now()).Infof("Running round %d", roundNumber)
 
 	// Run round
-	return e.runRound(roundCtx, entRound, userLookup, checkLookup)
+	return e.runRound(roundCtx, entRound)
 }
 
-func (e *Client) runRound(ctx context.Context, entRound *ent.Round, userLookup map[uuid.UUID]*ent.User, checkLookup map[uuid.UUID]*ent.Check) error {
+func (e *Client) runRound(ctx context.Context, entRound *ent.Round) error {
 	// Get all the tasks
 	tasks, err := e.ent.CheckConfig.Query().
 		WithUser().
@@ -278,13 +256,13 @@ func (e *Client) runRound(ctx context.Context, entRound *ent.Round, userLookup m
 
 			switch result.Status {
 			case proto.Status_up:
-				go e.updateStatus(ctx, roundTasks, status_id, result.Error, status.StatusUp, entRound, userLookup, checkLookup, allChecksReported)
+				go e.updateStatus(ctx, roundTasks, status_id, result.Error, status.StatusUp, allChecksReported)
 			case proto.Status_down:
-				go e.updateStatus(ctx, roundTasks, status_id, result.Error, status.StatusDown, entRound, userLookup, checkLookup, allChecksReported)
+				go e.updateStatus(ctx, roundTasks, status_id, result.Error, status.StatusDown, allChecksReported)
 			case proto.Status_unknown:
-				go e.updateStatus(ctx, roundTasks, status_id, result.Error, status.StatusUnknown, entRound, userLookup, checkLookup, allChecksReported)
+				go e.updateStatus(ctx, roundTasks, status_id, result.Error, status.StatusUnknown, allChecksReported)
 			default:
-				go e.updateStatus(ctx, roundTasks, status_id, result.Error, status.StatusUnknown, entRound, userLookup, checkLookup, allChecksReported)
+				go e.updateStatus(ctx, roundTasks, status_id, result.Error, status.StatusUnknown, allChecksReported)
 				logrus.WithFields(logrus.Fields{
 					"status":    result.Status,
 					"status_id": status_id,
@@ -341,32 +319,13 @@ func (e *Client) runRound(ctx context.Context, entRound *ent.Round, userLookup m
 		Save(ctx)
 	if err != nil {
 		logrus.WithError(err).Error("failed to set round as complete")
-	}
-
-	var TeamScore []struct {
-		TeamID uuid.UUID `json:"user_id"`
-		Sum    int       `json:"sum"`
-	}
-
-	err = e.ent.ScoreCache.Query().
-		GroupBy(
-			scorecache.FieldUserID,
-		).
-		Aggregate(
-			ent.Sum(
-				scorecache.FieldPoints,
-			),
-		).
-		Scan(ctx, &TeamScore)
-	if err != nil {
-		logrus.WithError(err).Error("failed to get team scores")
 		return err
 	}
 
 	return nil
 }
 
-func (e *Client) updateStatus(ctx context.Context, roundTasks *structs.SyncMap[uuid.UUID, *ent.CheckConfig], status_id uuid.UUID, errorMessage string, _status status.Status, entRound *ent.Round, userLookup map[uuid.UUID]*ent.User, checkLookup map[uuid.UUID]*ent.Check, allChecksReported chan<- struct{}) {
+func (e *Client) updateStatus(ctx context.Context, roundTasks *structs.SyncMap[uuid.UUID, *ent.CheckConfig], status_id uuid.UUID, errorMessage string, _status status.Status, allChecksReported chan<- struct{}) {
 	_, ok := roundTasks.Get(status_id)
 	if !ok {
 		logrus.WithField("status_id", status_id).Error("uuid not belong to round was submitted")

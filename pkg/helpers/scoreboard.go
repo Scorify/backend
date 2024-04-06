@@ -7,6 +7,7 @@ import (
 	"github.com/scorify/backend/pkg/ent"
 	"github.com/scorify/backend/pkg/ent/check"
 	"github.com/scorify/backend/pkg/ent/round"
+	"github.com/scorify/backend/pkg/ent/scorecache"
 	"github.com/scorify/backend/pkg/ent/status"
 	"github.com/scorify/backend/pkg/ent/user"
 	"github.com/scorify/backend/pkg/graph/model"
@@ -86,6 +87,35 @@ func Scoreboard(ctx context.Context, entClient *ent.Client) (*model.Scoreboard, 
 		}
 
 		scoreboard.Statuses[check_index][user_index] = entStatus
+	}
+
+	var TeamScore []struct {
+		TeamID uuid.UUID `json:"user_id"`
+		Sum    int       `json:"sum"`
+	}
+
+	err = entClient.ScoreCache.Query().
+		GroupBy(
+			scorecache.FieldUserID,
+		).
+		Aggregate(
+			ent.Sum(
+				scorecache.FieldPoints,
+			),
+		).
+		Scan(ctx, &TeamScore)
+	if err != nil {
+		return nil, err
+	}
+
+	scoreboard.Scores = make([]int, len(entUsers))
+	for _, teamScore := range TeamScore {
+		user_index, ok := lookup[teamScore.TeamID]
+		if !ok {
+			continue
+		}
+
+		scoreboard.Scores[user_index] = teamScore.Sum
 	}
 
 	return scoreboard, nil

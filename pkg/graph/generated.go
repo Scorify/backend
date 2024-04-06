@@ -162,6 +162,7 @@ type ComplexityRoot struct {
 	Scoreboard struct {
 		Checks   func(childComplexity int) int
 		Round    func(childComplexity int) int
+		Scores   func(childComplexity int) int
 		Statuses func(childComplexity int) int
 		Teams    func(childComplexity int) int
 	}
@@ -865,6 +866,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Scoreboard.Round(childComplexity), true
+
+	case "Scoreboard.scores":
+		if e.complexity.Scoreboard.Scores == nil {
+			break
+		}
+
+		return e.complexity.Scoreboard.Scores(childComplexity), true
 
 	case "Scoreboard.statuses":
 		if e.complexity.Scoreboard.Statuses == nil {
@@ -5042,6 +5050,8 @@ func (ec *executionContext) fieldContext_Query_scoreboard(ctx context.Context, f
 				return ec.fieldContext_Scoreboard_round(ctx, field)
 			case "statuses":
 				return ec.fieldContext_Scoreboard_statuses(ctx, field)
+			case "scores":
+				return ec.fieldContext_Scoreboard_scores(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Scoreboard", field.Name)
 		},
@@ -6178,6 +6188,50 @@ func (ec *executionContext) fieldContext_Scoreboard_statuses(ctx context.Context
 	return fc, nil
 }
 
+func (ec *executionContext) _Scoreboard_scores(ctx context.Context, field graphql.CollectedField, obj *model.Scoreboard) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Scoreboard_scores(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Scores, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]int)
+	fc.Result = res
+	return ec.marshalNInt2ᚕintᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Scoreboard_scores(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Scoreboard",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Source_name(ctx context.Context, field graphql.CollectedField, obj *model.Source) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Source_name(ctx, field)
 	if err != nil {
@@ -7032,6 +7086,8 @@ func (ec *executionContext) fieldContext_Subscription_scoreboardUpdate(ctx conte
 				return ec.fieldContext_Scoreboard_round(ctx, field)
 			case "statuses":
 				return ec.fieldContext_Scoreboard_statuses(ctx, field)
+			case "scores":
+				return ec.fieldContext_Scoreboard_scores(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Scoreboard", field.Name)
 		},
@@ -10648,6 +10704,11 @@ func (ec *executionContext) _Scoreboard(ctx context.Context, sel ast.SelectionSe
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "scores":
+			out.Values[i] = ec._Scoreboard_scores(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -11641,6 +11702,38 @@ func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.Selecti
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) unmarshalNInt2ᚕintᚄ(ctx context.Context, v interface{}) ([]int, error) {
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]int, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNInt2int(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNInt2ᚕintᚄ(ctx context.Context, sel ast.SelectionSet, v []int) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNInt2int(ctx, sel, v[i])
+	}
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) unmarshalNJSON2string(ctx context.Context, v interface{}) (string, error) {
