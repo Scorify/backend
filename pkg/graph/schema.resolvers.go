@@ -8,7 +8,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/scorify/backend/pkg/auth"
@@ -19,8 +18,6 @@ import (
 	"github.com/scorify/backend/pkg/ent/check"
 	"github.com/scorify/backend/pkg/ent/checkconfig"
 	"github.com/scorify/backend/pkg/ent/predicate"
-	"github.com/scorify/backend/pkg/ent/round"
-	"github.com/scorify/backend/pkg/ent/status"
 	"github.com/scorify/backend/pkg/ent/user"
 	"github.com/scorify/backend/pkg/graph/model"
 	"github.com/scorify/backend/pkg/helpers"
@@ -794,82 +791,7 @@ func (r *queryResolver) Config(ctx context.Context, id uuid.UUID) (*ent.CheckCon
 
 // Scoreboard is the resolver for the scoreboard field.
 func (r *queryResolver) Scoreboard(ctx context.Context) (*model.Scoreboard, error) {
-	scoreboard := &model.Scoreboard{}
-
-	entUsers, err := r.Ent.User.Query().
-		Where(
-			user.RoleEQ(user.RoleUser),
-		).
-		Order(
-			ent.Asc(user.FieldNumber),
-		).
-		All(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	scoreboard.Teams = entUsers
-
-	entChecks, err := r.Ent.Check.Query().
-		Order(
-			ent.Asc(check.FieldName),
-		).
-		All(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	scoreboard.Checks = entChecks
-
-	entRound, err := r.Ent.Round.Query().
-		Order(
-			ent.Desc(round.FieldNumber),
-		).
-		First(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	scoreboard.Round = entRound
-
-	entStatuses, err := r.Ent.Status.Query().
-		Where(
-			status.HasRoundWith(
-				round.IDEQ(entRound.ID),
-			),
-		).All(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	lookup := make(map[uuid.UUID]int)
-	for i, entUser := range entUsers {
-		lookup[entUser.ID] = i
-	}
-	for i, entCheck := range entChecks {
-		lookup[entCheck.ID] = i
-	}
-
-	scoreboard.Statuses = make([][]*ent.Status, len(entChecks))
-	for i := range scoreboard.Statuses {
-		scoreboard.Statuses[i] = make([]*ent.Status, len(entUsers))
-	}
-
-	for _, entStatus := range entStatuses {
-		check_index, ok := lookup[entStatus.CheckID]
-		if !ok {
-			continue
-		}
-
-		user_index, ok := lookup[entStatus.UserID]
-		if !ok {
-			continue
-		}
-
-		scoreboard.Statuses[check_index][user_index] = entStatus
-	}
-
-	return scoreboard, nil
+	return helpers.Scoreboard(ctx, r.Ent)
 }
 
 // Statuses is the resolver for the statuses field.
@@ -970,139 +892,28 @@ func (r *subscriptionResolver) EngineState(ctx context.Context) (<-chan model.En
 	return engineStateChan, nil
 }
 
-// StatusStream is the resolver for the statusStream field.
-func (r *subscriptionResolver) StatusStream(ctx context.Context) (<-chan []*ent.Status, error) {
-	scoreStreamChan := make(chan []*ent.Status, 1)
-
-	go func() {
-		ticker := time.NewTicker(250 * time.Millisecond)
-		defer ticker.Stop()
-
-		statuses := []*ent.Status{}
-
-		sub := cache.SubscribeScoreboardStatusUpdate(ctx, r.Redis)
-
-		ch := sub.Channel()
-		for {
-			select {
-			case <-ticker.C:
-				if len(statuses) > 0 {
-					scoreStreamChan <- statuses
-					statuses = []*ent.Status{}
-				}
-			case msg := <-ch:
-				statusUpdate := &model.StatusUpdateScoreboard{}
-				err := json.Unmarshal([]byte(msg.Payload), statusUpdate)
-				if err != nil {
-					logrus.WithError(err).Error("failed to unmarshal status")
-					continue
-				}
-
-				entStatus, err := r.Ent.Status.Query().
-					Where(
-						status.HasCheckWith(
-							check.NameEQ(statusUpdate.Check),
-						),
-						status.HasUserWith(
-							user.NumberEQ(statusUpdate.Team),
-						),
-						status.HasRoundWith(
-							round.NumberEQ(statusUpdate.Round),
-						),
-					).Only(context.WithoutCancel(ctx))
-				if err != nil {
-					logrus.WithError(err).Error("failed to get status")
-					continue
-				}
-
-				statuses = append(statuses, entStatus)
-			case <-ctx.Done():
-				close(scoreStreamChan)
-				sub.Close()
-				return
-			}
-		}
-	}()
-
-	return scoreStreamChan, nil
-}
-
 // ScoreboardUpdate is the resolver for the scoreboardUpdate field.
-func (r *subscriptionResolver) ScoreboardUpdate(ctx context.Context) (<-chan *model.ScoreboardUpdate, error) {
-	scoreboardUpdateChan := make(chan *model.ScoreboardUpdate, 1)
+func (r *subscriptionResolver) ScoreboardUpdate(ctx context.Context) (<-chan *model.Scoreboard, error) {
+	scoreboardUpdateChan := make(chan *model.Scoreboard, 1)
 
 	go func() {
-		ticket := time.NewTicker(250 * time.Millisecond)
-		defer ticket.Stop()
-
-		scoreboardUpdate := &model.ScoreboardUpdate{}
-
-		roundSub := cache.SubscribeScoreboardRoundUpdate(ctx, r.Redis)
-		statusSub := cache.SubscribeScoreboardStatusUpdate(ctx, r.Redis)
-		scoreSub := cache.SubscribeScoreboardScoreUpdate(ctx, r.Redis)
-
-		roundCh := roundSub.Channel()
-		statusCh := statusSub.Channel()
-		scoreCh := scoreSub.Channel()
+		scoreboardSub := cache.SubscribeScoreboardUpdate(ctx, r.Redis)
+		scoreboardChan := scoreboardSub.Channel()
 
 		for {
 			select {
-			case <-ticket.C:
-				if scoreboardUpdate.RoundUpdate != nil || scoreboardUpdate.StatusUpdate != nil || scoreboardUpdate.ScoreUpdate != nil {
-					scoreboardUpdateChan <- scoreboardUpdate
-					scoreboardUpdate = &model.ScoreboardUpdate{}
-				}
-			case msg := <-roundCh:
-				roundUpdate := &model.RoundUpdateScoreboard{}
-				err := json.Unmarshal([]byte(msg.Payload), roundUpdate)
+			case msg := <-scoreboardChan:
+				scoreboardUpdate := &model.Scoreboard{}
+				err := json.Unmarshal([]byte(msg.Payload), scoreboardUpdate)
 				if err != nil {
 					logrus.WithError(err).Error("failed to unmarshal round update")
 					continue
 				}
 
-				if scoreboardUpdate.RoundUpdate == nil {
-					scoreboardUpdate.RoundUpdate = []*model.RoundUpdateScoreboard{
-						roundUpdate,
-					}
-				} else {
-					scoreboardUpdate.RoundUpdate = append(scoreboardUpdate.RoundUpdate, roundUpdate)
-				}
-
-			case msg := <-statusCh:
-				statusUpdate := &model.StatusUpdateScoreboard{}
-				err := json.Unmarshal([]byte(msg.Payload), statusUpdate)
-				if err != nil {
-					logrus.WithError(err).Error("failed to unmarshal status update")
-					continue
-				}
-
-				if scoreboardUpdate.StatusUpdate == nil {
-					scoreboardUpdate.StatusUpdate = []*model.StatusUpdateScoreboard{
-						statusUpdate,
-					}
-				} else {
-					scoreboardUpdate.StatusUpdate = append(scoreboardUpdate.StatusUpdate, statusUpdate)
-				}
-			case msg := <-scoreCh:
-				scoreUpdate := &model.ScoreUpdateScoreboard{}
-				err := json.Unmarshal([]byte(msg.Payload), scoreUpdate)
-				if err != nil {
-					logrus.WithError(err).Error("failed to unmarshal score update")
-					continue
-				}
-
-				if scoreboardUpdate.ScoreUpdate == nil {
-					scoreboardUpdate.ScoreUpdate = []*model.ScoreUpdateScoreboard{
-						scoreUpdate,
-					}
-				} else {
-					scoreboardUpdate.ScoreUpdate = append(scoreboardUpdate.ScoreUpdate, scoreUpdate)
-				}
+				scoreboardUpdateChan <- scoreboardUpdate
 			case <-ctx.Done():
 				close(scoreboardUpdateChan)
-				roundSub.Close()
-				statusSub.Close()
-				scoreSub.Close()
+				scoreboardSub.Close()
 				return
 			}
 		}
