@@ -25,12 +25,17 @@ type Notification struct {
 	Type    NotificationType `json:"type"`
 }
 
+type Score struct {
+	User  *ent.User `json:"user"`
+	Score int       `json:"score"`
+}
+
 type Scoreboard struct {
 	Teams    []*ent.User     `json:"teams"`
 	Checks   []*ent.Check    `json:"checks"`
 	Round    *ent.Round      `json:"round"`
 	Statuses [][]*ent.Status `json:"statuses"`
-	Scores   []int           `json:"scores"`
+	Scores   []*Score        `json:"scores"`
 }
 
 type Source struct {
