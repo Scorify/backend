@@ -129,12 +129,17 @@ type Notification {
   type: NotificationType!
 }
 
+type Score {
+  user: User!
+  score: Int!
+}
+
 type Scoreboard {
   teams: [User!]!
   checks: [Check!]!
   round: Round!
   statuses: [[Status]!]!
-  scores: [Int!]!
+  scores: [Score!]!
 }
 
 type Subscription {
