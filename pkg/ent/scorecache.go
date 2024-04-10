@@ -51,12 +51,10 @@ type ScoreCacheEdges struct {
 // RoundOrErr returns the Round value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e ScoreCacheEdges) RoundOrErr() (*Round, error) {
-	if e.loadedTypes[0] {
-		if e.Round == nil {
-			// Edge was loaded but was not found.
-			return nil, &NotFoundError{label: round.Label}
-		}
+	if e.Round != nil {
 		return e.Round, nil
+	} else if e.loadedTypes[0] {
+		return nil, &NotFoundError{label: round.Label}
 	}
 	return nil, &NotLoadedError{edge: "round"}
 }
@@ -64,12 +62,10 @@ func (e ScoreCacheEdges) RoundOrErr() (*Round, error) {
 // UserOrErr returns the User value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e ScoreCacheEdges) UserOrErr() (*User, error) {
-	if e.loadedTypes[1] {
-		if e.User == nil {
-			// Edge was loaded but was not found.
-			return nil, &NotFoundError{label: user.Label}
-		}
+	if e.User != nil {
 		return e.User, nil
+	} else if e.loadedTypes[1] {
+		return nil, &NotFoundError{label: user.Label}
 	}
 	return nil, &NotLoadedError{edge: "user"}
 }

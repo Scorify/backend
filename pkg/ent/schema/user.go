@@ -2,7 +2,6 @@ package schema
 
 import (
 	"entgo.io/ent"
-	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
@@ -68,29 +67,14 @@ func (User) Edges() []ent.Edge {
 		edge.From("configs", CheckConfig.Type).
 			StructTag(`json:"config"`).
 			Comment("The configuration of a check").
-			Annotations(
-				entsql.Annotation{
-					OnDelete: entsql.Cascade,
-				},
-			).
 			Ref("user"),
 		edge.From("statuses", Status.Type).
 			StructTag(`json:"status"`).
 			Comment("The status of a user").
-			Annotations(
-				entsql.Annotation{
-					OnDelete: entsql.Cascade,
-				},
-			).
 			Ref("user"),
 		edge.From("scoreCaches", ScoreCache.Type).
 			StructTag(`json:"score_caches"`).
 			Comment("The score caches of a user").
-			Annotations(
-				entsql.Annotation{
-					OnDelete: entsql.Cascade,
-				},
-			).
 			Ref("user"),
 	}
 }

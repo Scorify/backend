@@ -2,7 +2,6 @@ package schema
 
 import (
 	"entgo.io/ent"
-	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
@@ -66,20 +65,10 @@ func (Check) Edges() []ent.Edge {
 		edge.From("configs", CheckConfig.Type).
 			StructTag(`json:"config"`).
 			Comment("The configuration of a check").
-			Annotations(
-				entsql.Annotation{
-					OnDelete: entsql.Cascade,
-				},
-			).
 			Ref("check"),
 		edge.From("statuses", Status.Type).
 			StructTag(`json:"statuses"`).
 			Comment("The statuses of a check").
-			Annotations(
-				entsql.Annotation{
-					OnDelete: entsql.Cascade,
-				},
-			).
 			Ref("check"),
 	}
 }
