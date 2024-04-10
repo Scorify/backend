@@ -18,6 +18,7 @@ import (
 	"github.com/scorify/backend/pkg/ent/check"
 	"github.com/scorify/backend/pkg/ent/checkconfig"
 	"github.com/scorify/backend/pkg/ent/predicate"
+	"github.com/scorify/backend/pkg/ent/status"
 	"github.com/scorify/backend/pkg/ent/user"
 	"github.com/scorify/backend/pkg/graph/model"
 	"github.com/scorify/backend/pkg/helpers"
@@ -527,7 +528,43 @@ func (r *mutationResolver) UpdateCheck(ctx context.Context, id uuid.UUID, name *
 
 // DeleteCheck is the resolver for the deleteCheck field.
 func (r *mutationResolver) DeleteCheck(ctx context.Context, id uuid.UUID) (bool, error) {
-	err := r.Ent.Check.DeleteOneID(id).Exec(ctx)
+	tx, err := r.Ent.Tx(ctx)
+	if err != nil {
+		return false, fmt.Errorf("failed to start transaction: %v", err)
+	}
+	defer tx.Rollback()
+
+	_, err = tx.Status.Delete().
+		Where(
+			status.HasCheckWith(
+				check.IDEQ(id),
+			),
+		).Exec(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	_, err = tx.CheckConfig.Delete().
+		Where(
+			checkconfig.HasCheckWith(
+				check.IDEQ(id),
+			),
+		).Exec(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	err = tx.Check.DeleteOneID(id).Exec(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	err = helpers.RecomputeScores(tx, ctx)
+	if err != nil {
+		return false, err
+	}
+
+	err = tx.Commit()
 	return err == nil, err
 }
 
