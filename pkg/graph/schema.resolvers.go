@@ -670,8 +670,42 @@ func (r *mutationResolver) DeleteUser(ctx context.Context, id uuid.UUID) (bool, 
 		return false, fmt.Errorf("cannot delete yourself")
 	}
 
-	err = r.Ent.User.DeleteOneID(id).Exec(ctx)
+	tx, err := r.Ent.Tx(ctx)
+	if err != nil {
+		return false, fmt.Errorf("failed to start transaction: %v", err)
+	}
 
+	_, err = tx.CheckConfig.Delete().
+		Where(
+			checkconfig.HasUserWith(
+				user.IDEQ(id),
+			),
+		).Exec(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	_, err = tx.Status.Delete().
+		Where(
+			status.HasUserWith(
+				user.IDEQ(id),
+			),
+		).Exec(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	err = helpers.RecomputeScores(tx, ctx)
+	if err != nil {
+		return false, err
+	}
+
+	err = tx.User.DeleteOneID(id).Exec(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	err = tx.Commit()
 	return err == nil, err
 }
 
