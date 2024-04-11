@@ -347,7 +347,14 @@ func (r *mutationResolver) CreateCheck(ctx context.Context, name string, source 
 		return nil, fmt.Errorf("failed to commit transaction: %v", err)
 	}
 
-	return entCheck, nil
+	scoreboard, err := helpers.Scoreboard(ctx, r.Ent)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = cache.PublishScoreboardUpdate(ctx, r.Redis, scoreboard)
+
+	return entCheck, err
 }
 
 // UpdateCheck is the resolver for the updateCheck field.
