@@ -18,7 +18,6 @@ import (
 	"github.com/scorify/backend/pkg/ent/check"
 	"github.com/scorify/backend/pkg/ent/checkconfig"
 	"github.com/scorify/backend/pkg/ent/predicate"
-	"github.com/scorify/backend/pkg/ent/status"
 	"github.com/scorify/backend/pkg/ent/user"
 	"github.com/scorify/backend/pkg/graph/model"
 	"github.com/scorify/backend/pkg/helpers"
@@ -534,32 +533,12 @@ func (r *mutationResolver) DeleteCheck(ctx context.Context, id uuid.UUID) (bool,
 	}
 	defer tx.Rollback()
 
-	_, err = tx.Status.Delete().
-		Where(
-			status.HasCheckWith(
-				check.IDEQ(id),
-			),
-		).Exec(ctx)
-	if err != nil {
-		return false, err
-	}
-
-	_, err = tx.CheckConfig.Delete().
-		Where(
-			checkconfig.HasCheckWith(
-				check.IDEQ(id),
-			),
-		).Exec(ctx)
-	if err != nil {
-		return false, err
-	}
-
 	err = tx.Check.DeleteOneID(id).Exec(ctx)
 	if err != nil {
 		return false, err
 	}
 
-	err = helpers.RecomputeScores(tx, ctx)
+	err = helpers.RecomputeScores(tx, r.Redis, ctx)
 	if err != nil {
 		return false, err
 	}
@@ -670,42 +649,18 @@ func (r *mutationResolver) DeleteUser(ctx context.Context, id uuid.UUID) (bool, 
 		return false, fmt.Errorf("cannot delete yourself")
 	}
 
-	tx, err := r.Ent.Tx(ctx)
-	if err != nil {
-		return false, fmt.Errorf("failed to start transaction: %v", err)
-	}
-
-	_, err = tx.CheckConfig.Delete().
-		Where(
-			checkconfig.HasUserWith(
-				user.IDEQ(id),
-			),
-		).Exec(ctx)
+	err = r.Ent.User.DeleteOneID(id).Exec(ctx)
 	if err != nil {
 		return false, err
 	}
 
-	_, err = tx.Status.Delete().
-		Where(
-			status.HasUserWith(
-				user.IDEQ(id),
-			),
-		).Exec(ctx)
+	scoreboard, err := helpers.Scoreboard(ctx, r.Ent)
 	if err != nil {
 		return false, err
 	}
 
-	err = helpers.RecomputeScores(tx, ctx)
-	if err != nil {
-		return false, err
-	}
+	_, err = cache.PublishScoreboardUpdate(ctx, r.Redis, scoreboard)
 
-	err = tx.User.DeleteOneID(id).Exec(ctx)
-	if err != nil {
-		return false, err
-	}
-
-	err = tx.Commit()
 	return err == nil, err
 }
 
