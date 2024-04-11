@@ -642,7 +642,19 @@ func (r *mutationResolver) UpdateUser(ctx context.Context, id uuid.UUID, usernam
 		userUpdate.SetNumber(*number)
 	}
 
-	return userUpdate.Save(ctx)
+	entUser, err := userUpdate.Save(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	scoreboard, err := helpers.Scoreboard(ctx, r.Ent)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = cache.PublishScoreboardUpdate(ctx, r.Redis, scoreboard)
+
+	return entUser, err
 }
 
 // DeleteUser is the resolver for the deleteUser field.
