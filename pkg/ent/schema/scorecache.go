@@ -55,19 +55,21 @@ func (ScoreCache) Mixin() []ent.Mixin {
 // Edges of the ScoreCache.
 func (ScoreCache) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.To("round", Round.Type).
+		edge.From("round", Round.Type).
 			StructTag(`json:"round"`).
 			Comment("The round of a score cache").
 			Field("round_id").
 			Immutable().
 			Required().
-			Unique(),
-		edge.To("user", User.Type).
+			Unique().
+			Ref("scoreCaches"),
+		edge.From("user", User.Type).
 			StructTag(`json:"user"`).
 			Comment("The user of a score cache").
 			Field("user_id").
 			Immutable().
 			Required().
-			Unique(),
+			Unique().
+			Ref("scoreCaches"),
 	}
 }

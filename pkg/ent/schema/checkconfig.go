@@ -54,19 +54,21 @@ func (CheckConfig) Mixin() []ent.Mixin {
 // Edges of the CheckConfig.
 func (CheckConfig) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.To("check", Check.Type).
+		edge.From("check", Check.Type).
 			StructTag(`json:"check"`).
 			Comment("The check this configuration belongs to").
 			Field("check_id").
 			Immutable().
 			Required().
-			Unique(),
-		edge.To("user", User.Type).
+			Unique().
+			Ref("configs"),
+		edge.From("user", User.Type).
 			StructTag(`json:"user"`).
 			Comment("The user this configuration belongs to").
 			Field("user_id").
 			Immutable().
 			Required().
-			Unique(),
+			Unique().
+			Ref("configs"),
 	}
 }

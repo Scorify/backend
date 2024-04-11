@@ -2,6 +2,7 @@ package schema
 
 import (
 	"entgo.io/ent"
+	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
@@ -52,13 +53,21 @@ func (Round) Mixin() []ent.Mixin {
 // Edges of the Round.
 func (Round) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.From("statuses", Status.Type).
+		edge.To("statuses", Status.Type).
 			StructTag(`json:"statuses"`).
 			Comment("The statuses of a round").
-			Ref("round"),
-		edge.From("scoreCaches", ScoreCache.Type).
+			Annotations(
+				entsql.OnDelete(
+					entsql.Cascade,
+				),
+			),
+		edge.To("scoreCaches", ScoreCache.Type).
 			StructTag(`json:"score_caches"`).
 			Comment("The score caches of a round").
-			Ref("round"),
+			Annotations(
+				entsql.OnDelete(
+					entsql.Cascade,
+				),
+			),
 	}
 }

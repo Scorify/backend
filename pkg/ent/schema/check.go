@@ -2,6 +2,7 @@ package schema
 
 import (
 	"entgo.io/ent"
+	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
@@ -62,13 +63,21 @@ func (Check) Mixin() []ent.Mixin {
 // Edges of the Check.
 func (Check) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.From("configs", CheckConfig.Type).
+		edge.To("configs", CheckConfig.Type).
 			StructTag(`json:"config"`).
 			Comment("The configuration of a check").
-			Ref("check"),
-		edge.From("statuses", Status.Type).
+			Annotations(
+				entsql.OnDelete(
+					entsql.Cascade,
+				),
+			),
+		edge.To("statuses", Status.Type).
 			StructTag(`json:"statuses"`).
 			Comment("The statuses of a check").
-			Ref("check"),
+			Annotations(
+				entsql.OnDelete(
+					entsql.Cascade,
+				),
+			),
 	}
 }

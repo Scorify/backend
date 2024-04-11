@@ -2,6 +2,7 @@ package schema
 
 import (
 	"entgo.io/ent"
+	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
@@ -64,17 +65,29 @@ func (User) Mixin() []ent.Mixin {
 // Edges of the User.
 func (User) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.From("configs", CheckConfig.Type).
+		edge.To("configs", CheckConfig.Type).
 			StructTag(`json:"config"`).
 			Comment("The configuration of a check").
-			Ref("user"),
-		edge.From("statuses", Status.Type).
+			Annotations(
+				entsql.OnDelete(
+					entsql.Cascade,
+				),
+			),
+		edge.To("statuses", Status.Type).
 			StructTag(`json:"status"`).
 			Comment("The status of a user").
-			Ref("user"),
-		edge.From("scoreCaches", ScoreCache.Type).
+			Annotations(
+				entsql.OnDelete(
+					entsql.Cascade,
+				),
+			),
+		edge.To("scoreCaches", ScoreCache.Type).
 			StructTag(`json:"score_caches"`).
 			Comment("The score caches of a user").
-			Ref("user"),
+			Annotations(
+				entsql.OnDelete(
+					entsql.Cascade,
+				),
+			),
 	}
 }
