@@ -5,11 +5,13 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/redis/go-redis/v9"
+	"github.com/scorify/backend/pkg/cache"
 	"github.com/scorify/backend/pkg/ent"
 	"github.com/scorify/backend/pkg/ent/status"
 )
 
-func RecomputeScores(tx *ent.Tx, ctx context.Context) error {
+func RecomputeScores(tx *ent.Tx, redisClient *redis.Client, ctx context.Context) error {
 	entRounds, err := tx.Round.Query().All(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get rounds: %v", err)
@@ -59,6 +61,16 @@ func RecomputeScores(tx *ent.Tx, ctx context.Context) error {
 	}
 
 	_, err = tx.ScoreCache.CreateBulk(scoreCacheUpdates...).Save(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to save score caches: %v", err)
+	}
+
+	scoreboard, err := Scoreboard(ctx, tx.Client())
+	if err != nil {
+		return fmt.Errorf("failed to get scoreboard: %v", err)
+	}
+
+	_, err = cache.PublishScoreboardUpdate(ctx, redisClient, scoreboard)
 
 	return err
 }
