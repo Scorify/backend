@@ -509,6 +509,13 @@ func (r *mutationResolver) UpdateCheck(ctx context.Context, id uuid.UUID, name *
 			return nil, fmt.Errorf("failed to commit transaction: %v", err)
 		}
 
+		scoreboard, err := helpers.Scoreboard(ctx, r.Ent)
+		if err != nil {
+			return nil, err
+		}
+
+		_, err = cache.PublishScoreboardUpdate(ctx, r.Redis, scoreboard)
+
 		return checkUpdateResult, err
 	}
 
