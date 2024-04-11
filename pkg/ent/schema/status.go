@@ -68,26 +68,29 @@ func (Status) Mixin() []ent.Mixin {
 // Edges of the Status.
 func (Status) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.To("check", Check.Type).
+		edge.From("check", Check.Type).
 			StructTag(`json:"check"`).
 			Comment("The check of a status").
 			Field("check_id").
 			Immutable().
 			Required().
-			Unique(),
-		edge.To("round", Round.Type).
+			Unique().
+			Ref("statuses"),
+		edge.From("round", Round.Type).
 			StructTag(`json:"round"`).
 			Comment("The round of a status").
 			Field("round_id").
 			Immutable().
 			Required().
-			Unique(),
-		edge.To("user", User.Type).
+			Unique().
+			Ref("statuses"),
+		edge.From("user", User.Type).
 			StructTag(`json:"user"`).
 			Comment("The user of a status").
 			Field("user_id").
 			Immutable().
 			Required().
-			Unique(),
+			Unique().
+			Ref("statuses"),
 	}
 }

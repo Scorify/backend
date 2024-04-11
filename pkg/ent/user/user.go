@@ -206,20 +206,20 @@ func newConfigsStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(ConfigsInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.O2M, true, ConfigsTable, ConfigsColumn),
+		sqlgraph.Edge(sqlgraph.O2M, false, ConfigsTable, ConfigsColumn),
 	)
 }
 func newStatusesStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(StatusesInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.O2M, true, StatusesTable, StatusesColumn),
+		sqlgraph.Edge(sqlgraph.O2M, false, StatusesTable, StatusesColumn),
 	)
 }
 func newScoreCachesStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(ScoreCachesInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.O2M, true, ScoreCachesTable, ScoreCachesColumn),
+		sqlgraph.Edge(sqlgraph.O2M, false, ScoreCachesTable, ScoreCachesColumn),
 	)
 }

@@ -211,7 +211,7 @@ func HasStatuses() predicate.Round {
 	return predicate.Round(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, true, StatusesTable, StatusesColumn),
+			sqlgraph.Edge(sqlgraph.O2M, false, StatusesTable, StatusesColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
@@ -234,7 +234,7 @@ func HasScoreCaches() predicate.Round {
 	return predicate.Round(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, true, ScoreCachesTable, ScoreCachesColumn),
+			sqlgraph.Edge(sqlgraph.O2M, false, ScoreCachesTable, ScoreCachesColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})

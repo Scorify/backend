@@ -53,23 +53,21 @@ func (Round) Mixin() []ent.Mixin {
 // Edges of the Round.
 func (Round) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.From("statuses", Status.Type).
+		edge.To("statuses", Status.Type).
 			StructTag(`json:"statuses"`).
 			Comment("The statuses of a round").
 			Annotations(
-				entsql.Annotation{
-					OnDelete: entsql.Cascade,
-				},
-			).
-			Ref("round"),
-		edge.From("scoreCaches", ScoreCache.Type).
+				entsql.OnDelete(
+					entsql.Cascade,
+				),
+			),
+		edge.To("scoreCaches", ScoreCache.Type).
 			StructTag(`json:"score_caches"`).
 			Comment("The score caches of a round").
 			Annotations(
-				entsql.Annotation{
-					OnDelete: entsql.Cascade,
-				},
-			).
-			Ref("round"),
+				entsql.OnDelete(
+					entsql.Cascade,
+				),
+			),
 	}
 }

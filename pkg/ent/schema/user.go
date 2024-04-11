@@ -65,32 +65,29 @@ func (User) Mixin() []ent.Mixin {
 // Edges of the User.
 func (User) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.From("configs", CheckConfig.Type).
+		edge.To("configs", CheckConfig.Type).
 			StructTag(`json:"config"`).
 			Comment("The configuration of a check").
 			Annotations(
-				entsql.Annotation{
-					OnDelete: entsql.Cascade,
-				},
-			).
-			Ref("user"),
-		edge.From("statuses", Status.Type).
+				entsql.OnDelete(
+					entsql.Cascade,
+				),
+			),
+		edge.To("statuses", Status.Type).
 			StructTag(`json:"status"`).
 			Comment("The status of a user").
 			Annotations(
-				entsql.Annotation{
-					OnDelete: entsql.Cascade,
-				},
-			).
-			Ref("user"),
-		edge.From("scoreCaches", ScoreCache.Type).
+				entsql.OnDelete(
+					entsql.Cascade,
+				),
+			),
+		edge.To("scoreCaches", ScoreCache.Type).
 			StructTag(`json:"score_caches"`).
 			Comment("The score caches of a user").
 			Annotations(
-				entsql.Annotation{
-					OnDelete: entsql.Cascade,
-				},
-			).
-			Ref("user"),
+				entsql.OnDelete(
+					entsql.Cascade,
+				),
+			),
 	}
 }

@@ -279,7 +279,7 @@ func (cu *CheckUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if cu.mutation.ConfigsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
-			Inverse: true,
+			Inverse: false,
 			Table:   check.ConfigsTable,
 			Columns: []string{check.ConfigsColumn},
 			Bidi:    false,
@@ -292,7 +292,7 @@ func (cu *CheckUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if nodes := cu.mutation.RemovedConfigsIDs(); len(nodes) > 0 && !cu.mutation.ConfigsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
-			Inverse: true,
+			Inverse: false,
 			Table:   check.ConfigsTable,
 			Columns: []string{check.ConfigsColumn},
 			Bidi:    false,
@@ -308,7 +308,7 @@ func (cu *CheckUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if nodes := cu.mutation.ConfigsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
-			Inverse: true,
+			Inverse: false,
 			Table:   check.ConfigsTable,
 			Columns: []string{check.ConfigsColumn},
 			Bidi:    false,
@@ -324,7 +324,7 @@ func (cu *CheckUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if cu.mutation.StatusesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
-			Inverse: true,
+			Inverse: false,
 			Table:   check.StatusesTable,
 			Columns: []string{check.StatusesColumn},
 			Bidi:    false,
@@ -337,7 +337,7 @@ func (cu *CheckUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if nodes := cu.mutation.RemovedStatusesIDs(); len(nodes) > 0 && !cu.mutation.StatusesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
-			Inverse: true,
+			Inverse: false,
 			Table:   check.StatusesTable,
 			Columns: []string{check.StatusesColumn},
 			Bidi:    false,
@@ -353,7 +353,7 @@ func (cu *CheckUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if nodes := cu.mutation.StatusesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
-			Inverse: true,
+			Inverse: false,
 			Table:   check.StatusesTable,
 			Columns: []string{check.StatusesColumn},
 			Bidi:    false,
@@ -663,7 +663,7 @@ func (cuo *CheckUpdateOne) sqlSave(ctx context.Context) (_node *Check, err error
 	if cuo.mutation.ConfigsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
-			Inverse: true,
+			Inverse: false,
 			Table:   check.ConfigsTable,
 			Columns: []string{check.ConfigsColumn},
 			Bidi:    false,
@@ -676,7 +676,7 @@ func (cuo *CheckUpdateOne) sqlSave(ctx context.Context) (_node *Check, err error
 	if nodes := cuo.mutation.RemovedConfigsIDs(); len(nodes) > 0 && !cuo.mutation.ConfigsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
-			Inverse: true,
+			Inverse: false,
 			Table:   check.ConfigsTable,
 			Columns: []string{check.ConfigsColumn},
 			Bidi:    false,
@@ -692,7 +692,7 @@ func (cuo *CheckUpdateOne) sqlSave(ctx context.Context) (_node *Check, err error
 	if nodes := cuo.mutation.ConfigsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
-			Inverse: true,
+			Inverse: false,
 			Table:   check.ConfigsTable,
 			Columns: []string{check.ConfigsColumn},
 			Bidi:    false,
@@ -708,7 +708,7 @@ func (cuo *CheckUpdateOne) sqlSave(ctx context.Context) (_node *Check, err error
 	if cuo.mutation.StatusesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
-			Inverse: true,
+			Inverse: false,
 			Table:   check.StatusesTable,
 			Columns: []string{check.StatusesColumn},
 			Bidi:    false,
@@ -721,7 +721,7 @@ func (cuo *CheckUpdateOne) sqlSave(ctx context.Context) (_node *Check, err error
 	if nodes := cuo.mutation.RemovedStatusesIDs(); len(nodes) > 0 && !cuo.mutation.StatusesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
-			Inverse: true,
+			Inverse: false,
 			Table:   check.StatusesTable,
 			Columns: []string{check.StatusesColumn},
 			Bidi:    false,
@@ -737,7 +737,7 @@ func (cuo *CheckUpdateOne) sqlSave(ctx context.Context) (_node *Check, err error
 	if nodes := cuo.mutation.StatusesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
-			Inverse: true,
+			Inverse: false,
 			Table:   check.StatusesTable,
 			Columns: []string{check.StatusesColumn},
 			Bidi:    false,

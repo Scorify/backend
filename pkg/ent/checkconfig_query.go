@@ -76,7 +76,7 @@ func (ccq *CheckConfigQuery) QueryCheck() *CheckQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(checkconfig.Table, checkconfig.FieldID, selector),
 			sqlgraph.To(check.Table, check.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, checkconfig.CheckTable, checkconfig.CheckColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, checkconfig.CheckTable, checkconfig.CheckColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(ccq.driver.Dialect(), step)
 		return fromU, nil
@@ -98,7 +98,7 @@ func (ccq *CheckConfigQuery) QueryUser() *UserQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(checkconfig.Table, checkconfig.FieldID, selector),
 			sqlgraph.To(user.Table, user.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, checkconfig.UserTable, checkconfig.UserColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, checkconfig.UserTable, checkconfig.UserColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(ccq.driver.Dialect(), step)
 		return fromU, nil

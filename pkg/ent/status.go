@@ -60,12 +60,10 @@ type StatusEdges struct {
 // CheckOrErr returns the Check value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e StatusEdges) CheckOrErr() (*Check, error) {
-	if e.loadedTypes[0] {
-		if e.Check == nil {
-			// Edge was loaded but was not found.
-			return nil, &NotFoundError{label: check.Label}
-		}
+	if e.Check != nil {
 		return e.Check, nil
+	} else if e.loadedTypes[0] {
+		return nil, &NotFoundError{label: check.Label}
 	}
 	return nil, &NotLoadedError{edge: "check"}
 }
@@ -73,12 +71,10 @@ func (e StatusEdges) CheckOrErr() (*Check, error) {
 // RoundOrErr returns the Round value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e StatusEdges) RoundOrErr() (*Round, error) {
-	if e.loadedTypes[1] {
-		if e.Round == nil {
-			// Edge was loaded but was not found.
-			return nil, &NotFoundError{label: round.Label}
-		}
+	if e.Round != nil {
 		return e.Round, nil
+	} else if e.loadedTypes[1] {
+		return nil, &NotFoundError{label: round.Label}
 	}
 	return nil, &NotLoadedError{edge: "round"}
 }
@@ -86,12 +82,10 @@ func (e StatusEdges) RoundOrErr() (*Round, error) {
 // UserOrErr returns the User value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e StatusEdges) UserOrErr() (*User, error) {
-	if e.loadedTypes[2] {
-		if e.User == nil {
-			// Edge was loaded but was not found.
-			return nil, &NotFoundError{label: user.Label}
-		}
+	if e.User != nil {
 		return e.User, nil
+	} else if e.loadedTypes[2] {
+		return nil, &NotFoundError{label: user.Label}
 	}
 	return nil, &NotLoadedError{edge: "user"}
 }

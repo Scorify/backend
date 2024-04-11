@@ -201,7 +201,7 @@ func HasCheck() predicate.CheckConfig {
 	return predicate.CheckConfig(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, CheckTable, CheckColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, CheckTable, CheckColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
@@ -224,7 +224,7 @@ func HasUser() predicate.CheckConfig {
 	return predicate.CheckConfig(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, UserTable, UserColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, UserTable, UserColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})

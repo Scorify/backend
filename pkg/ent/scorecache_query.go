@@ -76,7 +76,7 @@ func (scq *ScoreCacheQuery) QueryRound() *RoundQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(scorecache.Table, scorecache.FieldID, selector),
 			sqlgraph.To(round.Table, round.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, scorecache.RoundTable, scorecache.RoundColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, scorecache.RoundTable, scorecache.RoundColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(scq.driver.Dialect(), step)
 		return fromU, nil
@@ -98,7 +98,7 @@ func (scq *ScoreCacheQuery) QueryUser() *UserQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(scorecache.Table, scorecache.FieldID, selector),
 			sqlgraph.To(user.Table, user.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, scorecache.UserTable, scorecache.UserColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, scorecache.UserTable, scorecache.UserColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(scq.driver.Dialect(), step)
 		return fromU, nil

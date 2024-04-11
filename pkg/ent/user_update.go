@@ -295,7 +295,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if uu.mutation.ConfigsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
-			Inverse: true,
+			Inverse: false,
 			Table:   user.ConfigsTable,
 			Columns: []string{user.ConfigsColumn},
 			Bidi:    false,
@@ -308,7 +308,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if nodes := uu.mutation.RemovedConfigsIDs(); len(nodes) > 0 && !uu.mutation.ConfigsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
-			Inverse: true,
+			Inverse: false,
 			Table:   user.ConfigsTable,
 			Columns: []string{user.ConfigsColumn},
 			Bidi:    false,
@@ -324,7 +324,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if nodes := uu.mutation.ConfigsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
-			Inverse: true,
+			Inverse: false,
 			Table:   user.ConfigsTable,
 			Columns: []string{user.ConfigsColumn},
 			Bidi:    false,
@@ -340,7 +340,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if uu.mutation.StatusesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
-			Inverse: true,
+			Inverse: false,
 			Table:   user.StatusesTable,
 			Columns: []string{user.StatusesColumn},
 			Bidi:    false,
@@ -353,7 +353,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if nodes := uu.mutation.RemovedStatusesIDs(); len(nodes) > 0 && !uu.mutation.StatusesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
-			Inverse: true,
+			Inverse: false,
 			Table:   user.StatusesTable,
 			Columns: []string{user.StatusesColumn},
 			Bidi:    false,
@@ -369,7 +369,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if nodes := uu.mutation.StatusesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
-			Inverse: true,
+			Inverse: false,
 			Table:   user.StatusesTable,
 			Columns: []string{user.StatusesColumn},
 			Bidi:    false,
@@ -385,7 +385,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if uu.mutation.ScoreCachesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
-			Inverse: true,
+			Inverse: false,
 			Table:   user.ScoreCachesTable,
 			Columns: []string{user.ScoreCachesColumn},
 			Bidi:    false,
@@ -398,7 +398,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if nodes := uu.mutation.RemovedScoreCachesIDs(); len(nodes) > 0 && !uu.mutation.ScoreCachesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
-			Inverse: true,
+			Inverse: false,
 			Table:   user.ScoreCachesTable,
 			Columns: []string{user.ScoreCachesColumn},
 			Bidi:    false,
@@ -414,7 +414,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if nodes := uu.mutation.ScoreCachesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
-			Inverse: true,
+			Inverse: false,
 			Table:   user.ScoreCachesTable,
 			Columns: []string{user.ScoreCachesColumn},
 			Bidi:    false,
@@ -740,7 +740,7 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 	if uuo.mutation.ConfigsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
-			Inverse: true,
+			Inverse: false,
 			Table:   user.ConfigsTable,
 			Columns: []string{user.ConfigsColumn},
 			Bidi:    false,
@@ -753,7 +753,7 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 	if nodes := uuo.mutation.RemovedConfigsIDs(); len(nodes) > 0 && !uuo.mutation.ConfigsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
-			Inverse: true,
+			Inverse: false,
 			Table:   user.ConfigsTable,
 			Columns: []string{user.ConfigsColumn},
 			Bidi:    false,
@@ -769,7 +769,7 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 	if nodes := uuo.mutation.ConfigsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
-			Inverse: true,
+			Inverse: false,
 			Table:   user.ConfigsTable,
 			Columns: []string{user.ConfigsColumn},
 			Bidi:    false,
@@ -785,7 +785,7 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 	if uuo.mutation.StatusesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
-			Inverse: true,
+			Inverse: false,
 			Table:   user.StatusesTable,
 			Columns: []string{user.StatusesColumn},
 			Bidi:    false,
@@ -798,7 +798,7 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 	if nodes := uuo.mutation.RemovedStatusesIDs(); len(nodes) > 0 && !uuo.mutation.StatusesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
-			Inverse: true,
+			Inverse: false,
 			Table:   user.StatusesTable,
 			Columns: []string{user.StatusesColumn},
 			Bidi:    false,
@@ -814,7 +814,7 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 	if nodes := uuo.mutation.StatusesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
-			Inverse: true,
+			Inverse: false,
 			Table:   user.StatusesTable,
 			Columns: []string{user.StatusesColumn},
 			Bidi:    false,
@@ -830,7 +830,7 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 	if uuo.mutation.ScoreCachesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
-			Inverse: true,
+			Inverse: false,
 			Table:   user.ScoreCachesTable,
 			Columns: []string{user.ScoreCachesColumn},
 			Bidi:    false,
@@ -843,7 +843,7 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 	if nodes := uuo.mutation.RemovedScoreCachesIDs(); len(nodes) > 0 && !uuo.mutation.ScoreCachesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
-			Inverse: true,
+			Inverse: false,
 			Table:   user.ScoreCachesTable,
 			Columns: []string{user.ScoreCachesColumn},
 			Bidi:    false,
@@ -859,7 +859,7 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 	if nodes := uuo.mutation.ScoreCachesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
-			Inverse: true,
+			Inverse: false,
 			Table:   user.ScoreCachesTable,
 			Columns: []string{user.ScoreCachesColumn},
 			Bidi:    false,

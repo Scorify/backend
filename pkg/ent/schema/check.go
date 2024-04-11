@@ -63,23 +63,21 @@ func (Check) Mixin() []ent.Mixin {
 // Edges of the Check.
 func (Check) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.From("configs", CheckConfig.Type).
+		edge.To("configs", CheckConfig.Type).
 			StructTag(`json:"config"`).
 			Comment("The configuration of a check").
 			Annotations(
-				entsql.Annotation{
-					OnDelete: entsql.Cascade,
-				},
-			).
-			Ref("check"),
-		edge.From("statuses", Status.Type).
+				entsql.OnDelete(
+					entsql.Cascade,
+				),
+			),
+		edge.To("statuses", Status.Type).
 			StructTag(`json:"statuses"`).
 			Comment("The statuses of a check").
 			Annotations(
-				entsql.Annotation{
-					OnDelete: entsql.Cascade,
-				},
-			).
-			Ref("check"),
+				entsql.OnDelete(
+					entsql.Cascade,
+				),
+			),
 	}
 }

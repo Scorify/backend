@@ -347,7 +347,14 @@ func (r *mutationResolver) CreateCheck(ctx context.Context, name string, source 
 		return nil, fmt.Errorf("failed to commit transaction: %v", err)
 	}
 
-	return entCheck, nil
+	scoreboard, err := helpers.Scoreboard(ctx, r.Ent)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = cache.PublishScoreboardUpdate(ctx, r.Redis, scoreboard)
+
+	return entCheck, err
 }
 
 // UpdateCheck is the resolver for the updateCheck field.
@@ -509,6 +516,13 @@ func (r *mutationResolver) UpdateCheck(ctx context.Context, id uuid.UUID, name *
 			return nil, fmt.Errorf("failed to commit transaction: %v", err)
 		}
 
+		scoreboard, err := helpers.Scoreboard(ctx, r.Ent)
+		if err != nil {
+			return nil, err
+		}
+
+		_, err = cache.PublishScoreboardUpdate(ctx, r.Redis, scoreboard)
+
 		return checkUpdateResult, err
 	}
 
@@ -527,7 +541,23 @@ func (r *mutationResolver) UpdateCheck(ctx context.Context, id uuid.UUID, name *
 
 // DeleteCheck is the resolver for the deleteCheck field.
 func (r *mutationResolver) DeleteCheck(ctx context.Context, id uuid.UUID) (bool, error) {
-	err := r.Ent.Check.DeleteOneID(id).Exec(ctx)
+	tx, err := r.Ent.Tx(ctx)
+	if err != nil {
+		return false, fmt.Errorf("failed to start transaction: %v", err)
+	}
+	defer tx.Rollback()
+
+	err = tx.Check.DeleteOneID(id).Exec(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	err = helpers.RecomputeScores(tx, r.Redis, ctx)
+	if err != nil {
+		return false, err
+	}
+
+	err = tx.Commit()
 	return err == nil, err
 }
 
@@ -595,7 +625,14 @@ func (r *mutationResolver) CreateUser(ctx context.Context, username string, pass
 		return nil, fmt.Errorf("failed to commit transaction: %v", err)
 	}
 
-	return entUser, nil
+	scoreboard, err := helpers.Scoreboard(ctx, r.Ent)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = cache.PublishScoreboardUpdate(ctx, r.Redis, scoreboard)
+
+	return entUser, err
 }
 
 // UpdateUser is the resolver for the updateUser field.
@@ -619,7 +656,19 @@ func (r *mutationResolver) UpdateUser(ctx context.Context, id uuid.UUID, usernam
 		userUpdate.SetNumber(*number)
 	}
 
-	return userUpdate.Save(ctx)
+	entUser, err := userUpdate.Save(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	scoreboard, err := helpers.Scoreboard(ctx, r.Ent)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = cache.PublishScoreboardUpdate(ctx, r.Redis, scoreboard)
+
+	return entUser, err
 }
 
 // DeleteUser is the resolver for the deleteUser field.
@@ -634,6 +683,16 @@ func (r *mutationResolver) DeleteUser(ctx context.Context, id uuid.UUID) (bool, 
 	}
 
 	err = r.Ent.User.DeleteOneID(id).Exec(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	scoreboard, err := helpers.Scoreboard(ctx, r.Ent)
+	if err != nil {
+		return false, err
+	}
+
+	_, err = cache.PublishScoreboardUpdate(ctx, r.Redis, scoreboard)
 
 	return err == nil, err
 }

@@ -48,16 +48,16 @@ var (
 		PrimaryKey: []*schema.Column{CheckConfigsColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "check_configs_checks_check",
+				Symbol:     "check_configs_checks_configs",
 				Columns:    []*schema.Column{CheckConfigsColumns[4]},
 				RefColumns: []*schema.Column{ChecksColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 			{
-				Symbol:     "check_configs_users_user",
+				Symbol:     "check_configs_users_configs",
 				Columns:    []*schema.Column{CheckConfigsColumns[5]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 		},
 		Indexes: []*schema.Index{
@@ -105,16 +105,16 @@ var (
 		PrimaryKey: []*schema.Column{ScoreCachesColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "score_caches_rounds_round",
+				Symbol:     "score_caches_rounds_scoreCaches",
 				Columns:    []*schema.Column{ScoreCachesColumns[4]},
 				RefColumns: []*schema.Column{RoundsColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 			{
-				Symbol:     "score_caches_users_user",
+				Symbol:     "score_caches_users_scoreCaches",
 				Columns:    []*schema.Column{ScoreCachesColumns[5]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 		},
 		Indexes: []*schema.Index{
@@ -144,22 +144,22 @@ var (
 		PrimaryKey: []*schema.Column{StatusColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "status_checks_check",
+				Symbol:     "status_checks_statuses",
 				Columns:    []*schema.Column{StatusColumns[6]},
 				RefColumns: []*schema.Column{ChecksColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 			{
-				Symbol:     "status_rounds_round",
+				Symbol:     "status_rounds_statuses",
 				Columns:    []*schema.Column{StatusColumns[7]},
 				RefColumns: []*schema.Column{RoundsColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 			{
-				Symbol:     "status_users_user",
+				Symbol:     "status_users_statuses",
 				Columns:    []*schema.Column{StatusColumns[8]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 		},
 		Indexes: []*schema.Index{

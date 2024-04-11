@@ -77,7 +77,7 @@ func (rq *RoundQuery) QueryStatuses() *StatusQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(round.Table, round.FieldID, selector),
 			sqlgraph.To(status.Table, status.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, true, round.StatusesTable, round.StatusesColumn),
+			sqlgraph.Edge(sqlgraph.O2M, false, round.StatusesTable, round.StatusesColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(rq.driver.Dialect(), step)
 		return fromU, nil
@@ -99,7 +99,7 @@ func (rq *RoundQuery) QueryScoreCaches() *ScoreCacheQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(round.Table, round.FieldID, selector),
 			sqlgraph.To(scorecache.Table, scorecache.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, true, round.ScoreCachesTable, round.ScoreCachesColumn),
+			sqlgraph.Edge(sqlgraph.O2M, false, round.ScoreCachesTable, round.ScoreCachesColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(rq.driver.Dialect(), step)
 		return fromU, nil

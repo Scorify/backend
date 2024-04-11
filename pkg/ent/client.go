@@ -362,7 +362,7 @@ func (c *CheckClient) QueryConfigs(ch *Check) *CheckConfigQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(check.Table, check.FieldID, id),
 			sqlgraph.To(checkconfig.Table, checkconfig.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, true, check.ConfigsTable, check.ConfigsColumn),
+			sqlgraph.Edge(sqlgraph.O2M, false, check.ConfigsTable, check.ConfigsColumn),
 		)
 		fromV = sqlgraph.Neighbors(ch.driver.Dialect(), step)
 		return fromV, nil
@@ -378,7 +378,7 @@ func (c *CheckClient) QueryStatuses(ch *Check) *StatusQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(check.Table, check.FieldID, id),
 			sqlgraph.To(status.Table, status.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, true, check.StatusesTable, check.StatusesColumn),
+			sqlgraph.Edge(sqlgraph.O2M, false, check.StatusesTable, check.StatusesColumn),
 		)
 		fromV = sqlgraph.Neighbors(ch.driver.Dialect(), step)
 		return fromV, nil
@@ -527,7 +527,7 @@ func (c *CheckConfigClient) QueryCheck(cc *CheckConfig) *CheckQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(checkconfig.Table, checkconfig.FieldID, id),
 			sqlgraph.To(check.Table, check.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, checkconfig.CheckTable, checkconfig.CheckColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, checkconfig.CheckTable, checkconfig.CheckColumn),
 		)
 		fromV = sqlgraph.Neighbors(cc.driver.Dialect(), step)
 		return fromV, nil
@@ -543,7 +543,7 @@ func (c *CheckConfigClient) QueryUser(cc *CheckConfig) *UserQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(checkconfig.Table, checkconfig.FieldID, id),
 			sqlgraph.To(user.Table, user.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, checkconfig.UserTable, checkconfig.UserColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, checkconfig.UserTable, checkconfig.UserColumn),
 		)
 		fromV = sqlgraph.Neighbors(cc.driver.Dialect(), step)
 		return fromV, nil
@@ -692,7 +692,7 @@ func (c *RoundClient) QueryStatuses(r *Round) *StatusQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(round.Table, round.FieldID, id),
 			sqlgraph.To(status.Table, status.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, true, round.StatusesTable, round.StatusesColumn),
+			sqlgraph.Edge(sqlgraph.O2M, false, round.StatusesTable, round.StatusesColumn),
 		)
 		fromV = sqlgraph.Neighbors(r.driver.Dialect(), step)
 		return fromV, nil
@@ -708,7 +708,7 @@ func (c *RoundClient) QueryScoreCaches(r *Round) *ScoreCacheQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(round.Table, round.FieldID, id),
 			sqlgraph.To(scorecache.Table, scorecache.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, true, round.ScoreCachesTable, round.ScoreCachesColumn),
+			sqlgraph.Edge(sqlgraph.O2M, false, round.ScoreCachesTable, round.ScoreCachesColumn),
 		)
 		fromV = sqlgraph.Neighbors(r.driver.Dialect(), step)
 		return fromV, nil
@@ -857,7 +857,7 @@ func (c *ScoreCacheClient) QueryRound(sc *ScoreCache) *RoundQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(scorecache.Table, scorecache.FieldID, id),
 			sqlgraph.To(round.Table, round.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, scorecache.RoundTable, scorecache.RoundColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, scorecache.RoundTable, scorecache.RoundColumn),
 		)
 		fromV = sqlgraph.Neighbors(sc.driver.Dialect(), step)
 		return fromV, nil
@@ -873,7 +873,7 @@ func (c *ScoreCacheClient) QueryUser(sc *ScoreCache) *UserQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(scorecache.Table, scorecache.FieldID, id),
 			sqlgraph.To(user.Table, user.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, scorecache.UserTable, scorecache.UserColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, scorecache.UserTable, scorecache.UserColumn),
 		)
 		fromV = sqlgraph.Neighbors(sc.driver.Dialect(), step)
 		return fromV, nil
@@ -1022,7 +1022,7 @@ func (c *StatusClient) QueryCheck(s *Status) *CheckQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(status.Table, status.FieldID, id),
 			sqlgraph.To(check.Table, check.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, status.CheckTable, status.CheckColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, status.CheckTable, status.CheckColumn),
 		)
 		fromV = sqlgraph.Neighbors(s.driver.Dialect(), step)
 		return fromV, nil
@@ -1038,7 +1038,7 @@ func (c *StatusClient) QueryRound(s *Status) *RoundQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(status.Table, status.FieldID, id),
 			sqlgraph.To(round.Table, round.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, status.RoundTable, status.RoundColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, status.RoundTable, status.RoundColumn),
 		)
 		fromV = sqlgraph.Neighbors(s.driver.Dialect(), step)
 		return fromV, nil
@@ -1054,7 +1054,7 @@ func (c *StatusClient) QueryUser(s *Status) *UserQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(status.Table, status.FieldID, id),
 			sqlgraph.To(user.Table, user.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, status.UserTable, status.UserColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, status.UserTable, status.UserColumn),
 		)
 		fromV = sqlgraph.Neighbors(s.driver.Dialect(), step)
 		return fromV, nil
@@ -1203,7 +1203,7 @@ func (c *UserClient) QueryConfigs(u *User) *CheckConfigQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(user.Table, user.FieldID, id),
 			sqlgraph.To(checkconfig.Table, checkconfig.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, true, user.ConfigsTable, user.ConfigsColumn),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.ConfigsTable, user.ConfigsColumn),
 		)
 		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
 		return fromV, nil
@@ -1219,7 +1219,7 @@ func (c *UserClient) QueryStatuses(u *User) *StatusQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(user.Table, user.FieldID, id),
 			sqlgraph.To(status.Table, status.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, true, user.StatusesTable, user.StatusesColumn),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.StatusesTable, user.StatusesColumn),
 		)
 		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
 		return fromV, nil
@@ -1235,7 +1235,7 @@ func (c *UserClient) QueryScoreCaches(u *User) *ScoreCacheQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(user.Table, user.FieldID, id),
 			sqlgraph.To(scorecache.Table, scorecache.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, true, user.ScoreCachesTable, user.ScoreCachesColumn),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.ScoreCachesTable, user.ScoreCachesColumn),
 		)
 		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
 		return fromV, nil

@@ -79,7 +79,7 @@ func (uq *UserQuery) QueryConfigs() *CheckConfigQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(user.Table, user.FieldID, selector),
 			sqlgraph.To(checkconfig.Table, checkconfig.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, true, user.ConfigsTable, user.ConfigsColumn),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.ConfigsTable, user.ConfigsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(uq.driver.Dialect(), step)
 		return fromU, nil
@@ -101,7 +101,7 @@ func (uq *UserQuery) QueryStatuses() *StatusQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(user.Table, user.FieldID, selector),
 			sqlgraph.To(status.Table, status.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, true, user.StatusesTable, user.StatusesColumn),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.StatusesTable, user.StatusesColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(uq.driver.Dialect(), step)
 		return fromU, nil
@@ -123,7 +123,7 @@ func (uq *UserQuery) QueryScoreCaches() *ScoreCacheQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(user.Table, user.FieldID, selector),
 			sqlgraph.To(scorecache.Table, scorecache.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, true, user.ScoreCachesTable, user.ScoreCachesColumn),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.ScoreCachesTable, user.ScoreCachesColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(uq.driver.Dialect(), step)
 		return fromU, nil

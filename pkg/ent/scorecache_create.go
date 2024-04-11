@@ -220,7 +220,7 @@ func (scc *ScoreCacheCreate) createSpec() (*ScoreCache, *sqlgraph.CreateSpec) {
 	if nodes := scc.mutation.RoundIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
-			Inverse: false,
+			Inverse: true,
 			Table:   scorecache.RoundTable,
 			Columns: []string{scorecache.RoundColumn},
 			Bidi:    false,
@@ -237,7 +237,7 @@ func (scc *ScoreCacheCreate) createSpec() (*ScoreCache, *sqlgraph.CreateSpec) {
 	if nodes := scc.mutation.UserIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
-			Inverse: false,
+			Inverse: true,
 			Table:   scorecache.UserTable,
 			Columns: []string{scorecache.UserColumn},
 			Bidi:    false,
