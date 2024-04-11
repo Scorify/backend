@@ -286,7 +286,7 @@ func (sc *StatusCreate) createSpec() (*Status, *sqlgraph.CreateSpec) {
 	if nodes := sc.mutation.CheckIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
-			Inverse: false,
+			Inverse: true,
 			Table:   status.CheckTable,
 			Columns: []string{status.CheckColumn},
 			Bidi:    false,
@@ -303,7 +303,7 @@ func (sc *StatusCreate) createSpec() (*Status, *sqlgraph.CreateSpec) {
 	if nodes := sc.mutation.RoundIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
-			Inverse: false,
+			Inverse: true,
 			Table:   status.RoundTable,
 			Columns: []string{status.RoundColumn},
 			Bidi:    false,
@@ -320,7 +320,7 @@ func (sc *StatusCreate) createSpec() (*Status, *sqlgraph.CreateSpec) {
 	if nodes := sc.mutation.UserIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
-			Inverse: false,
+			Inverse: true,
 			Table:   status.UserTable,
 			Columns: []string{status.UserColumn},
 			Bidi:    false,

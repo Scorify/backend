@@ -78,7 +78,7 @@ func (sq *StatusQuery) QueryCheck() *CheckQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(status.Table, status.FieldID, selector),
 			sqlgraph.To(check.Table, check.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, status.CheckTable, status.CheckColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, status.CheckTable, status.CheckColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(sq.driver.Dialect(), step)
 		return fromU, nil
@@ -100,7 +100,7 @@ func (sq *StatusQuery) QueryRound() *RoundQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(status.Table, status.FieldID, selector),
 			sqlgraph.To(round.Table, round.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, status.RoundTable, status.RoundColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, status.RoundTable, status.RoundColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(sq.driver.Dialect(), step)
 		return fromU, nil
@@ -122,7 +122,7 @@ func (sq *StatusQuery) QueryUser() *UserQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(status.Table, status.FieldID, selector),
 			sqlgraph.To(user.Table, user.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, status.UserTable, status.UserColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, status.UserTable, status.UserColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(sq.driver.Dialect(), step)
 		return fromU, nil

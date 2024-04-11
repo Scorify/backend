@@ -222,7 +222,7 @@ func (ru *RoundUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if ru.mutation.StatusesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
-			Inverse: true,
+			Inverse: false,
 			Table:   round.StatusesTable,
 			Columns: []string{round.StatusesColumn},
 			Bidi:    false,
@@ -235,7 +235,7 @@ func (ru *RoundUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if nodes := ru.mutation.RemovedStatusesIDs(); len(nodes) > 0 && !ru.mutation.StatusesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
-			Inverse: true,
+			Inverse: false,
 			Table:   round.StatusesTable,
 			Columns: []string{round.StatusesColumn},
 			Bidi:    false,
@@ -251,7 +251,7 @@ func (ru *RoundUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if nodes := ru.mutation.StatusesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
-			Inverse: true,
+			Inverse: false,
 			Table:   round.StatusesTable,
 			Columns: []string{round.StatusesColumn},
 			Bidi:    false,
@@ -267,7 +267,7 @@ func (ru *RoundUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if ru.mutation.ScoreCachesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
-			Inverse: true,
+			Inverse: false,
 			Table:   round.ScoreCachesTable,
 			Columns: []string{round.ScoreCachesColumn},
 			Bidi:    false,
@@ -280,7 +280,7 @@ func (ru *RoundUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if nodes := ru.mutation.RemovedScoreCachesIDs(); len(nodes) > 0 && !ru.mutation.ScoreCachesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
-			Inverse: true,
+			Inverse: false,
 			Table:   round.ScoreCachesTable,
 			Columns: []string{round.ScoreCachesColumn},
 			Bidi:    false,
@@ -296,7 +296,7 @@ func (ru *RoundUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if nodes := ru.mutation.ScoreCachesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
-			Inverse: true,
+			Inverse: false,
 			Table:   round.ScoreCachesTable,
 			Columns: []string{round.ScoreCachesColumn},
 			Bidi:    false,
@@ -550,7 +550,7 @@ func (ruo *RoundUpdateOne) sqlSave(ctx context.Context) (_node *Round, err error
 	if ruo.mutation.StatusesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
-			Inverse: true,
+			Inverse: false,
 			Table:   round.StatusesTable,
 			Columns: []string{round.StatusesColumn},
 			Bidi:    false,
@@ -563,7 +563,7 @@ func (ruo *RoundUpdateOne) sqlSave(ctx context.Context) (_node *Round, err error
 	if nodes := ruo.mutation.RemovedStatusesIDs(); len(nodes) > 0 && !ruo.mutation.StatusesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
-			Inverse: true,
+			Inverse: false,
 			Table:   round.StatusesTable,
 			Columns: []string{round.StatusesColumn},
 			Bidi:    false,
@@ -579,7 +579,7 @@ func (ruo *RoundUpdateOne) sqlSave(ctx context.Context) (_node *Round, err error
 	if nodes := ruo.mutation.StatusesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
-			Inverse: true,
+			Inverse: false,
 			Table:   round.StatusesTable,
 			Columns: []string{round.StatusesColumn},
 			Bidi:    false,
@@ -595,7 +595,7 @@ func (ruo *RoundUpdateOne) sqlSave(ctx context.Context) (_node *Round, err error
 	if ruo.mutation.ScoreCachesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
-			Inverse: true,
+			Inverse: false,
 			Table:   round.ScoreCachesTable,
 			Columns: []string{round.ScoreCachesColumn},
 			Bidi:    false,
@@ -608,7 +608,7 @@ func (ruo *RoundUpdateOne) sqlSave(ctx context.Context) (_node *Round, err error
 	if nodes := ruo.mutation.RemovedScoreCachesIDs(); len(nodes) > 0 && !ruo.mutation.ScoreCachesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
-			Inverse: true,
+			Inverse: false,
 			Table:   round.ScoreCachesTable,
 			Columns: []string{round.ScoreCachesColumn},
 			Bidi:    false,
@@ -624,7 +624,7 @@ func (ruo *RoundUpdateOne) sqlSave(ctx context.Context) (_node *Round, err error
 	if nodes := ruo.mutation.ScoreCachesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
-			Inverse: true,
+			Inverse: false,
 			Table:   round.ScoreCachesTable,
 			Columns: []string{round.ScoreCachesColumn},
 			Bidi:    false,

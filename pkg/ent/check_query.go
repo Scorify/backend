@@ -77,7 +77,7 @@ func (cq *CheckQuery) QueryConfigs() *CheckConfigQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(check.Table, check.FieldID, selector),
 			sqlgraph.To(checkconfig.Table, checkconfig.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, true, check.ConfigsTable, check.ConfigsColumn),
+			sqlgraph.Edge(sqlgraph.O2M, false, check.ConfigsTable, check.ConfigsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(cq.driver.Dialect(), step)
 		return fromU, nil
@@ -99,7 +99,7 @@ func (cq *CheckQuery) QueryStatuses() *StatusQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(check.Table, check.FieldID, selector),
 			sqlgraph.To(status.Table, status.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, true, check.StatusesTable, check.StatusesColumn),
+			sqlgraph.Edge(sqlgraph.O2M, false, check.StatusesTable, check.StatusesColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(cq.driver.Dialect(), step)
 		return fromU, nil

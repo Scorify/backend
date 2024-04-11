@@ -278,7 +278,7 @@ func (cc *CheckCreate) createSpec() (*Check, *sqlgraph.CreateSpec) {
 	if nodes := cc.mutation.ConfigsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
-			Inverse: true,
+			Inverse: false,
 			Table:   check.ConfigsTable,
 			Columns: []string{check.ConfigsColumn},
 			Bidi:    false,
@@ -294,7 +294,7 @@ func (cc *CheckCreate) createSpec() (*Check, *sqlgraph.CreateSpec) {
 	if nodes := cc.mutation.StatusesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
-			Inverse: true,
+			Inverse: false,
 			Table:   check.StatusesTable,
 			Columns: []string{check.StatusesColumn},
 			Bidi:    false,

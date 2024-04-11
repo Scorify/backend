@@ -366,7 +366,7 @@ func HasConfigs() predicate.User {
 	return predicate.User(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, true, ConfigsTable, ConfigsColumn),
+			sqlgraph.Edge(sqlgraph.O2M, false, ConfigsTable, ConfigsColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
@@ -389,7 +389,7 @@ func HasStatuses() predicate.User {
 	return predicate.User(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, true, StatusesTable, StatusesColumn),
+			sqlgraph.Edge(sqlgraph.O2M, false, StatusesTable, StatusesColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
@@ -412,7 +412,7 @@ func HasScoreCaches() predicate.User {
 	return predicate.User(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, true, ScoreCachesTable, ScoreCachesColumn),
+			sqlgraph.Edge(sqlgraph.O2M, false, ScoreCachesTable, ScoreCachesColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})

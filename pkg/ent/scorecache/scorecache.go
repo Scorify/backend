@@ -130,13 +130,13 @@ func newRoundStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(RoundInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.M2O, false, RoundTable, RoundColumn),
+		sqlgraph.Edge(sqlgraph.M2O, true, RoundTable, RoundColumn),
 	)
 }
 func newUserStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(UserInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.M2O, false, UserTable, UserColumn),
+		sqlgraph.Edge(sqlgraph.M2O, true, UserTable, UserColumn),
 	)
 }
