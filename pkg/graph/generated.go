@@ -6343,7 +6343,7 @@ func (ec *executionContext) _Scoreboard_scores(ctx context.Context, field graphq
 	}
 	res := resTmp.([]*model.Score)
 	fc.Result = res
-	return ec.marshalNScore2ᚕᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋgraphᚋmodelᚐScoreᚄ(ctx, field.Selections, res)
+	return ec.marshalNScore2ᚕᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋgraphᚋmodelᚐScore(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Scoreboard_scores(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -11964,7 +11964,7 @@ func (ec *executionContext) marshalNRound2ᚖgithubᚗcomᚋscorifyᚋbackendᚋ
 	return ec._Round(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNScore2ᚕᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋgraphᚋmodelᚐScoreᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Score) graphql.Marshaler {
+func (ec *executionContext) marshalNScore2ᚕᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋgraphᚋmodelᚐScore(ctx context.Context, sel ast.SelectionSet, v []*model.Score) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -11988,7 +11988,7 @@ func (ec *executionContext) marshalNScore2ᚕᚖgithubᚗcomᚋscorifyᚋbackend
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNScore2ᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋgraphᚋmodelᚐScore(ctx, sel, v[i])
+			ret[i] = ec.marshalOScore2ᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋgraphᚋmodelᚐScore(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -11999,23 +11999,7 @@ func (ec *executionContext) marshalNScore2ᚕᚖgithubᚗcomᚋscorifyᚋbackend
 	}
 	wg.Wait()
 
-	for _, e := range ret {
-		if e == graphql.Null {
-			return graphql.Null
-		}
-	}
-
 	return ret
-}
-
-func (ec *executionContext) marshalNScore2ᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋgraphᚋmodelᚐScore(ctx context.Context, sel ast.SelectionSet, v *model.Score) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-		return graphql.Null
-	}
-	return ec._Score(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNScoreCache2ᚕᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚐScoreCacheᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.ScoreCache) graphql.Marshaler {
@@ -12829,6 +12813,13 @@ func (ec *executionContext) marshalORole2ᚖgithubᚗcomᚋscorifyᚋbackendᚋp
 	}
 	res := graphql.MarshalString(string(*v))
 	return res
+}
+
+func (ec *executionContext) marshalOScore2ᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋgraphᚋmodelᚐScore(ctx context.Context, sel ast.SelectionSet, v *model.Score) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Score(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOStatus2ᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚐStatus(ctx context.Context, sel ast.SelectionSet, v *ent.Status) graphql.Marshaler {
