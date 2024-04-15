@@ -109,16 +109,25 @@ func Scoreboard(ctx context.Context, entClient *ent.Client) (*model.Scoreboard, 
 	}
 
 	scoreboard.Scores = make([]*model.Score, len(entUsers))
+	for _, entUser := range entUsers {
+		user_index, ok := lookup[entUser.ID]
+		if !ok {
+			continue
+		}
+
+		scoreboard.Scores[user_index] = &model.Score{
+			User:  entUser,
+			Score: 0,
+		}
+	}
+
 	for _, teamScore := range TeamScore {
 		user_index, ok := lookup[teamScore.TeamID]
 		if !ok {
 			continue
 		}
 
-		scoreboard.Scores[user_index] = &model.Score{
-			User:  entUsers[user_index],
-			Score: teamScore.Sum,
-		}
+		scoreboard.Scores[user_index].Score = teamScore.Sum
 	}
 
 	return scoreboard, nil
