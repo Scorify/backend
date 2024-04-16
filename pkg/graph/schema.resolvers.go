@@ -526,11 +526,21 @@ func (r *mutationResolver) UpdateCheck(ctx context.Context, id uuid.UUID, name *
 			if err != nil {
 				return nil, fmt.Errorf("failed to update status: %v", err)
 			}
-		}
 
-		err = helpers.RecomputeScores(tx, r.Redis, ctx)
-		if err != nil {
-			return nil, err
+			err = helpers.RecomputeScores(tx, r.Redis, ctx)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			scoreboard, err := helpers.Scoreboard(ctx, r.Ent)
+			if err != nil {
+				return nil, err
+			}
+
+			_, err = cache.PublishScoreboardUpdate(ctx, r.Redis, scoreboard)
+			if err != nil {
+				return nil, err
+			}
 		}
 
 		err = tx.Commit()
@@ -560,11 +570,21 @@ func (r *mutationResolver) UpdateCheck(ctx context.Context, id uuid.UUID, name *
 		if err != nil {
 			return nil, fmt.Errorf("failed to update status: %v", err)
 		}
-	}
 
-	err = helpers.RecomputeScores(tx, r.Redis, ctx)
-	if err != nil {
-		return nil, err
+		err = helpers.RecomputeScores(tx, r.Redis, ctx)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		scoreboard, err := helpers.Scoreboard(ctx, r.Ent)
+		if err != nil {
+			return nil, err
+		}
+
+		_, err = cache.PublishScoreboardUpdate(ctx, r.Redis, scoreboard)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	err = tx.Commit()
