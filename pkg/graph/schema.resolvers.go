@@ -18,6 +18,7 @@ import (
 	"github.com/scorify/backend/pkg/ent/check"
 	"github.com/scorify/backend/pkg/ent/checkconfig"
 	"github.com/scorify/backend/pkg/ent/predicate"
+	"github.com/scorify/backend/pkg/ent/status"
 	"github.com/scorify/backend/pkg/ent/user"
 	"github.com/scorify/backend/pkg/graph/model"
 	"github.com/scorify/backend/pkg/helpers"
@@ -511,24 +512,59 @@ func (r *mutationResolver) UpdateCheck(ctx context.Context, id uuid.UUID, name *
 			}
 		}
 
+		// update status points if weight is changed
+		if weight != nil {
+			err = tx.Status.Update().
+				Where(
+					status.HasCheckWith(
+						check.IDEQ(id),
+					),
+					status.StatusEQ(status.StatusUp),
+				).
+				SetPoints(*weight).
+				Exec(ctx)
+			if err != nil {
+				return nil, fmt.Errorf("failed to update status: %v", err)
+			}
+		}
+
+		err = helpers.RecomputeScores(tx, r.Redis, ctx)
+		if err != nil {
+			return nil, err
+		}
+
 		err = tx.Commit()
 		if err != nil {
 			return nil, fmt.Errorf("failed to commit transaction: %v", err)
 		}
 
-		scoreboard, err := helpers.Scoreboard(ctx, r.Ent)
-		if err != nil {
-			return nil, err
-		}
-
-		_, err = cache.PublishScoreboardUpdate(ctx, r.Redis, scoreboard)
-
-		return checkUpdateResult, err
+		return checkUpdateResult, nil
 	}
 
 	entCheck, err = checkUpdate.Save(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update check: %v", err)
+	}
+
+	// update status points if weight is changed
+	if weight != nil {
+		err = tx.Status.Update().
+			Where(
+				status.HasCheckWith(
+					check.IDEQ(id),
+				),
+				status.StatusEQ(status.StatusUp),
+			).
+			SetPoints(*weight).
+			Exec(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to update status: %v", err)
+		}
+	}
+
+	err = helpers.RecomputeScores(tx, r.Redis, ctx)
+	if err != nil {
+		return nil, err
 	}
 
 	err = tx.Commit()
