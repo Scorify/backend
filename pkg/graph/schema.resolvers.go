@@ -906,7 +906,23 @@ func (r *queryResolver) Config(ctx context.Context, id uuid.UUID) (*ent.CheckCon
 
 // Scoreboard is the resolver for the scoreboard field.
 func (r *queryResolver) Scoreboard(ctx context.Context) (*model.Scoreboard, error) {
-	return helpers.Scoreboard(ctx, r.Ent)
+	scoreboard := &model.Scoreboard{}
+
+	if cache.GetObject(ctx, r.Redis, cache.ScoreboardObjectKey, scoreboard) {
+		return scoreboard, nil
+	}
+
+	scoreboard, err := helpers.Scoreboard(ctx, r.Ent)
+	if err != nil {
+		return nil, err
+	}
+
+	err = cache.SetObject(ctx, r.Redis, cache.ScoreboardObjectKey, scoreboard, 0)
+	if err != nil {
+		return nil, err
+	}
+
+	return scoreboard, nil
 }
 
 // Statuses is the resolver for the statuses field.
