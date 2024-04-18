@@ -54,5 +54,5 @@ func GetObject(ctx context.Context, redisClient *redis.Client, key ObjectKey, ob
 		return false
 	}
 
-	return nil == json.Unmarshal([]byte(out), obj)
+	return json.Unmarshal([]byte(out), obj) == nil
 }
