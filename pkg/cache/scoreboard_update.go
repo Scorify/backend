@@ -19,6 +19,11 @@ func PublishScoreboardUpdate(ctx context.Context, redisClient *redis.Client, sco
 		return nil, err
 	}
 
+	err = SetObject(ctx, redisClient, ScoreboardObjectKey, scoreboardUpdate, 0)
+	if err != nil {
+		return nil, err
+	}
+
 	return redisClient.Publish(ctx, scoreboardUpdateChannel, out), nil
 }
 
