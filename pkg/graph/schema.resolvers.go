@@ -815,7 +815,7 @@ func (r *mutationResolver) StopEngine(ctx context.Context) (bool, error) {
 func (r *queryResolver) Me(ctx context.Context) (*ent.User, error) {
 	entUser, err := auth.Parse(ctx)
 	if err != nil {
-		return &ent.User{}, nil
+		return nil, nil
 	}
 	return entUser, nil
 }
