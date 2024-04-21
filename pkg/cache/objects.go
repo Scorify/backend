@@ -3,6 +3,7 @@ package cache
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -14,6 +15,10 @@ type ObjectKey string
 const (
 	ScoreboardObjectKey ObjectKey = "object-scoreboard"
 )
+
+func GetScoreboardObjectKey(round int) ObjectKey {
+	return ObjectKey(fmt.Sprintf("object-scoreboard-%d", round))
+}
 
 func GetCheckObjectKey(checkID uuid.UUID) ObjectKey {
 	return ObjectKey("object-check-" + checkID.String())
