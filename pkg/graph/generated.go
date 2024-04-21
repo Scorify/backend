@@ -132,7 +132,7 @@ type ComplexityRoot struct {
 		Config     func(childComplexity int, id uuid.UUID) int
 		Configs    func(childComplexity int) int
 		Me         func(childComplexity int) int
-		Scoreboard func(childComplexity int) int
+		Scoreboard func(childComplexity int, round *int) int
 		Source     func(childComplexity int, name string) int
 		Sources    func(childComplexity int) int
 		Users      func(childComplexity int) int
@@ -255,7 +255,7 @@ type QueryResolver interface {
 	Check(ctx context.Context, id *uuid.UUID, name *string) (*ent.Check, error)
 	Configs(ctx context.Context) ([]*ent.CheckConfig, error)
 	Config(ctx context.Context, id uuid.UUID) (*ent.CheckConfig, error)
-	Scoreboard(ctx context.Context) (*model.Scoreboard, error)
+	Scoreboard(ctx context.Context, round *int) (*model.Scoreboard, error)
 }
 type RoundResolver interface {
 	Statuses(ctx context.Context, obj *ent.Round) ([]*ent.Status, error)
@@ -725,7 +725,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.Query.Scoreboard(childComplexity), true
+		args, err := ec.field_Query_scoreboard_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Scoreboard(childComplexity, args["round"].(*int)), true
 
 	case "Query.source":
 		if e.complexity.Query.Source == nil {
@@ -1637,6 +1642,21 @@ func (ec *executionContext) field_Query_config_args(ctx context.Context, rawArgs
 		}
 	}
 	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_scoreboard_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *int
+	if tmp, ok := rawArgs["round"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("round"))
+		arg0, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["round"] = arg0
 	return args, nil
 }
 
@@ -5033,7 +5053,7 @@ func (ec *executionContext) _Query_scoreboard(ctx context.Context, field graphql
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Scoreboard(rctx)
+		return ec.resolvers.Query().Scoreboard(rctx, fc.Args["round"].(*int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5071,6 +5091,17 @@ func (ec *executionContext) fieldContext_Query_scoreboard(ctx context.Context, f
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Scoreboard", field.Name)
 		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_scoreboard_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }
