@@ -2,6 +2,7 @@ package helpers
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/scorify/backend/pkg/ent"
@@ -14,7 +15,33 @@ import (
 )
 
 func Scoreboard(ctx context.Context, entClient *ent.Client) (*model.Scoreboard, error) {
+	latestRound, err := entClient.Round.Query().
+		Order(
+			ent.Desc(round.FieldNumber),
+		).
+		First(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return ScoreboardByRound(ctx, entClient, latestRound.Number)
+}
+
+func ScoreboardByRound(ctx context.Context, entClient *ent.Client, roundNumber int) (*model.Scoreboard, error) {
 	scoreboard := &model.Scoreboard{}
+
+	latestRound, err := entClient.Round.Query().
+		Order(
+			ent.Desc(round.FieldNumber),
+		).
+		First(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if roundNumber > latestRound.Number {
+		return nil, fmt.Errorf("round %d has not started yet", roundNumber)
+	}
 
 	entUsers, err := entClient.User.Query().
 		Where(
@@ -42,10 +69,10 @@ func Scoreboard(ctx context.Context, entClient *ent.Client) (*model.Scoreboard, 
 	scoreboard.Checks = entChecks
 
 	entRound, err := entClient.Round.Query().
-		Order(
-			ent.Desc(round.FieldNumber),
+		Where(
+			round.NumberEQ(roundNumber),
 		).
-		First(ctx)
+		Only(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -95,6 +122,11 @@ func Scoreboard(ctx context.Context, entClient *ent.Client) (*model.Scoreboard, 
 	}
 
 	err = entClient.ScoreCache.Query().
+		Where(
+			scorecache.HasRoundWith(
+				round.NumberLTE(roundNumber),
+			),
+		).
 		GroupBy(
 			scorecache.FieldUserID,
 		).
