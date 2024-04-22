@@ -18,6 +18,7 @@ import (
 	"github.com/scorify/backend/pkg/ent/check"
 	"github.com/scorify/backend/pkg/ent/checkconfig"
 	"github.com/scorify/backend/pkg/ent/predicate"
+	"github.com/scorify/backend/pkg/ent/round"
 	"github.com/scorify/backend/pkg/ent/status"
 	"github.com/scorify/backend/pkg/ent/user"
 	"github.com/scorify/backend/pkg/graph/model"
@@ -941,6 +942,17 @@ func (r *queryResolver) Scoreboard(ctx context.Context, round *int) (*model.Scor
 	}
 
 	return scoreboard, nil
+}
+
+// LatestRound is the resolver for the latestRound field.
+func (r *queryResolver) LatestRound(ctx context.Context) (*ent.Round, error) {
+	return r.Ent.Round.Query().
+		Order(
+			ent.Desc(
+				round.FieldNumber,
+			),
+		).
+		First(ctx)
 }
 
 // Statuses is the resolver for the statuses field.
