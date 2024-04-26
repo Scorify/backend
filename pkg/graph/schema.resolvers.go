@@ -19,6 +19,7 @@ import (
 	"github.com/scorify/backend/pkg/ent/checkconfig"
 	"github.com/scorify/backend/pkg/ent/predicate"
 	"github.com/scorify/backend/pkg/ent/round"
+	"github.com/scorify/backend/pkg/ent/scorecache"
 	"github.com/scorify/backend/pkg/ent/status"
 	"github.com/scorify/backend/pkg/ent/user"
 	"github.com/scorify/backend/pkg/graph/model"
@@ -946,23 +947,49 @@ func (r *queryResolver) Scoreboard(ctx context.Context, round *int) (*model.Scor
 
 // LatestRound is the resolver for the latestRound field.
 func (r *queryResolver) LatestRound(ctx context.Context) (*ent.Round, error) {
-	return r.Ent.Round.Query().
+	entRound := &ent.Round{}
+
+	if cache.GetObject(ctx, r.Redis, cache.LatestRoundObjectKey, entRound) {
+		return entRound, nil
+	}
+
+	entRound, err := r.Ent.Round.Query().
 		Order(
 			ent.Desc(
 				round.FieldNumber,
 			),
 		).
 		First(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	err = cache.SetObject(ctx, r.Redis, cache.LatestRoundObjectKey, entRound, 0)
+	if err != nil {
+		return nil, err
+	}
+
+	return entRound, nil
 }
 
 // Statuses is the resolver for the statuses field.
 func (r *roundResolver) Statuses(ctx context.Context, obj *ent.Round) ([]*ent.Status, error) {
-	return obj.QueryStatuses().All(ctx)
+	return r.Ent.Status.Query().
+		Where(
+			status.HasRoundWith(
+				round.IDEQ(obj.ID),
+			),
+		).All(ctx)
 }
 
 // ScoreCaches is the resolver for the score_caches field.
 func (r *roundResolver) ScoreCaches(ctx context.Context, obj *ent.Round) ([]*ent.ScoreCache, error) {
-	return obj.QueryScoreCaches().All(ctx)
+	return r.Ent.ScoreCache.Query().
+		Where(
+			scorecache.HasRoundWith(
+				round.IDEQ(obj.ID),
+			),
+		).All(ctx)
 }
 
 // Round is the resolver for the round field.
