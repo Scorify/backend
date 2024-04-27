@@ -172,6 +172,18 @@ func (e *Client) loopRoundRunner() error {
 		return nil
 	}
 
+	err = cache.SetObject(roundCtx, e.redis, cache.GetRoundObjectKey(entRound.ID), entRound, 0)
+	if err != nil {
+		logrus.WithError(err).Error("failed to set round object")
+		return err
+	}
+
+	err = cache.SetObject(roundCtx, e.redis, cache.LatestRoundObjectKey, entRound, 0)
+	if err != nil {
+		logrus.WithError(err).Error("failed to set latest round object")
+		return err
+	}
+
 	logrus.WithField("time", time.Now()).Infof("Running round %d", roundNumber)
 
 	// Run round

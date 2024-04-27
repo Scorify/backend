@@ -13,7 +13,8 @@ import (
 type ObjectKey string
 
 const (
-	ScoreboardObjectKey ObjectKey = "object-scoreboard"
+	ScoreboardObjectKey  ObjectKey = "object-scoreboard"
+	LatestRoundObjectKey ObjectKey = "object-latest-round"
 )
 
 func GetScoreboardObjectKey(round int) ObjectKey {
