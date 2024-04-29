@@ -1112,7 +1112,32 @@ func (r *subscriptionResolver) ScoreboardUpdate(ctx context.Context) (<-chan *mo
 
 // LatestRound is the resolver for the latestRound field.
 func (r *subscriptionResolver) LatestRound(ctx context.Context) (<-chan *ent.Round, error) {
-	panic(fmt.Errorf("not implemented: LatestRound - latestRound"))
+	latestRoundChan := make(chan *ent.Round, 1)
+
+	go func() {
+		latestRoundSub := cache.SubscribeLatestRound(ctx, r.Redis)
+		latestRoundSubChan := latestRoundSub.Channel()
+
+		for {
+			select {
+			case msg := <-latestRoundSubChan:
+				latestRound := &ent.Round{}
+				err := json.Unmarshal([]byte(msg.Payload), latestRound)
+				if err != nil {
+					logrus.WithError(err).Error("failed to unmarshal latest round")
+					continue
+				}
+
+				latestRoundChan <- latestRound
+			case <-ctx.Done():
+				close(latestRoundChan)
+				latestRoundSub.Close()
+				return
+			}
+		}
+	}()
+
+	return latestRoundChan, nil
 }
 
 // Configs is the resolver for the configs field.
