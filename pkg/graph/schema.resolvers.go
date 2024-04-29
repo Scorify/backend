@@ -1115,6 +1115,11 @@ func (r *subscriptionResolver) LatestRound(ctx context.Context) (<-chan *ent.Rou
 	latestRoundChan := make(chan *ent.Round, 1)
 
 	go func() {
+		latestRound := &ent.Round{}
+		if cache.GetObject(ctx, r.Redis, cache.LatestRoundObjectKey, latestRound) {
+			latestRoundChan <- latestRound
+		}
+
 		latestRoundSub := cache.SubscribeLatestRound(ctx, r.Redis)
 		latestRoundSubChan := latestRoundSub.Channel()
 
