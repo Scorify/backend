@@ -14,6 +14,11 @@ const (
 )
 
 func PublishLatestRound(ctx context.Context, redisClient *redis.Client, entRound *ent.Round) (*redis.IntCmd, error) {
+	err := SetObject(ctx, redisClient, LatestRoundObjectKey, entRound, 0)
+	if err != nil {
+		return nil, err
+	}
+
 	out, err := json.Marshal(entRound)
 	if err != nil {
 		return nil, err
