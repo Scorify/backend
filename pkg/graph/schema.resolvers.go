@@ -1110,6 +1110,11 @@ func (r *subscriptionResolver) ScoreboardUpdate(ctx context.Context) (<-chan *mo
 	return scoreboardUpdateChan, nil
 }
 
+// LatestRound is the resolver for the latestRound field.
+func (r *subscriptionResolver) LatestRound(ctx context.Context) (<-chan *ent.Round, error) {
+	panic(fmt.Errorf("not implemented: LatestRound - latestRound"))
+}
+
 // Configs is the resolver for the configs field.
 func (r *userResolver) Configs(ctx context.Context, obj *ent.User) ([]*ent.CheckConfig, error) {
 	return obj.QueryConfigs().All(ctx)
