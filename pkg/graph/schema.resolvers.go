@@ -945,33 +945,6 @@ func (r *queryResolver) Scoreboard(ctx context.Context, round *int) (*model.Scor
 	return scoreboard, nil
 }
 
-// LatestRound is the resolver for the latestRound field.
-func (r *queryResolver) LatestRound(ctx context.Context) (*ent.Round, error) {
-	entRound := &ent.Round{}
-
-	if cache.GetObject(ctx, r.Redis, cache.LatestRoundObjectKey, entRound) {
-		return entRound, nil
-	}
-
-	entRound, err := r.Ent.Round.Query().
-		Order(
-			ent.Desc(
-				round.FieldNumber,
-			),
-		).
-		First(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	err = cache.SetObject(ctx, r.Redis, cache.LatestRoundObjectKey, entRound, 0)
-	if err != nil {
-		return nil, err
-	}
-
-	return entRound, nil
-}
-
 // Statuses is the resolver for the statuses field.
 func (r *roundResolver) Statuses(ctx context.Context, obj *ent.Round) ([]*ent.Status, error) {
 	return r.Ent.Status.Query().
@@ -1200,3 +1173,35 @@ type scoreCacheResolver struct{ *Resolver }
 type statusResolver struct{ *Resolver }
 type subscriptionResolver struct{ *Resolver }
 type userResolver struct{ *Resolver }
+
+// !!! WARNING !!!
+// The code below was going to be deleted when updating resolvers. It has been copied here so you have
+// one last chance to move it out of harms way if you want. There are two reasons this happens:
+//   - When renaming or deleting a resolver the old code will be put in here. You can safely delete
+//     it when you're done.
+//   - You have helper methods in this file. Move them out to keep these resolver files clean.
+func (r *queryResolver) LatestRound(ctx context.Context) (*ent.Round, error) {
+	entRound := &ent.Round{}
+
+	if cache.GetObject(ctx, r.Redis, cache.LatestRoundObjectKey, entRound) {
+		return entRound, nil
+	}
+
+	entRound, err := r.Ent.Round.Query().
+		Order(
+			ent.Desc(
+				round.FieldNumber,
+			),
+		).
+		First(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	err = cache.SetObject(ctx, r.Redis, cache.LatestRoundObjectKey, entRound, 0)
+	if err != nil {
+		return nil, err
+	}
+
+	return entRound, nil
+}
