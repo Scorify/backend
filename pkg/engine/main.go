@@ -178,7 +178,7 @@ func (e *Client) loopRoundRunner() error {
 		return err
 	}
 
-	err = cache.SetObject(roundCtx, e.redis, cache.LatestRoundObjectKey, entRound, 0)
+	_, err = cache.PublishLatestRound(roundCtx, e.redis, entRound)
 	if err != nil {
 		logrus.WithError(err).Error("failed to set latest round object")
 		return err

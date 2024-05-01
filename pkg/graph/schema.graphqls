@@ -146,6 +146,7 @@ type Subscription {
   globalNotification: Notification!
   engineState: EngineState!
   scoreboardUpdate: Scoreboard!
+  latestRound: Round!
 }
 
 type Query {
@@ -162,7 +163,6 @@ type Query {
   config(id: ID!): Config! @isAuthenticated
 
   scoreboard(round: Int): Scoreboard!
-  latestRound: Round!
 }
 
 type Mutation {

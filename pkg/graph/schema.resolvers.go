@@ -945,33 +945,6 @@ func (r *queryResolver) Scoreboard(ctx context.Context, round *int) (*model.Scor
 	return scoreboard, nil
 }
 
-// LatestRound is the resolver for the latestRound field.
-func (r *queryResolver) LatestRound(ctx context.Context) (*ent.Round, error) {
-	entRound := &ent.Round{}
-
-	if cache.GetObject(ctx, r.Redis, cache.LatestRoundObjectKey, entRound) {
-		return entRound, nil
-	}
-
-	entRound, err := r.Ent.Round.Query().
-		Order(
-			ent.Desc(
-				round.FieldNumber,
-			),
-		).
-		First(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	err = cache.SetObject(ctx, r.Redis, cache.LatestRoundObjectKey, entRound, 0)
-	if err != nil {
-		return nil, err
-	}
-
-	return entRound, nil
-}
-
 // Statuses is the resolver for the statuses field.
 func (r *roundResolver) Statuses(ctx context.Context, obj *ent.Round) ([]*ent.Status, error) {
 	return r.Ent.Status.Query().
@@ -1108,6 +1081,41 @@ func (r *subscriptionResolver) ScoreboardUpdate(ctx context.Context) (<-chan *mo
 	}()
 
 	return scoreboardUpdateChan, nil
+}
+
+// LatestRound is the resolver for the latestRound field.
+func (r *subscriptionResolver) LatestRound(ctx context.Context) (<-chan *ent.Round, error) {
+	latestRoundChan := make(chan *ent.Round, 1)
+
+	go func() {
+		latestRound := &ent.Round{}
+		if cache.GetObject(ctx, r.Redis, cache.LatestRoundObjectKey, latestRound) {
+			latestRoundChan <- latestRound
+		}
+
+		latestRoundSub := cache.SubscribeLatestRound(ctx, r.Redis)
+		latestRoundSubChan := latestRoundSub.Channel()
+
+		for {
+			select {
+			case msg := <-latestRoundSubChan:
+				latestRound := &ent.Round{}
+				err := json.Unmarshal([]byte(msg.Payload), latestRound)
+				if err != nil {
+					logrus.WithError(err).Error("failed to unmarshal latest round")
+					continue
+				}
+
+				latestRoundChan <- latestRound
+			case <-ctx.Done():
+				close(latestRoundChan)
+				latestRoundSub.Close()
+				return
+			}
+		}
+	}()
+
+	return latestRoundChan, nil
 }
 
 // Configs is the resolver for the configs field.
