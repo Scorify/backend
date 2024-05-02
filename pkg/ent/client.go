@@ -18,6 +18,8 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/scorify/backend/pkg/ent/check"
 	"github.com/scorify/backend/pkg/ent/checkconfig"
+	"github.com/scorify/backend/pkg/ent/inject"
+	"github.com/scorify/backend/pkg/ent/injectsubmission"
 	"github.com/scorify/backend/pkg/ent/round"
 	"github.com/scorify/backend/pkg/ent/scorecache"
 	"github.com/scorify/backend/pkg/ent/status"
@@ -33,6 +35,10 @@ type Client struct {
 	Check *CheckClient
 	// CheckConfig is the client for interacting with the CheckConfig builders.
 	CheckConfig *CheckConfigClient
+	// Inject is the client for interacting with the Inject builders.
+	Inject *InjectClient
+	// InjectSubmission is the client for interacting with the InjectSubmission builders.
+	InjectSubmission *InjectSubmissionClient
 	// Round is the client for interacting with the Round builders.
 	Round *RoundClient
 	// ScoreCache is the client for interacting with the ScoreCache builders.
@@ -54,6 +60,8 @@ func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
 	c.Check = NewCheckClient(c.config)
 	c.CheckConfig = NewCheckConfigClient(c.config)
+	c.Inject = NewInjectClient(c.config)
+	c.InjectSubmission = NewInjectSubmissionClient(c.config)
 	c.Round = NewRoundClient(c.config)
 	c.ScoreCache = NewScoreCacheClient(c.config)
 	c.Status = NewStatusClient(c.config)
@@ -148,14 +156,16 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	cfg := c.config
 	cfg.driver = tx
 	return &Tx{
-		ctx:         ctx,
-		config:      cfg,
-		Check:       NewCheckClient(cfg),
-		CheckConfig: NewCheckConfigClient(cfg),
-		Round:       NewRoundClient(cfg),
-		ScoreCache:  NewScoreCacheClient(cfg),
-		Status:      NewStatusClient(cfg),
-		User:        NewUserClient(cfg),
+		ctx:              ctx,
+		config:           cfg,
+		Check:            NewCheckClient(cfg),
+		CheckConfig:      NewCheckConfigClient(cfg),
+		Inject:           NewInjectClient(cfg),
+		InjectSubmission: NewInjectSubmissionClient(cfg),
+		Round:            NewRoundClient(cfg),
+		ScoreCache:       NewScoreCacheClient(cfg),
+		Status:           NewStatusClient(cfg),
+		User:             NewUserClient(cfg),
 	}, nil
 }
 
@@ -173,14 +183,16 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	cfg := c.config
 	cfg.driver = &txDriver{tx: tx, drv: c.driver}
 	return &Tx{
-		ctx:         ctx,
-		config:      cfg,
-		Check:       NewCheckClient(cfg),
-		CheckConfig: NewCheckConfigClient(cfg),
-		Round:       NewRoundClient(cfg),
-		ScoreCache:  NewScoreCacheClient(cfg),
-		Status:      NewStatusClient(cfg),
-		User:        NewUserClient(cfg),
+		ctx:              ctx,
+		config:           cfg,
+		Check:            NewCheckClient(cfg),
+		CheckConfig:      NewCheckConfigClient(cfg),
+		Inject:           NewInjectClient(cfg),
+		InjectSubmission: NewInjectSubmissionClient(cfg),
+		Round:            NewRoundClient(cfg),
+		ScoreCache:       NewScoreCacheClient(cfg),
+		Status:           NewStatusClient(cfg),
+		User:             NewUserClient(cfg),
 	}, nil
 }
 
@@ -210,7 +222,8 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
-		c.Check, c.CheckConfig, c.Round, c.ScoreCache, c.Status, c.User,
+		c.Check, c.CheckConfig, c.Inject, c.InjectSubmission, c.Round, c.ScoreCache,
+		c.Status, c.User,
 	} {
 		n.Use(hooks...)
 	}
@@ -220,7 +233,8 @@ func (c *Client) Use(hooks ...Hook) {
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
-		c.Check, c.CheckConfig, c.Round, c.ScoreCache, c.Status, c.User,
+		c.Check, c.CheckConfig, c.Inject, c.InjectSubmission, c.Round, c.ScoreCache,
+		c.Status, c.User,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -233,6 +247,10 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Check.mutate(ctx, m)
 	case *CheckConfigMutation:
 		return c.CheckConfig.mutate(ctx, m)
+	case *InjectMutation:
+		return c.Inject.mutate(ctx, m)
+	case *InjectSubmissionMutation:
+		return c.InjectSubmission.mutate(ctx, m)
 	case *RoundMutation:
 		return c.Round.mutate(ctx, m)
 	case *ScoreCacheMutation:
@@ -573,6 +591,320 @@ func (c *CheckConfigClient) mutate(ctx context.Context, m *CheckConfigMutation) 
 		return (&CheckConfigDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown CheckConfig mutation op: %q", m.Op())
+	}
+}
+
+// InjectClient is a client for the Inject schema.
+type InjectClient struct {
+	config
+}
+
+// NewInjectClient returns a client for the Inject from the given config.
+func NewInjectClient(c config) *InjectClient {
+	return &InjectClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `inject.Hooks(f(g(h())))`.
+func (c *InjectClient) Use(hooks ...Hook) {
+	c.hooks.Inject = append(c.hooks.Inject, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `inject.Intercept(f(g(h())))`.
+func (c *InjectClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Inject = append(c.inters.Inject, interceptors...)
+}
+
+// Create returns a builder for creating a Inject entity.
+func (c *InjectClient) Create() *InjectCreate {
+	mutation := newInjectMutation(c.config, OpCreate)
+	return &InjectCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Inject entities.
+func (c *InjectClient) CreateBulk(builders ...*InjectCreate) *InjectCreateBulk {
+	return &InjectCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *InjectClient) MapCreateBulk(slice any, setFunc func(*InjectCreate, int)) *InjectCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &InjectCreateBulk{err: fmt.Errorf("calling to InjectClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*InjectCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &InjectCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Inject.
+func (c *InjectClient) Update() *InjectUpdate {
+	mutation := newInjectMutation(c.config, OpUpdate)
+	return &InjectUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *InjectClient) UpdateOne(i *Inject) *InjectUpdateOne {
+	mutation := newInjectMutation(c.config, OpUpdateOne, withInject(i))
+	return &InjectUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *InjectClient) UpdateOneID(id uuid.UUID) *InjectUpdateOne {
+	mutation := newInjectMutation(c.config, OpUpdateOne, withInjectID(id))
+	return &InjectUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Inject.
+func (c *InjectClient) Delete() *InjectDelete {
+	mutation := newInjectMutation(c.config, OpDelete)
+	return &InjectDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *InjectClient) DeleteOne(i *Inject) *InjectDeleteOne {
+	return c.DeleteOneID(i.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *InjectClient) DeleteOneID(id uuid.UUID) *InjectDeleteOne {
+	builder := c.Delete().Where(inject.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &InjectDeleteOne{builder}
+}
+
+// Query returns a query builder for Inject.
+func (c *InjectClient) Query() *InjectQuery {
+	return &InjectQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeInject},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Inject entity by its id.
+func (c *InjectClient) Get(ctx context.Context, id uuid.UUID) (*Inject, error) {
+	return c.Query().Where(inject.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *InjectClient) GetX(ctx context.Context, id uuid.UUID) *Inject {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QuerySubmissions queries the submissions edge of a Inject.
+func (c *InjectClient) QuerySubmissions(i *Inject) *InjectSubmissionQuery {
+	query := (&InjectSubmissionClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := i.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(inject.Table, inject.FieldID, id),
+			sqlgraph.To(injectsubmission.Table, injectsubmission.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, inject.SubmissionsTable, inject.SubmissionsColumn),
+		)
+		fromV = sqlgraph.Neighbors(i.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *InjectClient) Hooks() []Hook {
+	return c.hooks.Inject
+}
+
+// Interceptors returns the client interceptors.
+func (c *InjectClient) Interceptors() []Interceptor {
+	return c.inters.Inject
+}
+
+func (c *InjectClient) mutate(ctx context.Context, m *InjectMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&InjectCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&InjectUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&InjectUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&InjectDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Inject mutation op: %q", m.Op())
+	}
+}
+
+// InjectSubmissionClient is a client for the InjectSubmission schema.
+type InjectSubmissionClient struct {
+	config
+}
+
+// NewInjectSubmissionClient returns a client for the InjectSubmission from the given config.
+func NewInjectSubmissionClient(c config) *InjectSubmissionClient {
+	return &InjectSubmissionClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `injectsubmission.Hooks(f(g(h())))`.
+func (c *InjectSubmissionClient) Use(hooks ...Hook) {
+	c.hooks.InjectSubmission = append(c.hooks.InjectSubmission, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `injectsubmission.Intercept(f(g(h())))`.
+func (c *InjectSubmissionClient) Intercept(interceptors ...Interceptor) {
+	c.inters.InjectSubmission = append(c.inters.InjectSubmission, interceptors...)
+}
+
+// Create returns a builder for creating a InjectSubmission entity.
+func (c *InjectSubmissionClient) Create() *InjectSubmissionCreate {
+	mutation := newInjectSubmissionMutation(c.config, OpCreate)
+	return &InjectSubmissionCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of InjectSubmission entities.
+func (c *InjectSubmissionClient) CreateBulk(builders ...*InjectSubmissionCreate) *InjectSubmissionCreateBulk {
+	return &InjectSubmissionCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *InjectSubmissionClient) MapCreateBulk(slice any, setFunc func(*InjectSubmissionCreate, int)) *InjectSubmissionCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &InjectSubmissionCreateBulk{err: fmt.Errorf("calling to InjectSubmissionClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*InjectSubmissionCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &InjectSubmissionCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for InjectSubmission.
+func (c *InjectSubmissionClient) Update() *InjectSubmissionUpdate {
+	mutation := newInjectSubmissionMutation(c.config, OpUpdate)
+	return &InjectSubmissionUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *InjectSubmissionClient) UpdateOne(is *InjectSubmission) *InjectSubmissionUpdateOne {
+	mutation := newInjectSubmissionMutation(c.config, OpUpdateOne, withInjectSubmission(is))
+	return &InjectSubmissionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *InjectSubmissionClient) UpdateOneID(id uuid.UUID) *InjectSubmissionUpdateOne {
+	mutation := newInjectSubmissionMutation(c.config, OpUpdateOne, withInjectSubmissionID(id))
+	return &InjectSubmissionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for InjectSubmission.
+func (c *InjectSubmissionClient) Delete() *InjectSubmissionDelete {
+	mutation := newInjectSubmissionMutation(c.config, OpDelete)
+	return &InjectSubmissionDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *InjectSubmissionClient) DeleteOne(is *InjectSubmission) *InjectSubmissionDeleteOne {
+	return c.DeleteOneID(is.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *InjectSubmissionClient) DeleteOneID(id uuid.UUID) *InjectSubmissionDeleteOne {
+	builder := c.Delete().Where(injectsubmission.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &InjectSubmissionDeleteOne{builder}
+}
+
+// Query returns a query builder for InjectSubmission.
+func (c *InjectSubmissionClient) Query() *InjectSubmissionQuery {
+	return &InjectSubmissionQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeInjectSubmission},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a InjectSubmission entity by its id.
+func (c *InjectSubmissionClient) Get(ctx context.Context, id uuid.UUID) (*InjectSubmission, error) {
+	return c.Query().Where(injectsubmission.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *InjectSubmissionClient) GetX(ctx context.Context, id uuid.UUID) *InjectSubmission {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryInject queries the inject edge of a InjectSubmission.
+func (c *InjectSubmissionClient) QueryInject(is *InjectSubmission) *InjectQuery {
+	query := (&InjectClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := is.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(injectsubmission.Table, injectsubmission.FieldID, id),
+			sqlgraph.To(inject.Table, inject.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, injectsubmission.InjectTable, injectsubmission.InjectColumn),
+		)
+		fromV = sqlgraph.Neighbors(is.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryUser queries the user edge of a InjectSubmission.
+func (c *InjectSubmissionClient) QueryUser(is *InjectSubmission) *UserQuery {
+	query := (&UserClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := is.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(injectsubmission.Table, injectsubmission.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, injectsubmission.UserTable, injectsubmission.UserColumn),
+		)
+		fromV = sqlgraph.Neighbors(is.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *InjectSubmissionClient) Hooks() []Hook {
+	return c.hooks.InjectSubmission
+}
+
+// Interceptors returns the client interceptors.
+func (c *InjectSubmissionClient) Interceptors() []Interceptor {
+	return c.inters.InjectSubmission
+}
+
+func (c *InjectSubmissionClient) mutate(ctx context.Context, m *InjectSubmissionMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&InjectSubmissionCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&InjectSubmissionUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&InjectSubmissionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&InjectSubmissionDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown InjectSubmission mutation op: %q", m.Op())
 	}
 }
 
@@ -1243,6 +1575,22 @@ func (c *UserClient) QueryScoreCaches(u *User) *ScoreCacheQuery {
 	return query
 }
 
+// QuerySubmissions queries the submissions edge of a User.
+func (c *UserClient) QuerySubmissions(u *User) *InjectSubmissionQuery {
+	query := (&InjectSubmissionClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := u.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, id),
+			sqlgraph.To(injectsubmission.Table, injectsubmission.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.SubmissionsTable, user.SubmissionsColumn),
+		)
+		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *UserClient) Hooks() []Hook {
 	return c.hooks.User
@@ -1271,9 +1619,11 @@ func (c *UserClient) mutate(ctx context.Context, m *UserMutation) (Value, error)
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		Check, CheckConfig, Round, ScoreCache, Status, User []ent.Hook
+		Check, CheckConfig, Inject, InjectSubmission, Round, ScoreCache, Status,
+		User []ent.Hook
 	}
 	inters struct {
-		Check, CheckConfig, Round, ScoreCache, Status, User []ent.Interceptor
+		Check, CheckConfig, Inject, InjectSubmission, Round, ScoreCache, Status,
+		User []ent.Interceptor
 	}
 )

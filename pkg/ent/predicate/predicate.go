@@ -12,6 +12,12 @@ type Check func(*sql.Selector)
 // CheckConfig is the predicate function for checkconfig builders.
 type CheckConfig func(*sql.Selector)
 
+// Inject is the predicate function for inject builders.
+type Inject func(*sql.Selector)
+
+// InjectSubmission is the predicate function for injectsubmission builders.
+type InjectSubmission func(*sql.Selector)
+
 // Round is the predicate function for round builders.
 type Round func(*sql.Selector)
 

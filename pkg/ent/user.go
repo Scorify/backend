@@ -45,9 +45,11 @@ type UserEdges struct {
 	Statuses []*Status `json:"status"`
 	// The score caches of a user
 	ScoreCaches []*ScoreCache `json:"score_caches"`
+	// The submissions of a user
+	Submissions []*InjectSubmission `json:"submissions"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [4]bool
 }
 
 // ConfigsOrErr returns the Configs value or an error if the edge
@@ -75,6 +77,15 @@ func (e UserEdges) ScoreCachesOrErr() ([]*ScoreCache, error) {
 		return e.ScoreCaches, nil
 	}
 	return nil, &NotLoadedError{edge: "scoreCaches"}
+}
+
+// SubmissionsOrErr returns the Submissions value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) SubmissionsOrErr() ([]*InjectSubmission, error) {
+	if e.loadedTypes[3] {
+		return e.Submissions, nil
+	}
+	return nil, &NotLoadedError{edge: "submissions"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -173,6 +184,11 @@ func (u *User) QueryStatuses() *StatusQuery {
 // QueryScoreCaches queries the "scoreCaches" edge of the User entity.
 func (u *User) QueryScoreCaches() *ScoreCacheQuery {
 	return NewUserClient(u.config).QueryScoreCaches(u)
+}
+
+// QuerySubmissions queries the "submissions" edge of the User entity.
+func (u *User) QuerySubmissions() *InjectSubmissionQuery {
+	return NewUserClient(u.config).QuerySubmissions(u)
 }
 
 // Update returns a builder for updating this User.

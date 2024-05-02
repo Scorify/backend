@@ -68,6 +68,58 @@ var (
 			},
 		},
 	}
+	// InjectsColumns holds the columns for the "injects" table.
+	InjectsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID, Unique: true},
+		{Name: "create_time", Type: field.TypeTime},
+		{Name: "update_time", Type: field.TypeTime},
+		{Name: "title", Type: field.TypeString, Unique: true},
+		{Name: "start_time", Type: field.TypeTime},
+		{Name: "end_time", Type: field.TypeTime},
+		{Name: "files", Type: field.TypeJSON},
+	}
+	// InjectsTable holds the schema information for the "injects" table.
+	InjectsTable = &schema.Table{
+		Name:       "injects",
+		Columns:    InjectsColumns,
+		PrimaryKey: []*schema.Column{InjectsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "inject_title",
+				Unique:  false,
+				Columns: []*schema.Column{InjectsColumns[3]},
+			},
+		},
+	}
+	// InjectSubmissionsColumns holds the columns for the "inject_submissions" table.
+	InjectSubmissionsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID, Unique: true},
+		{Name: "create_time", Type: field.TypeTime},
+		{Name: "update_time", Type: field.TypeTime},
+		{Name: "files", Type: field.TypeJSON},
+		{Name: "inject_id", Type: field.TypeUUID},
+		{Name: "user_id", Type: field.TypeUUID},
+	}
+	// InjectSubmissionsTable holds the schema information for the "inject_submissions" table.
+	InjectSubmissionsTable = &schema.Table{
+		Name:       "inject_submissions",
+		Columns:    InjectSubmissionsColumns,
+		PrimaryKey: []*schema.Column{InjectSubmissionsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "inject_submissions_injects_submissions",
+				Columns:    []*schema.Column{InjectSubmissionsColumns[4]},
+				RefColumns: []*schema.Column{InjectsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "inject_submissions_users_submissions",
+				Columns:    []*schema.Column{InjectSubmissionsColumns[5]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+	}
 	// RoundsColumns holds the columns for the "rounds" table.
 	RoundsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Unique: true},
@@ -197,6 +249,8 @@ var (
 	Tables = []*schema.Table{
 		ChecksTable,
 		CheckConfigsTable,
+		InjectsTable,
+		InjectSubmissionsTable,
 		RoundsTable,
 		ScoreCachesTable,
 		StatusTable,
@@ -207,6 +261,8 @@ var (
 func init() {
 	CheckConfigsTable.ForeignKeys[0].RefTable = ChecksTable
 	CheckConfigsTable.ForeignKeys[1].RefTable = UsersTable
+	InjectSubmissionsTable.ForeignKeys[0].RefTable = InjectsTable
+	InjectSubmissionsTable.ForeignKeys[1].RefTable = UsersTable
 	ScoreCachesTable.ForeignKeys[0].RefTable = RoundsTable
 	ScoreCachesTable.ForeignKeys[1].RefTable = UsersTable
 	StatusTable.ForeignKeys[0].RefTable = ChecksTable
