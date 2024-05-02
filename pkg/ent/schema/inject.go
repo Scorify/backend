@@ -18,7 +18,7 @@ func (Inject) Fields() []ent.Field {
 	return []ent.Field{
 		field.UUID("id", uuid.UUID{}).
 			StructTag(`json:"id"`).
-			Comment("The uuid of a inject").
+			Comment("The uuid of an inject").
 			Unique().
 			Immutable().
 			Default(uuid.New),
