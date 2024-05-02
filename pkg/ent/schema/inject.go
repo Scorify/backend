@@ -2,6 +2,8 @@ package schema
 
 import (
 	"entgo.io/ent"
+	"entgo.io/ent/dialect/entsql"
+	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
 	"entgo.io/ent/schema/mixin"
@@ -55,5 +57,14 @@ func (Inject) Mixin() []ent.Mixin {
 
 // Edges of the Inject.
 func (Inject) Edges() []ent.Edge {
-	return []ent.Edge{}
+	return []ent.Edge{
+		edge.To("submissions", InjectSubmission.Type).
+			StructTag(`json:"submissions"`).
+			Comment("The submissions of the inject").
+			Annotations(
+				entsql.OnDelete(
+					entsql.Cascade,
+				),
+			),
+	}
 }

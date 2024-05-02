@@ -2,6 +2,7 @@ package schema
 
 import (
 	"entgo.io/ent"
+	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/mixin"
 	"github.com/google/uuid"
@@ -24,6 +25,14 @@ func (InjectSubmission) Fields() []ent.Field {
 		field.Strings("files").
 			StructTag(`json:"files"`).
 			Comment("The files of the inject submission"),
+		field.UUID("inject_id", uuid.UUID{}).
+			StructTag(`json:"inject_id"`).
+			Comment("The inject this submission belongs to").
+			Immutable(),
+		field.UUID("user_id", uuid.UUID{}).
+			StructTag(`json:"user_id"`).
+			Comment("The user this submission belongs to").
+			Immutable(),
 	}
 }
 
@@ -36,5 +45,22 @@ func (InjectSubmission) Mixin() []ent.Mixin {
 
 // Edges of the InjectSubmission.
 func (InjectSubmission) Edges() []ent.Edge {
-	return []ent.Edge{}
+	return []ent.Edge{
+		edge.From("inject", Inject.Type).
+			StructTag(`json:"inject"`).
+			Comment("The inject this submission belongs to").
+			Field("inject_id").
+			Immutable().
+			Required().
+			Unique().
+			Ref("submissions"),
+		edge.From("user", User.Type).
+			StructTag(`json:"user"`).
+			Comment("The user this submission belongs to").
+			Field("user_id").
+			Immutable().
+			Required().
+			Unique().
+			Ref("submissions"),
+	}
 }
