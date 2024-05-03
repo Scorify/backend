@@ -14,6 +14,7 @@ import (
 	"github.com/scorify/backend/pkg/ent/inject"
 	"github.com/scorify/backend/pkg/ent/injectsubmission"
 	"github.com/scorify/backend/pkg/ent/user"
+	"github.com/scorify/backend/pkg/structs"
 )
 
 // InjectSubmission is the model entity for the InjectSubmission schema.
@@ -27,7 +28,7 @@ type InjectSubmission struct {
 	// UpdateTime holds the value of the "update_time" field.
 	UpdateTime time.Time `json:"update_time,omitempty"`
 	// The files of the inject submission
-	Files []string `json:"files"`
+	Files []structs.File `json:"files"`
 	// The inject this submission belongs to
 	InjectID uuid.UUID `json:"inject_id"`
 	// The user this submission belongs to

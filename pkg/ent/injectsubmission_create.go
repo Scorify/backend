@@ -14,6 +14,7 @@ import (
 	"github.com/scorify/backend/pkg/ent/inject"
 	"github.com/scorify/backend/pkg/ent/injectsubmission"
 	"github.com/scorify/backend/pkg/ent/user"
+	"github.com/scorify/backend/pkg/structs"
 )
 
 // InjectSubmissionCreate is the builder for creating a InjectSubmission entity.
@@ -52,7 +53,7 @@ func (isc *InjectSubmissionCreate) SetNillableUpdateTime(t *time.Time) *InjectSu
 }
 
 // SetFiles sets the "files" field.
-func (isc *InjectSubmissionCreate) SetFiles(s []string) *InjectSubmissionCreate {
+func (isc *InjectSubmissionCreate) SetFiles(s []structs.File) *InjectSubmissionCreate {
 	isc.mutation.SetFiles(s)
 	return isc
 }

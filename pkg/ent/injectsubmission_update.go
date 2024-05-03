@@ -14,6 +14,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/scorify/backend/pkg/ent/injectsubmission"
 	"github.com/scorify/backend/pkg/ent/predicate"
+	"github.com/scorify/backend/pkg/structs"
 )
 
 // InjectSubmissionUpdate is the builder for updating InjectSubmission entities.
@@ -36,13 +37,13 @@ func (isu *InjectSubmissionUpdate) SetUpdateTime(t time.Time) *InjectSubmissionU
 }
 
 // SetFiles sets the "files" field.
-func (isu *InjectSubmissionUpdate) SetFiles(s []string) *InjectSubmissionUpdate {
+func (isu *InjectSubmissionUpdate) SetFiles(s []structs.File) *InjectSubmissionUpdate {
 	isu.mutation.SetFiles(s)
 	return isu
 }
 
 // AppendFiles appends s to the "files" field.
-func (isu *InjectSubmissionUpdate) AppendFiles(s []string) *InjectSubmissionUpdate {
+func (isu *InjectSubmissionUpdate) AppendFiles(s []structs.File) *InjectSubmissionUpdate {
 	isu.mutation.AppendFiles(s)
 	return isu
 }
@@ -149,13 +150,13 @@ func (isuo *InjectSubmissionUpdateOne) SetUpdateTime(t time.Time) *InjectSubmiss
 }
 
 // SetFiles sets the "files" field.
-func (isuo *InjectSubmissionUpdateOne) SetFiles(s []string) *InjectSubmissionUpdateOne {
+func (isuo *InjectSubmissionUpdateOne) SetFiles(s []structs.File) *InjectSubmissionUpdateOne {
 	isuo.mutation.SetFiles(s)
 	return isuo
 }
 
 // AppendFiles appends s to the "files" field.
-func (isuo *InjectSubmissionUpdateOne) AppendFiles(s []string) *InjectSubmissionUpdateOne {
+func (isuo *InjectSubmissionUpdateOne) AppendFiles(s []structs.File) *InjectSubmissionUpdateOne {
 	isuo.mutation.AppendFiles(s)
 	return isuo
 }

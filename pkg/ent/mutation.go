@@ -2294,8 +2294,8 @@ type InjectSubmissionMutation struct {
 	id            *uuid.UUID
 	create_time   *time.Time
 	update_time   *time.Time
-	files         *[]string
-	appendfiles   []string
+	files         *[]structs.File
+	appendfiles   []structs.File
 	clearedFields map[string]struct{}
 	inject        *uuid.UUID
 	clearedinject bool
@@ -2483,13 +2483,13 @@ func (m *InjectSubmissionMutation) ResetUpdateTime() {
 }
 
 // SetFiles sets the "files" field.
-func (m *InjectSubmissionMutation) SetFiles(s []string) {
+func (m *InjectSubmissionMutation) SetFiles(s []structs.File) {
 	m.files = &s
 	m.appendfiles = nil
 }
 
 // Files returns the value of the "files" field in the mutation.
-func (m *InjectSubmissionMutation) Files() (r []string, exists bool) {
+func (m *InjectSubmissionMutation) Files() (r []structs.File, exists bool) {
 	v := m.files
 	if v == nil {
 		return
@@ -2500,7 +2500,7 @@ func (m *InjectSubmissionMutation) Files() (r []string, exists bool) {
 // OldFiles returns the old "files" field's value of the InjectSubmission entity.
 // If the InjectSubmission object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *InjectSubmissionMutation) OldFiles(ctx context.Context) (v []string, err error) {
+func (m *InjectSubmissionMutation) OldFiles(ctx context.Context) (v []structs.File, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldFiles is only allowed on UpdateOne operations")
 	}
@@ -2515,12 +2515,12 @@ func (m *InjectSubmissionMutation) OldFiles(ctx context.Context) (v []string, er
 }
 
 // AppendFiles adds s to the "files" field.
-func (m *InjectSubmissionMutation) AppendFiles(s []string) {
+func (m *InjectSubmissionMutation) AppendFiles(s []structs.File) {
 	m.appendfiles = append(m.appendfiles, s...)
 }
 
 // AppendedFiles returns the list of values that were appended to the "files" field in this mutation.
-func (m *InjectSubmissionMutation) AppendedFiles() ([]string, bool) {
+func (m *InjectSubmissionMutation) AppendedFiles() ([]structs.File, bool) {
 	if len(m.appendfiles) == 0 {
 		return nil, false
 	}
@@ -2770,7 +2770,7 @@ func (m *InjectSubmissionMutation) SetField(name string, value ent.Value) error 
 		m.SetUpdateTime(v)
 		return nil
 	case injectsubmission.FieldFiles:
-		v, ok := value.([]string)
+		v, ok := value.([]structs.File)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
