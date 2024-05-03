@@ -14,6 +14,8 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/scorify/backend/pkg/ent/check"
 	"github.com/scorify/backend/pkg/ent/checkconfig"
+	"github.com/scorify/backend/pkg/ent/inject"
+	"github.com/scorify/backend/pkg/ent/injectsubmission"
 	"github.com/scorify/backend/pkg/ent/round"
 	"github.com/scorify/backend/pkg/ent/scorecache"
 	"github.com/scorify/backend/pkg/ent/status"
@@ -78,12 +80,14 @@ var (
 func checkColumn(table, column string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
-			check.Table:       check.ValidColumn,
-			checkconfig.Table: checkconfig.ValidColumn,
-			round.Table:       round.ValidColumn,
-			scorecache.Table:  scorecache.ValidColumn,
-			status.Table:      status.ValidColumn,
-			user.Table:        user.ValidColumn,
+			check.Table:            check.ValidColumn,
+			checkconfig.Table:      checkconfig.ValidColumn,
+			inject.Table:           inject.ValidColumn,
+			injectsubmission.Table: injectsubmission.ValidColumn,
+			round.Table:            round.ValidColumn,
+			scorecache.Table:       scorecache.ValidColumn,
+			status.Table:           status.ValidColumn,
+			user.Table:             user.ValidColumn,
 		})
 	})
 	return columnCheck(table, column)

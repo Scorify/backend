@@ -33,6 +33,30 @@ func (f CheckConfigFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value,
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.CheckConfigMutation", m)
 }
 
+// The InjectFunc type is an adapter to allow the use of ordinary
+// function as Inject mutator.
+type InjectFunc func(context.Context, *ent.InjectMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f InjectFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.InjectMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.InjectMutation", m)
+}
+
+// The InjectSubmissionFunc type is an adapter to allow the use of ordinary
+// function as InjectSubmission mutator.
+type InjectSubmissionFunc func(context.Context, *ent.InjectSubmissionMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f InjectSubmissionFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.InjectSubmissionMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.InjectSubmissionMutation", m)
+}
+
 // The RoundFunc type is an adapter to allow the use of ordinary
 // function as Round mutator.
 type RoundFunc func(context.Context, *ent.RoundMutation) (ent.Value, error)

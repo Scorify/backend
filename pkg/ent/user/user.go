@@ -34,6 +34,8 @@ const (
 	EdgeStatuses = "statuses"
 	// EdgeScoreCaches holds the string denoting the scorecaches edge name in mutations.
 	EdgeScoreCaches = "scoreCaches"
+	// EdgeSubmissions holds the string denoting the submissions edge name in mutations.
+	EdgeSubmissions = "submissions"
 	// Table holds the table name of the user in the database.
 	Table = "users"
 	// ConfigsTable is the table that holds the configs relation/edge.
@@ -57,6 +59,13 @@ const (
 	ScoreCachesInverseTable = "score_caches"
 	// ScoreCachesColumn is the table column denoting the scoreCaches relation/edge.
 	ScoreCachesColumn = "user_id"
+	// SubmissionsTable is the table that holds the submissions relation/edge.
+	SubmissionsTable = "inject_submissions"
+	// SubmissionsInverseTable is the table name for the InjectSubmission entity.
+	// It exists in this package in order to avoid circular dependency with the "injectsubmission" package.
+	SubmissionsInverseTable = "inject_submissions"
+	// SubmissionsColumn is the table column denoting the submissions relation/edge.
+	SubmissionsColumn = "user_id"
 )
 
 // Columns holds all SQL columns for user fields.
@@ -202,6 +211,20 @@ func ByScoreCaches(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newScoreCachesStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// BySubmissionsCount orders the results by submissions count.
+func BySubmissionsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newSubmissionsStep(), opts...)
+	}
+}
+
+// BySubmissions orders the results by submissions terms.
+func BySubmissions(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newSubmissionsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newConfigsStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -221,5 +244,12 @@ func newScoreCachesStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(ScoreCachesInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, ScoreCachesTable, ScoreCachesColumn),
+	)
+}
+func newSubmissionsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(SubmissionsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, SubmissionsTable, SubmissionsColumn),
 	)
 }

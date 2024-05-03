@@ -16,6 +16,10 @@ type Tx struct {
 	Check *CheckClient
 	// CheckConfig is the client for interacting with the CheckConfig builders.
 	CheckConfig *CheckConfigClient
+	// Inject is the client for interacting with the Inject builders.
+	Inject *InjectClient
+	// InjectSubmission is the client for interacting with the InjectSubmission builders.
+	InjectSubmission *InjectSubmissionClient
 	// Round is the client for interacting with the Round builders.
 	Round *RoundClient
 	// ScoreCache is the client for interacting with the ScoreCache builders.
@@ -157,6 +161,8 @@ func (tx *Tx) Client() *Client {
 func (tx *Tx) init() {
 	tx.Check = NewCheckClient(tx.config)
 	tx.CheckConfig = NewCheckConfigClient(tx.config)
+	tx.Inject = NewInjectClient(tx.config)
+	tx.InjectSubmission = NewInjectSubmissionClient(tx.config)
 	tx.Round = NewRoundClient(tx.config)
 	tx.ScoreCache = NewScoreCacheClient(tx.config)
 	tx.Status = NewStatusClient(tx.config)

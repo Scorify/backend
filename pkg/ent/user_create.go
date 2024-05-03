@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
 	"github.com/scorify/backend/pkg/ent/checkconfig"
+	"github.com/scorify/backend/pkg/ent/injectsubmission"
 	"github.com/scorify/backend/pkg/ent/scorecache"
 	"github.com/scorify/backend/pkg/ent/status"
 	"github.com/scorify/backend/pkg/ent/user"
@@ -149,6 +150,21 @@ func (uc *UserCreate) AddScoreCaches(s ...*ScoreCache) *UserCreate {
 		ids[i] = s[i].ID
 	}
 	return uc.AddScoreCachIDs(ids...)
+}
+
+// AddSubmissionIDs adds the "submissions" edge to the InjectSubmission entity by IDs.
+func (uc *UserCreate) AddSubmissionIDs(ids ...uuid.UUID) *UserCreate {
+	uc.mutation.AddSubmissionIDs(ids...)
+	return uc
+}
+
+// AddSubmissions adds the "submissions" edges to the InjectSubmission entity.
+func (uc *UserCreate) AddSubmissions(i ...*InjectSubmission) *UserCreate {
+	ids := make([]uuid.UUID, len(i))
+	for j := range i {
+		ids[j] = i[j].ID
+	}
+	return uc.AddSubmissionIDs(ids...)
 }
 
 // Mutation returns the UserMutation object of the builder.
@@ -341,6 +357,22 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(scorecache.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := uc.mutation.SubmissionsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.SubmissionsTable,
+			Columns: []string{user.SubmissionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(injectsubmission.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

@@ -89,5 +89,13 @@ func (User) Edges() []ent.Edge {
 					entsql.Cascade,
 				),
 			),
+		edge.To("submissions", InjectSubmission.Type).
+			StructTag(`json:"submissions"`).
+			Comment("The submissions of a user").
+			Annotations(
+				entsql.OnDelete(
+					entsql.Cascade,
+				),
+			),
 	}
 }

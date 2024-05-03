@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
 	"github.com/scorify/backend/pkg/ent/checkconfig"
+	"github.com/scorify/backend/pkg/ent/injectsubmission"
 	"github.com/scorify/backend/pkg/ent/predicate"
 	"github.com/scorify/backend/pkg/ent/scorecache"
 	"github.com/scorify/backend/pkg/ent/status"
@@ -138,6 +139,21 @@ func (uu *UserUpdate) AddScoreCaches(s ...*ScoreCache) *UserUpdate {
 	return uu.AddScoreCachIDs(ids...)
 }
 
+// AddSubmissionIDs adds the "submissions" edge to the InjectSubmission entity by IDs.
+func (uu *UserUpdate) AddSubmissionIDs(ids ...uuid.UUID) *UserUpdate {
+	uu.mutation.AddSubmissionIDs(ids...)
+	return uu
+}
+
+// AddSubmissions adds the "submissions" edges to the InjectSubmission entity.
+func (uu *UserUpdate) AddSubmissions(i ...*InjectSubmission) *UserUpdate {
+	ids := make([]uuid.UUID, len(i))
+	for j := range i {
+		ids[j] = i[j].ID
+	}
+	return uu.AddSubmissionIDs(ids...)
+}
+
 // Mutation returns the UserMutation object of the builder.
 func (uu *UserUpdate) Mutation() *UserMutation {
 	return uu.mutation
@@ -204,6 +220,27 @@ func (uu *UserUpdate) RemoveScoreCaches(s ...*ScoreCache) *UserUpdate {
 		ids[i] = s[i].ID
 	}
 	return uu.RemoveScoreCachIDs(ids...)
+}
+
+// ClearSubmissions clears all "submissions" edges to the InjectSubmission entity.
+func (uu *UserUpdate) ClearSubmissions() *UserUpdate {
+	uu.mutation.ClearSubmissions()
+	return uu
+}
+
+// RemoveSubmissionIDs removes the "submissions" edge to InjectSubmission entities by IDs.
+func (uu *UserUpdate) RemoveSubmissionIDs(ids ...uuid.UUID) *UserUpdate {
+	uu.mutation.RemoveSubmissionIDs(ids...)
+	return uu
+}
+
+// RemoveSubmissions removes "submissions" edges to InjectSubmission entities.
+func (uu *UserUpdate) RemoveSubmissions(i ...*InjectSubmission) *UserUpdate {
+	ids := make([]uuid.UUID, len(i))
+	for j := range i {
+		ids[j] = i[j].ID
+	}
+	return uu.RemoveSubmissionIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -427,6 +464,51 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if uu.mutation.SubmissionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.SubmissionsTable,
+			Columns: []string{user.SubmissionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(injectsubmission.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.RemovedSubmissionsIDs(); len(nodes) > 0 && !uu.mutation.SubmissionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.SubmissionsTable,
+			Columns: []string{user.SubmissionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(injectsubmission.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.SubmissionsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.SubmissionsTable,
+			Columns: []string{user.SubmissionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(injectsubmission.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, uu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{user.Label}
@@ -553,6 +635,21 @@ func (uuo *UserUpdateOne) AddScoreCaches(s ...*ScoreCache) *UserUpdateOne {
 	return uuo.AddScoreCachIDs(ids...)
 }
 
+// AddSubmissionIDs adds the "submissions" edge to the InjectSubmission entity by IDs.
+func (uuo *UserUpdateOne) AddSubmissionIDs(ids ...uuid.UUID) *UserUpdateOne {
+	uuo.mutation.AddSubmissionIDs(ids...)
+	return uuo
+}
+
+// AddSubmissions adds the "submissions" edges to the InjectSubmission entity.
+func (uuo *UserUpdateOne) AddSubmissions(i ...*InjectSubmission) *UserUpdateOne {
+	ids := make([]uuid.UUID, len(i))
+	for j := range i {
+		ids[j] = i[j].ID
+	}
+	return uuo.AddSubmissionIDs(ids...)
+}
+
 // Mutation returns the UserMutation object of the builder.
 func (uuo *UserUpdateOne) Mutation() *UserMutation {
 	return uuo.mutation
@@ -619,6 +716,27 @@ func (uuo *UserUpdateOne) RemoveScoreCaches(s ...*ScoreCache) *UserUpdateOne {
 		ids[i] = s[i].ID
 	}
 	return uuo.RemoveScoreCachIDs(ids...)
+}
+
+// ClearSubmissions clears all "submissions" edges to the InjectSubmission entity.
+func (uuo *UserUpdateOne) ClearSubmissions() *UserUpdateOne {
+	uuo.mutation.ClearSubmissions()
+	return uuo
+}
+
+// RemoveSubmissionIDs removes the "submissions" edge to InjectSubmission entities by IDs.
+func (uuo *UserUpdateOne) RemoveSubmissionIDs(ids ...uuid.UUID) *UserUpdateOne {
+	uuo.mutation.RemoveSubmissionIDs(ids...)
+	return uuo
+}
+
+// RemoveSubmissions removes "submissions" edges to InjectSubmission entities.
+func (uuo *UserUpdateOne) RemoveSubmissions(i ...*InjectSubmission) *UserUpdateOne {
+	ids := make([]uuid.UUID, len(i))
+	for j := range i {
+		ids[j] = i[j].ID
+	}
+	return uuo.RemoveSubmissionIDs(ids...)
 }
 
 // Where appends a list predicates to the UserUpdate builder.
@@ -865,6 +983,51 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(scorecache.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if uuo.mutation.SubmissionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.SubmissionsTable,
+			Columns: []string{user.SubmissionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(injectsubmission.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.RemovedSubmissionsIDs(); len(nodes) > 0 && !uuo.mutation.SubmissionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.SubmissionsTable,
+			Columns: []string{user.SubmissionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(injectsubmission.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.SubmissionsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.SubmissionsTable,
+			Columns: []string{user.SubmissionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(injectsubmission.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

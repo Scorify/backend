@@ -14,11 +14,14 @@ import (
 	"github.com/google/uuid"
 	"github.com/scorify/backend/pkg/ent/check"
 	"github.com/scorify/backend/pkg/ent/checkconfig"
+	"github.com/scorify/backend/pkg/ent/inject"
+	"github.com/scorify/backend/pkg/ent/injectsubmission"
 	"github.com/scorify/backend/pkg/ent/predicate"
 	"github.com/scorify/backend/pkg/ent/round"
 	"github.com/scorify/backend/pkg/ent/scorecache"
 	"github.com/scorify/backend/pkg/ent/status"
 	"github.com/scorify/backend/pkg/ent/user"
+	"github.com/scorify/backend/pkg/structs"
 )
 
 const (
@@ -30,12 +33,14 @@ const (
 	OpUpdateOne = ent.OpUpdateOne
 
 	// Node types.
-	TypeCheck       = "Check"
-	TypeCheckConfig = "CheckConfig"
-	TypeRound       = "Round"
-	TypeScoreCache  = "ScoreCache"
-	TypeStatus      = "Status"
-	TypeUser        = "User"
+	TypeCheck            = "Check"
+	TypeCheckConfig      = "CheckConfig"
+	TypeInject           = "Inject"
+	TypeInjectSubmission = "InjectSubmission"
+	TypeRound            = "Round"
+	TypeScoreCache       = "ScoreCache"
+	TypeStatus           = "Status"
+	TypeUser             = "User"
 )
 
 // CheckMutation represents an operation that mutates the Check nodes in the graph.
@@ -1568,6 +1573,1381 @@ func (m *CheckConfigMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown CheckConfig edge %s", name)
+}
+
+// InjectMutation represents an operation that mutates the Inject nodes in the graph.
+type InjectMutation struct {
+	config
+	op                 Op
+	typ                string
+	id                 *uuid.UUID
+	create_time        *time.Time
+	update_time        *time.Time
+	title              *string
+	start_time         *time.Time
+	end_time           *time.Time
+	files              *[]structs.File
+	appendfiles        []structs.File
+	clearedFields      map[string]struct{}
+	submissions        map[uuid.UUID]struct{}
+	removedsubmissions map[uuid.UUID]struct{}
+	clearedsubmissions bool
+	done               bool
+	oldValue           func(context.Context) (*Inject, error)
+	predicates         []predicate.Inject
+}
+
+var _ ent.Mutation = (*InjectMutation)(nil)
+
+// injectOption allows management of the mutation configuration using functional options.
+type injectOption func(*InjectMutation)
+
+// newInjectMutation creates new mutation for the Inject entity.
+func newInjectMutation(c config, op Op, opts ...injectOption) *InjectMutation {
+	m := &InjectMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeInject,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withInjectID sets the ID field of the mutation.
+func withInjectID(id uuid.UUID) injectOption {
+	return func(m *InjectMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *Inject
+		)
+		m.oldValue = func(ctx context.Context) (*Inject, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().Inject.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withInject sets the old Inject of the mutation.
+func withInject(node *Inject) injectOption {
+	return func(m *InjectMutation) {
+		m.oldValue = func(context.Context) (*Inject, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m InjectMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m InjectMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of Inject entities.
+func (m *InjectMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *InjectMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *InjectMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().Inject.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreateTime sets the "create_time" field.
+func (m *InjectMutation) SetCreateTime(t time.Time) {
+	m.create_time = &t
+}
+
+// CreateTime returns the value of the "create_time" field in the mutation.
+func (m *InjectMutation) CreateTime() (r time.Time, exists bool) {
+	v := m.create_time
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreateTime returns the old "create_time" field's value of the Inject entity.
+// If the Inject object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *InjectMutation) OldCreateTime(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreateTime is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreateTime requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreateTime: %w", err)
+	}
+	return oldValue.CreateTime, nil
+}
+
+// ResetCreateTime resets all changes to the "create_time" field.
+func (m *InjectMutation) ResetCreateTime() {
+	m.create_time = nil
+}
+
+// SetUpdateTime sets the "update_time" field.
+func (m *InjectMutation) SetUpdateTime(t time.Time) {
+	m.update_time = &t
+}
+
+// UpdateTime returns the value of the "update_time" field in the mutation.
+func (m *InjectMutation) UpdateTime() (r time.Time, exists bool) {
+	v := m.update_time
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdateTime returns the old "update_time" field's value of the Inject entity.
+// If the Inject object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *InjectMutation) OldUpdateTime(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdateTime is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdateTime requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdateTime: %w", err)
+	}
+	return oldValue.UpdateTime, nil
+}
+
+// ResetUpdateTime resets all changes to the "update_time" field.
+func (m *InjectMutation) ResetUpdateTime() {
+	m.update_time = nil
+}
+
+// SetTitle sets the "title" field.
+func (m *InjectMutation) SetTitle(s string) {
+	m.title = &s
+}
+
+// Title returns the value of the "title" field in the mutation.
+func (m *InjectMutation) Title() (r string, exists bool) {
+	v := m.title
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTitle returns the old "title" field's value of the Inject entity.
+// If the Inject object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *InjectMutation) OldTitle(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTitle is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTitle requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTitle: %w", err)
+	}
+	return oldValue.Title, nil
+}
+
+// ResetTitle resets all changes to the "title" field.
+func (m *InjectMutation) ResetTitle() {
+	m.title = nil
+}
+
+// SetStartTime sets the "start_time" field.
+func (m *InjectMutation) SetStartTime(t time.Time) {
+	m.start_time = &t
+}
+
+// StartTime returns the value of the "start_time" field in the mutation.
+func (m *InjectMutation) StartTime() (r time.Time, exists bool) {
+	v := m.start_time
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStartTime returns the old "start_time" field's value of the Inject entity.
+// If the Inject object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *InjectMutation) OldStartTime(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStartTime is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStartTime requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStartTime: %w", err)
+	}
+	return oldValue.StartTime, nil
+}
+
+// ResetStartTime resets all changes to the "start_time" field.
+func (m *InjectMutation) ResetStartTime() {
+	m.start_time = nil
+}
+
+// SetEndTime sets the "end_time" field.
+func (m *InjectMutation) SetEndTime(t time.Time) {
+	m.end_time = &t
+}
+
+// EndTime returns the value of the "end_time" field in the mutation.
+func (m *InjectMutation) EndTime() (r time.Time, exists bool) {
+	v := m.end_time
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEndTime returns the old "end_time" field's value of the Inject entity.
+// If the Inject object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *InjectMutation) OldEndTime(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEndTime is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEndTime requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEndTime: %w", err)
+	}
+	return oldValue.EndTime, nil
+}
+
+// ResetEndTime resets all changes to the "end_time" field.
+func (m *InjectMutation) ResetEndTime() {
+	m.end_time = nil
+}
+
+// SetFiles sets the "files" field.
+func (m *InjectMutation) SetFiles(s []structs.File) {
+	m.files = &s
+	m.appendfiles = nil
+}
+
+// Files returns the value of the "files" field in the mutation.
+func (m *InjectMutation) Files() (r []structs.File, exists bool) {
+	v := m.files
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFiles returns the old "files" field's value of the Inject entity.
+// If the Inject object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *InjectMutation) OldFiles(ctx context.Context) (v []structs.File, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFiles is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFiles requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFiles: %w", err)
+	}
+	return oldValue.Files, nil
+}
+
+// AppendFiles adds s to the "files" field.
+func (m *InjectMutation) AppendFiles(s []structs.File) {
+	m.appendfiles = append(m.appendfiles, s...)
+}
+
+// AppendedFiles returns the list of values that were appended to the "files" field in this mutation.
+func (m *InjectMutation) AppendedFiles() ([]structs.File, bool) {
+	if len(m.appendfiles) == 0 {
+		return nil, false
+	}
+	return m.appendfiles, true
+}
+
+// ResetFiles resets all changes to the "files" field.
+func (m *InjectMutation) ResetFiles() {
+	m.files = nil
+	m.appendfiles = nil
+}
+
+// AddSubmissionIDs adds the "submissions" edge to the InjectSubmission entity by ids.
+func (m *InjectMutation) AddSubmissionIDs(ids ...uuid.UUID) {
+	if m.submissions == nil {
+		m.submissions = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.submissions[ids[i]] = struct{}{}
+	}
+}
+
+// ClearSubmissions clears the "submissions" edge to the InjectSubmission entity.
+func (m *InjectMutation) ClearSubmissions() {
+	m.clearedsubmissions = true
+}
+
+// SubmissionsCleared reports if the "submissions" edge to the InjectSubmission entity was cleared.
+func (m *InjectMutation) SubmissionsCleared() bool {
+	return m.clearedsubmissions
+}
+
+// RemoveSubmissionIDs removes the "submissions" edge to the InjectSubmission entity by IDs.
+func (m *InjectMutation) RemoveSubmissionIDs(ids ...uuid.UUID) {
+	if m.removedsubmissions == nil {
+		m.removedsubmissions = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.submissions, ids[i])
+		m.removedsubmissions[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedSubmissions returns the removed IDs of the "submissions" edge to the InjectSubmission entity.
+func (m *InjectMutation) RemovedSubmissionsIDs() (ids []uuid.UUID) {
+	for id := range m.removedsubmissions {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// SubmissionsIDs returns the "submissions" edge IDs in the mutation.
+func (m *InjectMutation) SubmissionsIDs() (ids []uuid.UUID) {
+	for id := range m.submissions {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetSubmissions resets all changes to the "submissions" edge.
+func (m *InjectMutation) ResetSubmissions() {
+	m.submissions = nil
+	m.clearedsubmissions = false
+	m.removedsubmissions = nil
+}
+
+// Where appends a list predicates to the InjectMutation builder.
+func (m *InjectMutation) Where(ps ...predicate.Inject) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the InjectMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *InjectMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.Inject, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *InjectMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *InjectMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (Inject).
+func (m *InjectMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *InjectMutation) Fields() []string {
+	fields := make([]string, 0, 6)
+	if m.create_time != nil {
+		fields = append(fields, inject.FieldCreateTime)
+	}
+	if m.update_time != nil {
+		fields = append(fields, inject.FieldUpdateTime)
+	}
+	if m.title != nil {
+		fields = append(fields, inject.FieldTitle)
+	}
+	if m.start_time != nil {
+		fields = append(fields, inject.FieldStartTime)
+	}
+	if m.end_time != nil {
+		fields = append(fields, inject.FieldEndTime)
+	}
+	if m.files != nil {
+		fields = append(fields, inject.FieldFiles)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *InjectMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case inject.FieldCreateTime:
+		return m.CreateTime()
+	case inject.FieldUpdateTime:
+		return m.UpdateTime()
+	case inject.FieldTitle:
+		return m.Title()
+	case inject.FieldStartTime:
+		return m.StartTime()
+	case inject.FieldEndTime:
+		return m.EndTime()
+	case inject.FieldFiles:
+		return m.Files()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *InjectMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case inject.FieldCreateTime:
+		return m.OldCreateTime(ctx)
+	case inject.FieldUpdateTime:
+		return m.OldUpdateTime(ctx)
+	case inject.FieldTitle:
+		return m.OldTitle(ctx)
+	case inject.FieldStartTime:
+		return m.OldStartTime(ctx)
+	case inject.FieldEndTime:
+		return m.OldEndTime(ctx)
+	case inject.FieldFiles:
+		return m.OldFiles(ctx)
+	}
+	return nil, fmt.Errorf("unknown Inject field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *InjectMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case inject.FieldCreateTime:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreateTime(v)
+		return nil
+	case inject.FieldUpdateTime:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdateTime(v)
+		return nil
+	case inject.FieldTitle:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTitle(v)
+		return nil
+	case inject.FieldStartTime:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStartTime(v)
+		return nil
+	case inject.FieldEndTime:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEndTime(v)
+		return nil
+	case inject.FieldFiles:
+		v, ok := value.([]structs.File)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFiles(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Inject field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *InjectMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *InjectMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *InjectMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown Inject numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *InjectMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *InjectMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *InjectMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown Inject nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *InjectMutation) ResetField(name string) error {
+	switch name {
+	case inject.FieldCreateTime:
+		m.ResetCreateTime()
+		return nil
+	case inject.FieldUpdateTime:
+		m.ResetUpdateTime()
+		return nil
+	case inject.FieldTitle:
+		m.ResetTitle()
+		return nil
+	case inject.FieldStartTime:
+		m.ResetStartTime()
+		return nil
+	case inject.FieldEndTime:
+		m.ResetEndTime()
+		return nil
+	case inject.FieldFiles:
+		m.ResetFiles()
+		return nil
+	}
+	return fmt.Errorf("unknown Inject field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *InjectMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.submissions != nil {
+		edges = append(edges, inject.EdgeSubmissions)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *InjectMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case inject.EdgeSubmissions:
+		ids := make([]ent.Value, 0, len(m.submissions))
+		for id := range m.submissions {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *InjectMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.removedsubmissions != nil {
+		edges = append(edges, inject.EdgeSubmissions)
+	}
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *InjectMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case inject.EdgeSubmissions:
+		ids := make([]ent.Value, 0, len(m.removedsubmissions))
+		for id := range m.removedsubmissions {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *InjectMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedsubmissions {
+		edges = append(edges, inject.EdgeSubmissions)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *InjectMutation) EdgeCleared(name string) bool {
+	switch name {
+	case inject.EdgeSubmissions:
+		return m.clearedsubmissions
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *InjectMutation) ClearEdge(name string) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown Inject unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *InjectMutation) ResetEdge(name string) error {
+	switch name {
+	case inject.EdgeSubmissions:
+		m.ResetSubmissions()
+		return nil
+	}
+	return fmt.Errorf("unknown Inject edge %s", name)
+}
+
+// InjectSubmissionMutation represents an operation that mutates the InjectSubmission nodes in the graph.
+type InjectSubmissionMutation struct {
+	config
+	op            Op
+	typ           string
+	id            *uuid.UUID
+	create_time   *time.Time
+	update_time   *time.Time
+	files         *[]structs.File
+	appendfiles   []structs.File
+	clearedFields map[string]struct{}
+	inject        *uuid.UUID
+	clearedinject bool
+	user          *uuid.UUID
+	cleareduser   bool
+	done          bool
+	oldValue      func(context.Context) (*InjectSubmission, error)
+	predicates    []predicate.InjectSubmission
+}
+
+var _ ent.Mutation = (*InjectSubmissionMutation)(nil)
+
+// injectsubmissionOption allows management of the mutation configuration using functional options.
+type injectsubmissionOption func(*InjectSubmissionMutation)
+
+// newInjectSubmissionMutation creates new mutation for the InjectSubmission entity.
+func newInjectSubmissionMutation(c config, op Op, opts ...injectsubmissionOption) *InjectSubmissionMutation {
+	m := &InjectSubmissionMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeInjectSubmission,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withInjectSubmissionID sets the ID field of the mutation.
+func withInjectSubmissionID(id uuid.UUID) injectsubmissionOption {
+	return func(m *InjectSubmissionMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *InjectSubmission
+		)
+		m.oldValue = func(ctx context.Context) (*InjectSubmission, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().InjectSubmission.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withInjectSubmission sets the old InjectSubmission of the mutation.
+func withInjectSubmission(node *InjectSubmission) injectsubmissionOption {
+	return func(m *InjectSubmissionMutation) {
+		m.oldValue = func(context.Context) (*InjectSubmission, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m InjectSubmissionMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m InjectSubmissionMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of InjectSubmission entities.
+func (m *InjectSubmissionMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *InjectSubmissionMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *InjectSubmissionMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().InjectSubmission.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreateTime sets the "create_time" field.
+func (m *InjectSubmissionMutation) SetCreateTime(t time.Time) {
+	m.create_time = &t
+}
+
+// CreateTime returns the value of the "create_time" field in the mutation.
+func (m *InjectSubmissionMutation) CreateTime() (r time.Time, exists bool) {
+	v := m.create_time
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreateTime returns the old "create_time" field's value of the InjectSubmission entity.
+// If the InjectSubmission object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *InjectSubmissionMutation) OldCreateTime(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreateTime is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreateTime requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreateTime: %w", err)
+	}
+	return oldValue.CreateTime, nil
+}
+
+// ResetCreateTime resets all changes to the "create_time" field.
+func (m *InjectSubmissionMutation) ResetCreateTime() {
+	m.create_time = nil
+}
+
+// SetUpdateTime sets the "update_time" field.
+func (m *InjectSubmissionMutation) SetUpdateTime(t time.Time) {
+	m.update_time = &t
+}
+
+// UpdateTime returns the value of the "update_time" field in the mutation.
+func (m *InjectSubmissionMutation) UpdateTime() (r time.Time, exists bool) {
+	v := m.update_time
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdateTime returns the old "update_time" field's value of the InjectSubmission entity.
+// If the InjectSubmission object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *InjectSubmissionMutation) OldUpdateTime(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdateTime is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdateTime requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdateTime: %w", err)
+	}
+	return oldValue.UpdateTime, nil
+}
+
+// ResetUpdateTime resets all changes to the "update_time" field.
+func (m *InjectSubmissionMutation) ResetUpdateTime() {
+	m.update_time = nil
+}
+
+// SetFiles sets the "files" field.
+func (m *InjectSubmissionMutation) SetFiles(s []structs.File) {
+	m.files = &s
+	m.appendfiles = nil
+}
+
+// Files returns the value of the "files" field in the mutation.
+func (m *InjectSubmissionMutation) Files() (r []structs.File, exists bool) {
+	v := m.files
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFiles returns the old "files" field's value of the InjectSubmission entity.
+// If the InjectSubmission object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *InjectSubmissionMutation) OldFiles(ctx context.Context) (v []structs.File, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFiles is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFiles requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFiles: %w", err)
+	}
+	return oldValue.Files, nil
+}
+
+// AppendFiles adds s to the "files" field.
+func (m *InjectSubmissionMutation) AppendFiles(s []structs.File) {
+	m.appendfiles = append(m.appendfiles, s...)
+}
+
+// AppendedFiles returns the list of values that were appended to the "files" field in this mutation.
+func (m *InjectSubmissionMutation) AppendedFiles() ([]structs.File, bool) {
+	if len(m.appendfiles) == 0 {
+		return nil, false
+	}
+	return m.appendfiles, true
+}
+
+// ResetFiles resets all changes to the "files" field.
+func (m *InjectSubmissionMutation) ResetFiles() {
+	m.files = nil
+	m.appendfiles = nil
+}
+
+// SetInjectID sets the "inject_id" field.
+func (m *InjectSubmissionMutation) SetInjectID(u uuid.UUID) {
+	m.inject = &u
+}
+
+// InjectID returns the value of the "inject_id" field in the mutation.
+func (m *InjectSubmissionMutation) InjectID() (r uuid.UUID, exists bool) {
+	v := m.inject
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldInjectID returns the old "inject_id" field's value of the InjectSubmission entity.
+// If the InjectSubmission object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *InjectSubmissionMutation) OldInjectID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldInjectID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldInjectID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldInjectID: %w", err)
+	}
+	return oldValue.InjectID, nil
+}
+
+// ResetInjectID resets all changes to the "inject_id" field.
+func (m *InjectSubmissionMutation) ResetInjectID() {
+	m.inject = nil
+}
+
+// SetUserID sets the "user_id" field.
+func (m *InjectSubmissionMutation) SetUserID(u uuid.UUID) {
+	m.user = &u
+}
+
+// UserID returns the value of the "user_id" field in the mutation.
+func (m *InjectSubmissionMutation) UserID() (r uuid.UUID, exists bool) {
+	v := m.user
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUserID returns the old "user_id" field's value of the InjectSubmission entity.
+// If the InjectSubmission object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *InjectSubmissionMutation) OldUserID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUserID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUserID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUserID: %w", err)
+	}
+	return oldValue.UserID, nil
+}
+
+// ResetUserID resets all changes to the "user_id" field.
+func (m *InjectSubmissionMutation) ResetUserID() {
+	m.user = nil
+}
+
+// ClearInject clears the "inject" edge to the Inject entity.
+func (m *InjectSubmissionMutation) ClearInject() {
+	m.clearedinject = true
+	m.clearedFields[injectsubmission.FieldInjectID] = struct{}{}
+}
+
+// InjectCleared reports if the "inject" edge to the Inject entity was cleared.
+func (m *InjectSubmissionMutation) InjectCleared() bool {
+	return m.clearedinject
+}
+
+// InjectIDs returns the "inject" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// InjectID instead. It exists only for internal usage by the builders.
+func (m *InjectSubmissionMutation) InjectIDs() (ids []uuid.UUID) {
+	if id := m.inject; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetInject resets all changes to the "inject" edge.
+func (m *InjectSubmissionMutation) ResetInject() {
+	m.inject = nil
+	m.clearedinject = false
+}
+
+// ClearUser clears the "user" edge to the User entity.
+func (m *InjectSubmissionMutation) ClearUser() {
+	m.cleareduser = true
+	m.clearedFields[injectsubmission.FieldUserID] = struct{}{}
+}
+
+// UserCleared reports if the "user" edge to the User entity was cleared.
+func (m *InjectSubmissionMutation) UserCleared() bool {
+	return m.cleareduser
+}
+
+// UserIDs returns the "user" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// UserID instead. It exists only for internal usage by the builders.
+func (m *InjectSubmissionMutation) UserIDs() (ids []uuid.UUID) {
+	if id := m.user; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetUser resets all changes to the "user" edge.
+func (m *InjectSubmissionMutation) ResetUser() {
+	m.user = nil
+	m.cleareduser = false
+}
+
+// Where appends a list predicates to the InjectSubmissionMutation builder.
+func (m *InjectSubmissionMutation) Where(ps ...predicate.InjectSubmission) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the InjectSubmissionMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *InjectSubmissionMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.InjectSubmission, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *InjectSubmissionMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *InjectSubmissionMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (InjectSubmission).
+func (m *InjectSubmissionMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *InjectSubmissionMutation) Fields() []string {
+	fields := make([]string, 0, 5)
+	if m.create_time != nil {
+		fields = append(fields, injectsubmission.FieldCreateTime)
+	}
+	if m.update_time != nil {
+		fields = append(fields, injectsubmission.FieldUpdateTime)
+	}
+	if m.files != nil {
+		fields = append(fields, injectsubmission.FieldFiles)
+	}
+	if m.inject != nil {
+		fields = append(fields, injectsubmission.FieldInjectID)
+	}
+	if m.user != nil {
+		fields = append(fields, injectsubmission.FieldUserID)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *InjectSubmissionMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case injectsubmission.FieldCreateTime:
+		return m.CreateTime()
+	case injectsubmission.FieldUpdateTime:
+		return m.UpdateTime()
+	case injectsubmission.FieldFiles:
+		return m.Files()
+	case injectsubmission.FieldInjectID:
+		return m.InjectID()
+	case injectsubmission.FieldUserID:
+		return m.UserID()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *InjectSubmissionMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case injectsubmission.FieldCreateTime:
+		return m.OldCreateTime(ctx)
+	case injectsubmission.FieldUpdateTime:
+		return m.OldUpdateTime(ctx)
+	case injectsubmission.FieldFiles:
+		return m.OldFiles(ctx)
+	case injectsubmission.FieldInjectID:
+		return m.OldInjectID(ctx)
+	case injectsubmission.FieldUserID:
+		return m.OldUserID(ctx)
+	}
+	return nil, fmt.Errorf("unknown InjectSubmission field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *InjectSubmissionMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case injectsubmission.FieldCreateTime:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreateTime(v)
+		return nil
+	case injectsubmission.FieldUpdateTime:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdateTime(v)
+		return nil
+	case injectsubmission.FieldFiles:
+		v, ok := value.([]structs.File)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFiles(v)
+		return nil
+	case injectsubmission.FieldInjectID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetInjectID(v)
+		return nil
+	case injectsubmission.FieldUserID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUserID(v)
+		return nil
+	}
+	return fmt.Errorf("unknown InjectSubmission field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *InjectSubmissionMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *InjectSubmissionMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *InjectSubmissionMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown InjectSubmission numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *InjectSubmissionMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *InjectSubmissionMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *InjectSubmissionMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown InjectSubmission nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *InjectSubmissionMutation) ResetField(name string) error {
+	switch name {
+	case injectsubmission.FieldCreateTime:
+		m.ResetCreateTime()
+		return nil
+	case injectsubmission.FieldUpdateTime:
+		m.ResetUpdateTime()
+		return nil
+	case injectsubmission.FieldFiles:
+		m.ResetFiles()
+		return nil
+	case injectsubmission.FieldInjectID:
+		m.ResetInjectID()
+		return nil
+	case injectsubmission.FieldUserID:
+		m.ResetUserID()
+		return nil
+	}
+	return fmt.Errorf("unknown InjectSubmission field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *InjectSubmissionMutation) AddedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.inject != nil {
+		edges = append(edges, injectsubmission.EdgeInject)
+	}
+	if m.user != nil {
+		edges = append(edges, injectsubmission.EdgeUser)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *InjectSubmissionMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case injectsubmission.EdgeInject:
+		if id := m.inject; id != nil {
+			return []ent.Value{*id}
+		}
+	case injectsubmission.EdgeUser:
+		if id := m.user; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *InjectSubmissionMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 2)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *InjectSubmissionMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *InjectSubmissionMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.clearedinject {
+		edges = append(edges, injectsubmission.EdgeInject)
+	}
+	if m.cleareduser {
+		edges = append(edges, injectsubmission.EdgeUser)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *InjectSubmissionMutation) EdgeCleared(name string) bool {
+	switch name {
+	case injectsubmission.EdgeInject:
+		return m.clearedinject
+	case injectsubmission.EdgeUser:
+		return m.cleareduser
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *InjectSubmissionMutation) ClearEdge(name string) error {
+	switch name {
+	case injectsubmission.EdgeInject:
+		m.ClearInject()
+		return nil
+	case injectsubmission.EdgeUser:
+		m.ClearUser()
+		return nil
+	}
+	return fmt.Errorf("unknown InjectSubmission unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *InjectSubmissionMutation) ResetEdge(name string) error {
+	switch name {
+	case injectsubmission.EdgeInject:
+		m.ResetInject()
+		return nil
+	case injectsubmission.EdgeUser:
+		m.ResetUser()
+		return nil
+	}
+	return fmt.Errorf("unknown InjectSubmission edge %s", name)
 }
 
 // RoundMutation represents an operation that mutates the Round nodes in the graph.
@@ -3897,6 +5277,9 @@ type UserMutation struct {
 	scoreCaches        map[uuid.UUID]struct{}
 	removedscoreCaches map[uuid.UUID]struct{}
 	clearedscoreCaches bool
+	submissions        map[uuid.UUID]struct{}
+	removedsubmissions map[uuid.UUID]struct{}
+	clearedsubmissions bool
 	done               bool
 	oldValue           func(context.Context) (*User, error)
 	predicates         []predicate.User
@@ -4418,6 +5801,60 @@ func (m *UserMutation) ResetScoreCaches() {
 	m.removedscoreCaches = nil
 }
 
+// AddSubmissionIDs adds the "submissions" edge to the InjectSubmission entity by ids.
+func (m *UserMutation) AddSubmissionIDs(ids ...uuid.UUID) {
+	if m.submissions == nil {
+		m.submissions = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.submissions[ids[i]] = struct{}{}
+	}
+}
+
+// ClearSubmissions clears the "submissions" edge to the InjectSubmission entity.
+func (m *UserMutation) ClearSubmissions() {
+	m.clearedsubmissions = true
+}
+
+// SubmissionsCleared reports if the "submissions" edge to the InjectSubmission entity was cleared.
+func (m *UserMutation) SubmissionsCleared() bool {
+	return m.clearedsubmissions
+}
+
+// RemoveSubmissionIDs removes the "submissions" edge to the InjectSubmission entity by IDs.
+func (m *UserMutation) RemoveSubmissionIDs(ids ...uuid.UUID) {
+	if m.removedsubmissions == nil {
+		m.removedsubmissions = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.submissions, ids[i])
+		m.removedsubmissions[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedSubmissions returns the removed IDs of the "submissions" edge to the InjectSubmission entity.
+func (m *UserMutation) RemovedSubmissionsIDs() (ids []uuid.UUID) {
+	for id := range m.removedsubmissions {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// SubmissionsIDs returns the "submissions" edge IDs in the mutation.
+func (m *UserMutation) SubmissionsIDs() (ids []uuid.UUID) {
+	for id := range m.submissions {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetSubmissions resets all changes to the "submissions" edge.
+func (m *UserMutation) ResetSubmissions() {
+	m.submissions = nil
+	m.clearedsubmissions = false
+	m.removedsubmissions = nil
+}
+
 // Where appends a list predicates to the UserMutation builder.
 func (m *UserMutation) Where(ps ...predicate.User) {
 	m.predicates = append(m.predicates, ps...)
@@ -4660,7 +6097,7 @@ func (m *UserMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *UserMutation) AddedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.configs != nil {
 		edges = append(edges, user.EdgeConfigs)
 	}
@@ -4669,6 +6106,9 @@ func (m *UserMutation) AddedEdges() []string {
 	}
 	if m.scoreCaches != nil {
 		edges = append(edges, user.EdgeScoreCaches)
+	}
+	if m.submissions != nil {
+		edges = append(edges, user.EdgeSubmissions)
 	}
 	return edges
 }
@@ -4695,13 +6135,19 @@ func (m *UserMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case user.EdgeSubmissions:
+		ids := make([]ent.Value, 0, len(m.submissions))
+		for id := range m.submissions {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *UserMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.removedconfigs != nil {
 		edges = append(edges, user.EdgeConfigs)
 	}
@@ -4710,6 +6156,9 @@ func (m *UserMutation) RemovedEdges() []string {
 	}
 	if m.removedscoreCaches != nil {
 		edges = append(edges, user.EdgeScoreCaches)
+	}
+	if m.removedsubmissions != nil {
+		edges = append(edges, user.EdgeSubmissions)
 	}
 	return edges
 }
@@ -4736,13 +6185,19 @@ func (m *UserMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case user.EdgeSubmissions:
+		ids := make([]ent.Value, 0, len(m.removedsubmissions))
+		for id := range m.removedsubmissions {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *UserMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.clearedconfigs {
 		edges = append(edges, user.EdgeConfigs)
 	}
@@ -4751,6 +6206,9 @@ func (m *UserMutation) ClearedEdges() []string {
 	}
 	if m.clearedscoreCaches {
 		edges = append(edges, user.EdgeScoreCaches)
+	}
+	if m.clearedsubmissions {
+		edges = append(edges, user.EdgeSubmissions)
 	}
 	return edges
 }
@@ -4765,6 +6223,8 @@ func (m *UserMutation) EdgeCleared(name string) bool {
 		return m.clearedstatuses
 	case user.EdgeScoreCaches:
 		return m.clearedscoreCaches
+	case user.EdgeSubmissions:
+		return m.clearedsubmissions
 	}
 	return false
 }
@@ -4789,6 +6249,9 @@ func (m *UserMutation) ResetEdge(name string) error {
 		return nil
 	case user.EdgeScoreCaches:
 		m.ResetScoreCaches()
+		return nil
+	case user.EdgeSubmissions:
+		m.ResetSubmissions()
 		return nil
 	}
 	return fmt.Errorf("unknown User edge %s", name)

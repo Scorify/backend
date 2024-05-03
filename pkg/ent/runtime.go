@@ -8,6 +8,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/scorify/backend/pkg/ent/check"
 	"github.com/scorify/backend/pkg/ent/checkconfig"
+	"github.com/scorify/backend/pkg/ent/inject"
+	"github.com/scorify/backend/pkg/ent/injectsubmission"
 	"github.com/scorify/backend/pkg/ent/round"
 	"github.com/scorify/backend/pkg/ent/schema"
 	"github.com/scorify/backend/pkg/ent/scorecache"
@@ -69,6 +71,48 @@ func init() {
 	checkconfigDescID := checkconfigFields[0].Descriptor()
 	// checkconfig.DefaultID holds the default value on creation for the id field.
 	checkconfig.DefaultID = checkconfigDescID.Default.(func() uuid.UUID)
+	injectMixin := schema.Inject{}.Mixin()
+	injectMixinFields0 := injectMixin[0].Fields()
+	_ = injectMixinFields0
+	injectFields := schema.Inject{}.Fields()
+	_ = injectFields
+	// injectDescCreateTime is the schema descriptor for create_time field.
+	injectDescCreateTime := injectMixinFields0[0].Descriptor()
+	// inject.DefaultCreateTime holds the default value on creation for the create_time field.
+	inject.DefaultCreateTime = injectDescCreateTime.Default.(func() time.Time)
+	// injectDescUpdateTime is the schema descriptor for update_time field.
+	injectDescUpdateTime := injectMixinFields0[1].Descriptor()
+	// inject.DefaultUpdateTime holds the default value on creation for the update_time field.
+	inject.DefaultUpdateTime = injectDescUpdateTime.Default.(func() time.Time)
+	// inject.UpdateDefaultUpdateTime holds the default value on update for the update_time field.
+	inject.UpdateDefaultUpdateTime = injectDescUpdateTime.UpdateDefault.(func() time.Time)
+	// injectDescTitle is the schema descriptor for title field.
+	injectDescTitle := injectFields[1].Descriptor()
+	// inject.TitleValidator is a validator for the "title" field. It is called by the builders before save.
+	inject.TitleValidator = injectDescTitle.Validators[0].(func(string) error)
+	// injectDescID is the schema descriptor for id field.
+	injectDescID := injectFields[0].Descriptor()
+	// inject.DefaultID holds the default value on creation for the id field.
+	inject.DefaultID = injectDescID.Default.(func() uuid.UUID)
+	injectsubmissionMixin := schema.InjectSubmission{}.Mixin()
+	injectsubmissionMixinFields0 := injectsubmissionMixin[0].Fields()
+	_ = injectsubmissionMixinFields0
+	injectsubmissionFields := schema.InjectSubmission{}.Fields()
+	_ = injectsubmissionFields
+	// injectsubmissionDescCreateTime is the schema descriptor for create_time field.
+	injectsubmissionDescCreateTime := injectsubmissionMixinFields0[0].Descriptor()
+	// injectsubmission.DefaultCreateTime holds the default value on creation for the create_time field.
+	injectsubmission.DefaultCreateTime = injectsubmissionDescCreateTime.Default.(func() time.Time)
+	// injectsubmissionDescUpdateTime is the schema descriptor for update_time field.
+	injectsubmissionDescUpdateTime := injectsubmissionMixinFields0[1].Descriptor()
+	// injectsubmission.DefaultUpdateTime holds the default value on creation for the update_time field.
+	injectsubmission.DefaultUpdateTime = injectsubmissionDescUpdateTime.Default.(func() time.Time)
+	// injectsubmission.UpdateDefaultUpdateTime holds the default value on update for the update_time field.
+	injectsubmission.UpdateDefaultUpdateTime = injectsubmissionDescUpdateTime.UpdateDefault.(func() time.Time)
+	// injectsubmissionDescID is the schema descriptor for id field.
+	injectsubmissionDescID := injectsubmissionFields[0].Descriptor()
+	// injectsubmission.DefaultID holds the default value on creation for the id field.
+	injectsubmission.DefaultID = injectsubmissionDescID.Default.(func() uuid.UUID)
 	roundMixin := schema.Round{}.Mixin()
 	roundMixinFields0 := roundMixin[0].Fields()
 	_ = roundMixinFields0
