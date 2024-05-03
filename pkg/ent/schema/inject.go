@@ -8,6 +8,7 @@ import (
 	"entgo.io/ent/schema/index"
 	"entgo.io/ent/schema/mixin"
 	"github.com/google/uuid"
+	"github.com/scorify/backend/pkg/structs"
 )
 
 // Inject holds the schema definition for the Inject entity.
@@ -35,7 +36,7 @@ func (Inject) Fields() []ent.Field {
 		field.Time("end_time").
 			StructTag(`json:"end_time"`).
 			Comment("The end time of the inject"),
-		field.Strings("files").
+		field.JSON("files", []structs.File{}).
 			StructTag(`json:"files"`).
 			Comment("The files of the inject"),
 	}

@@ -16,6 +16,7 @@ import (
 	"github.com/scorify/backend/pkg/ent/inject"
 	"github.com/scorify/backend/pkg/ent/injectsubmission"
 	"github.com/scorify/backend/pkg/ent/predicate"
+	"github.com/scorify/backend/pkg/structs"
 )
 
 // InjectUpdate is the builder for updating Inject entities.
@@ -80,13 +81,13 @@ func (iu *InjectUpdate) SetNillableEndTime(t *time.Time) *InjectUpdate {
 }
 
 // SetFiles sets the "files" field.
-func (iu *InjectUpdate) SetFiles(s []string) *InjectUpdate {
+func (iu *InjectUpdate) SetFiles(s []structs.File) *InjectUpdate {
 	iu.mutation.SetFiles(s)
 	return iu
 }
 
 // AppendFiles appends s to the "files" field.
-func (iu *InjectUpdate) AppendFiles(s []string) *InjectUpdate {
+func (iu *InjectUpdate) AppendFiles(s []structs.File) *InjectUpdate {
 	iu.mutation.AppendFiles(s)
 	return iu
 }
@@ -324,13 +325,13 @@ func (iuo *InjectUpdateOne) SetNillableEndTime(t *time.Time) *InjectUpdateOne {
 }
 
 // SetFiles sets the "files" field.
-func (iuo *InjectUpdateOne) SetFiles(s []string) *InjectUpdateOne {
+func (iuo *InjectUpdateOne) SetFiles(s []structs.File) *InjectUpdateOne {
 	iuo.mutation.SetFiles(s)
 	return iuo
 }
 
 // AppendFiles appends s to the "files" field.
-func (iuo *InjectUpdateOne) AppendFiles(s []string) *InjectUpdateOne {
+func (iuo *InjectUpdateOne) AppendFiles(s []structs.File) *InjectUpdateOne {
 	iuo.mutation.AppendFiles(s)
 	return iuo
 }

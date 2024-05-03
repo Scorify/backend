@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
 	"github.com/scorify/backend/pkg/ent/inject"
+	"github.com/scorify/backend/pkg/structs"
 )
 
 // Inject is the model entity for the Inject schema.
@@ -31,7 +32,7 @@ type Inject struct {
 	// The end time of the inject
 	EndTime time.Time `json:"end_time"`
 	// The files of the inject
-	Files []string `json:"files"`
+	Files []structs.File `json:"files"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the InjectQuery when eager-loading is set.
 	Edges        InjectEdges `json:"edges"`

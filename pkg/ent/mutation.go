@@ -21,6 +21,7 @@ import (
 	"github.com/scorify/backend/pkg/ent/scorecache"
 	"github.com/scorify/backend/pkg/ent/status"
 	"github.com/scorify/backend/pkg/ent/user"
+	"github.com/scorify/backend/pkg/structs"
 )
 
 const (
@@ -1585,8 +1586,8 @@ type InjectMutation struct {
 	title              *string
 	start_time         *time.Time
 	end_time           *time.Time
-	files              *[]string
-	appendfiles        []string
+	files              *[]structs.File
+	appendfiles        []structs.File
 	clearedFields      map[string]struct{}
 	submissions        map[uuid.UUID]struct{}
 	removedsubmissions map[uuid.UUID]struct{}
@@ -1881,13 +1882,13 @@ func (m *InjectMutation) ResetEndTime() {
 }
 
 // SetFiles sets the "files" field.
-func (m *InjectMutation) SetFiles(s []string) {
+func (m *InjectMutation) SetFiles(s []structs.File) {
 	m.files = &s
 	m.appendfiles = nil
 }
 
 // Files returns the value of the "files" field in the mutation.
-func (m *InjectMutation) Files() (r []string, exists bool) {
+func (m *InjectMutation) Files() (r []structs.File, exists bool) {
 	v := m.files
 	if v == nil {
 		return
@@ -1898,7 +1899,7 @@ func (m *InjectMutation) Files() (r []string, exists bool) {
 // OldFiles returns the old "files" field's value of the Inject entity.
 // If the Inject object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *InjectMutation) OldFiles(ctx context.Context) (v []string, err error) {
+func (m *InjectMutation) OldFiles(ctx context.Context) (v []structs.File, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldFiles is only allowed on UpdateOne operations")
 	}
@@ -1913,12 +1914,12 @@ func (m *InjectMutation) OldFiles(ctx context.Context) (v []string, err error) {
 }
 
 // AppendFiles adds s to the "files" field.
-func (m *InjectMutation) AppendFiles(s []string) {
+func (m *InjectMutation) AppendFiles(s []structs.File) {
 	m.appendfiles = append(m.appendfiles, s...)
 }
 
 // AppendedFiles returns the list of values that were appended to the "files" field in this mutation.
-func (m *InjectMutation) AppendedFiles() ([]string, bool) {
+func (m *InjectMutation) AppendedFiles() ([]structs.File, bool) {
 	if len(m.appendfiles) == 0 {
 		return nil, false
 	}
@@ -2124,7 +2125,7 @@ func (m *InjectMutation) SetField(name string, value ent.Value) error {
 		m.SetEndTime(v)
 		return nil
 	case inject.FieldFiles:
-		v, ok := value.([]string)
+		v, ok := value.([]structs.File)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}

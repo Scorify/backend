@@ -13,6 +13,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/scorify/backend/pkg/ent/inject"
 	"github.com/scorify/backend/pkg/ent/injectsubmission"
+	"github.com/scorify/backend/pkg/structs"
 )
 
 // InjectCreate is the builder for creating a Inject entity.
@@ -69,7 +70,7 @@ func (ic *InjectCreate) SetEndTime(t time.Time) *InjectCreate {
 }
 
 // SetFiles sets the "files" field.
-func (ic *InjectCreate) SetFiles(s []string) *InjectCreate {
+func (ic *InjectCreate) SetFiles(s []structs.File) *InjectCreate {
 	ic.mutation.SetFiles(s)
 	return ic
 }
