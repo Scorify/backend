@@ -6,6 +6,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/mixin"
 	"github.com/google/uuid"
+	"github.com/scorify/backend/pkg/structs"
 )
 
 // InjectSubmission holds the schema definition for the InjectSubmission entity.
@@ -22,7 +23,7 @@ func (InjectSubmission) Fields() []ent.Field {
 			Unique().
 			Immutable().
 			Default(uuid.New),
-		field.Strings("files").
+		field.JSON("files", []structs.File{}).
 			StructTag(`json:"files"`).
 			Comment("The files of the inject submission"),
 		field.UUID("inject_id", uuid.UUID{}).
