@@ -25,6 +25,7 @@ import (
 	"github.com/scorify/backend/pkg/ent/user"
 	"github.com/scorify/backend/pkg/graph/model"
 	"github.com/scorify/backend/pkg/helpers"
+	"github.com/scorify/backend/pkg/structs"
 	"github.com/sirupsen/logrus"
 )
 
@@ -104,7 +105,13 @@ func (r *configResolver) User(ctx context.Context, obj *ent.CheckConfig) (*ent.U
 
 // Files is the resolver for the files field.
 func (r *injectResolver) Files(ctx context.Context, obj *ent.Inject) ([]string, error) {
-	panic(fmt.Errorf("not implemented: Files - files"))
+	files := make([]string, len(obj.Files))
+
+	for i, file := range obj.Files {
+		files[i] = file.Path(structs.FileTypeInject, obj.ID)
+	}
+
+	return files, nil
 }
 
 // Submissions is the resolver for the submissions field.
