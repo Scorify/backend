@@ -250,5 +250,5 @@ type Mutation {
   deleteInject(id: ID!): Boolean! @hasRole(roles: [admin])
 
   submitInject(injectID: ID!, files: [String!]!): InjectSubmission!
-    @isAuthenticated
+    @hasRole(roles: [user])
 }

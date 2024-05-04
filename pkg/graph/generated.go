@@ -5854,10 +5854,14 @@ func (ec *executionContext) _Mutation_submitInject(ctx context.Context, field gr
 			return ec.resolvers.Mutation().SubmitInject(rctx, fc.Args["injectID"].(uuid.UUID), fc.Args["files"].([]string))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			if ec.directives.IsAuthenticated == nil {
-				return nil, errors.New("directive isAuthenticated is not implemented")
+			roles, err := ec.unmarshalORole2ᚕᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚋuserᚐRole(ctx, []interface{}{"user"})
+			if err != nil {
+				return nil, err
 			}
-			return ec.directives.IsAuthenticated(ctx, nil, directive0)
+			if ec.directives.HasRole == nil {
+				return nil, errors.New("directive hasRole is not implemented")
+			}
+			return ec.directives.HasRole(ctx, nil, directive0, roles)
 		}
 
 		tmp, err := directive1(rctx)
