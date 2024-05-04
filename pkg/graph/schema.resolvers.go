@@ -8,6 +8,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/scorify/backend/pkg/auth"
@@ -99,6 +100,31 @@ func (r *configResolver) Check(ctx context.Context, obj *ent.CheckConfig) (*ent.
 // User is the resolver for the user field.
 func (r *configResolver) User(ctx context.Context, obj *ent.CheckConfig) (*ent.User, error) {
 	return obj.QueryUser().Only(ctx)
+}
+
+// Files is the resolver for the files field.
+func (r *injectResolver) Files(ctx context.Context, obj *ent.Inject) ([]string, error) {
+	panic(fmt.Errorf("not implemented: Files - files"))
+}
+
+// Submissions is the resolver for the submissions field.
+func (r *injectResolver) Submissions(ctx context.Context, obj *ent.Inject) ([]*ent.InjectSubmission, error) {
+	panic(fmt.Errorf("not implemented: Submissions - submissions"))
+}
+
+// Files is the resolver for the files field.
+func (r *injectSubmissionResolver) Files(ctx context.Context, obj *ent.InjectSubmission) ([]string, error) {
+	panic(fmt.Errorf("not implemented: Files - files"))
+}
+
+// User is the resolver for the user field.
+func (r *injectSubmissionResolver) User(ctx context.Context, obj *ent.InjectSubmission) (*ent.User, error) {
+	panic(fmt.Errorf("not implemented: User - user"))
+}
+
+// Inject is the resolver for the inject field.
+func (r *injectSubmissionResolver) Inject(ctx context.Context, obj *ent.InjectSubmission) (*ent.Inject, error) {
+	panic(fmt.Errorf("not implemented: Inject - inject"))
 }
 
 // Login is the resolver for the login field.
@@ -813,6 +839,26 @@ func (r *mutationResolver) StopEngine(ctx context.Context) (bool, error) {
 	return err == nil, err
 }
 
+// CreateInject is the resolver for the createInject field.
+func (r *mutationResolver) CreateInject(ctx context.Context, title string, startTime time.Time, endTime time.Time, files []string) (*ent.Inject, error) {
+	panic(fmt.Errorf("not implemented: CreateInject - createInject"))
+}
+
+// UpdateInject is the resolver for the updateInject field.
+func (r *mutationResolver) UpdateInject(ctx context.Context, id uuid.UUID, title *string, startTime *time.Time, endTime *time.Time, files []string) (*ent.Inject, error) {
+	panic(fmt.Errorf("not implemented: UpdateInject - updateInject"))
+}
+
+// DeleteInject is the resolver for the deleteInject field.
+func (r *mutationResolver) DeleteInject(ctx context.Context, id uuid.UUID) (bool, error) {
+	panic(fmt.Errorf("not implemented: DeleteInject - deleteInject"))
+}
+
+// SubmitInject is the resolver for the submitInject field.
+func (r *mutationResolver) SubmitInject(ctx context.Context, injectID uuid.UUID, files []string) (*ent.InjectSubmission, error) {
+	panic(fmt.Errorf("not implemented: SubmitInject - submitInject"))
+}
+
 // Me is the resolver for the me field.
 func (r *queryResolver) Me(ctx context.Context) (*ent.User, error) {
 	entUser, err := auth.Parse(ctx)
@@ -943,6 +989,26 @@ func (r *queryResolver) Scoreboard(ctx context.Context, round *int) (*model.Scor
 	}
 
 	return scoreboard, nil
+}
+
+// Injects is the resolver for the injects field.
+func (r *queryResolver) Injects(ctx context.Context) ([]*ent.Inject, error) {
+	panic(fmt.Errorf("not implemented: Injects - injects"))
+}
+
+// Inject is the resolver for the inject field.
+func (r *queryResolver) Inject(ctx context.Context, id uuid.UUID) (*ent.Inject, error) {
+	panic(fmt.Errorf("not implemented: Inject - inject"))
+}
+
+// InjectSubmissions is the resolver for the injectSubmissions field.
+func (r *queryResolver) InjectSubmissions(ctx context.Context) ([]*ent.InjectSubmission, error) {
+	panic(fmt.Errorf("not implemented: InjectSubmissions - injectSubmissions"))
+}
+
+// InjectSubmission is the resolver for the injectSubmission field.
+func (r *queryResolver) InjectSubmission(ctx context.Context, id uuid.UUID) (*ent.InjectSubmission, error) {
+	panic(fmt.Errorf("not implemented: InjectSubmission - injectSubmission"))
 }
 
 // Statuses is the resolver for the statuses field.
@@ -1133,6 +1199,11 @@ func (r *userResolver) ScoreCaches(ctx context.Context, obj *ent.User) ([]*ent.S
 	return obj.QueryScoreCaches().All(ctx)
 }
 
+// InjectSubmissions is the resolver for the inject_submissions field.
+func (r *userResolver) InjectSubmissions(ctx context.Context, obj *ent.User) ([]*ent.InjectSubmission, error) {
+	panic(fmt.Errorf("not implemented: InjectSubmissions - inject_submissions"))
+}
+
 // Check returns CheckResolver implementation.
 func (r *Resolver) Check() CheckResolver { return &checkResolver{r} }
 
@@ -1141,6 +1212,12 @@ func (r *Resolver) CheckConfig() CheckConfigResolver { return &checkConfigResolv
 
 // Config returns ConfigResolver implementation.
 func (r *Resolver) Config() ConfigResolver { return &configResolver{r} }
+
+// Inject returns InjectResolver implementation.
+func (r *Resolver) Inject() InjectResolver { return &injectResolver{r} }
+
+// InjectSubmission returns InjectSubmissionResolver implementation.
+func (r *Resolver) InjectSubmission() InjectSubmissionResolver { return &injectSubmissionResolver{r} }
 
 // Mutation returns MutationResolver implementation.
 func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
@@ -1166,6 +1243,8 @@ func (r *Resolver) User() UserResolver { return &userResolver{r} }
 type checkResolver struct{ *Resolver }
 type checkConfigResolver struct{ *Resolver }
 type configResolver struct{ *Resolver }
+type injectResolver struct{ *Resolver }
+type injectSubmissionResolver struct{ *Resolver }
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
 type roundResolver struct{ *Resolver }
