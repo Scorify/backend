@@ -121,7 +121,13 @@ func (r *injectResolver) Submissions(ctx context.Context, obj *ent.Inject) ([]*e
 
 // Files is the resolver for the files field.
 func (r *injectSubmissionResolver) Files(ctx context.Context, obj *ent.InjectSubmission) ([]string, error) {
-	panic(fmt.Errorf("not implemented: Files - files"))
+	files := make([]string, len(obj.Files))
+
+	for i, file := range obj.Files {
+		files[i] = file.Path(structs.FileTypeSubmission, obj.ID)
+	}
+
+	return files, nil
 }
 
 // User is the resolver for the user field.
