@@ -1201,7 +1201,7 @@ func (r *userResolver) ScoreCaches(ctx context.Context, obj *ent.User) ([]*ent.S
 
 // InjectSubmissions is the resolver for the inject_submissions field.
 func (r *userResolver) InjectSubmissions(ctx context.Context, obj *ent.User) ([]*ent.InjectSubmission, error) {
-	panic(fmt.Errorf("not implemented: InjectSubmissions - inject_submissions"))
+	return obj.QuerySubmissions().All(ctx)
 }
 
 // Check returns CheckResolver implementation.
