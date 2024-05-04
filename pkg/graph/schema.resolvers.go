@@ -116,7 +116,7 @@ func (r *injectResolver) Files(ctx context.Context, obj *ent.Inject) ([]string, 
 
 // Submissions is the resolver for the submissions field.
 func (r *injectResolver) Submissions(ctx context.Context, obj *ent.Inject) ([]*ent.InjectSubmission, error) {
-	panic(fmt.Errorf("not implemented: Submissions - submissions"))
+	return obj.QuerySubmissions().All(ctx)
 }
 
 // Files is the resolver for the files field.
