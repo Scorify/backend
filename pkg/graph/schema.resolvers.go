@@ -132,12 +132,12 @@ func (r *injectSubmissionResolver) Files(ctx context.Context, obj *ent.InjectSub
 
 // User is the resolver for the user field.
 func (r *injectSubmissionResolver) User(ctx context.Context, obj *ent.InjectSubmission) (*ent.User, error) {
-	panic(fmt.Errorf("not implemented: User - user"))
+	return obj.QueryUser().Only(ctx)
 }
 
 // Inject is the resolver for the inject field.
 func (r *injectSubmissionResolver) Inject(ctx context.Context, obj *ent.InjectSubmission) (*ent.Inject, error) {
-	panic(fmt.Errorf("not implemented: Inject - inject"))
+	return obj.QueryInject().Only(ctx)
 }
 
 // Login is the resolver for the login field.
