@@ -984,7 +984,30 @@ func (r *mutationResolver) DeleteInject(ctx context.Context, id uuid.UUID) (bool
 
 // SubmitInject is the resolver for the submitInject field.
 func (r *mutationResolver) SubmitInject(ctx context.Context, injectID uuid.UUID, files []*graphql.Upload) (*ent.InjectSubmission, error) {
-	panic(fmt.Errorf("not implemented: SubmitInject - submitInject"))
+	entUser, err := auth.Parse(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("invalid user")
+	}
+
+	structFiles := make([]structs.File, len(files))
+
+	for i, file := range files {
+		structFiles[i] = structs.File{
+			ID:   uuid.New(),
+			Name: file.Filename,
+		}
+
+		err := structFiles[i].WriteFile(structs.FileTypeSubmission, injectID, file.File)
+		if err != nil {
+			return nil, fmt.Errorf("failed to write file: %v", err)
+		}
+	}
+
+	return r.Ent.InjectSubmission.Create().
+		SetUser(entUser).
+		SetInjectID(injectID).
+		SetFiles(structFiles).
+		Save(ctx)
 }
 
 // Me is the resolver for the me field.
