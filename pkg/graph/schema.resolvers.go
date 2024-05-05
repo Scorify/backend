@@ -20,6 +20,7 @@ import (
 	"github.com/scorify/backend/pkg/ent/check"
 	"github.com/scorify/backend/pkg/ent/checkconfig"
 	"github.com/scorify/backend/pkg/ent/inject"
+	"github.com/scorify/backend/pkg/ent/injectsubmission"
 	"github.com/scorify/backend/pkg/ent/predicate"
 	"github.com/scorify/backend/pkg/ent/round"
 	"github.com/scorify/backend/pkg/ent/scorecache"
@@ -1144,22 +1145,28 @@ func (r *queryResolver) Scoreboard(ctx context.Context, round *int) (*model.Scor
 
 // Injects is the resolver for the injects field.
 func (r *queryResolver) Injects(ctx context.Context) ([]*ent.Inject, error) {
-	panic(fmt.Errorf("not implemented: Injects - injects"))
+	return r.Ent.Inject.Query().All(ctx)
 }
 
 // Inject is the resolver for the inject field.
 func (r *queryResolver) Inject(ctx context.Context, id uuid.UUID) (*ent.Inject, error) {
-	panic(fmt.Errorf("not implemented: Inject - inject"))
+	return r.Ent.Inject.Query().
+		Where(
+			inject.IDEQ(id),
+		).Only(ctx)
 }
 
 // InjectSubmissions is the resolver for the injectSubmissions field.
 func (r *queryResolver) InjectSubmissions(ctx context.Context) ([]*ent.InjectSubmission, error) {
-	panic(fmt.Errorf("not implemented: InjectSubmissions - injectSubmissions"))
+	return r.Ent.InjectSubmission.Query().All(ctx)
 }
 
 // InjectSubmission is the resolver for the injectSubmission field.
 func (r *queryResolver) InjectSubmission(ctx context.Context, id uuid.UUID) (*ent.InjectSubmission, error) {
-	panic(fmt.Errorf("not implemented: InjectSubmission - injectSubmission"))
+	return r.Ent.InjectSubmission.Query().
+		Where(
+			injectsubmission.IDEQ(id),
+		).Only(ctx)
 }
 
 // Statuses is the resolver for the statuses field.
