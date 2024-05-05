@@ -111,7 +111,7 @@ func (r *injectResolver) Files(ctx context.Context, obj *ent.Inject) ([]string, 
 	files := make([]string, len(obj.Files))
 
 	for i, file := range obj.Files {
-		files[i] = file.Path(structs.FileTypeInject, obj.ID)
+		files[i] = file.APIPath(structs.FileTypeInject, obj.ID)
 	}
 
 	return files, nil
@@ -127,7 +127,7 @@ func (r *injectSubmissionResolver) Files(ctx context.Context, obj *ent.InjectSub
 	files := make([]string, len(obj.Files))
 
 	for i, file := range obj.Files {
-		files[i] = file.Path(structs.FileTypeSubmission, obj.ID)
+		files[i] = file.APIPath(structs.FileTypeSubmission, obj.ID)
 	}
 
 	return files, nil

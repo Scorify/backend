@@ -20,12 +20,17 @@ type File struct {
 	Name string    `json:"name"`
 }
 
-func (file *File) Path(fileType FileType, parentID uuid.UUID) string {
+func (file *File) FilePath(fileType FileType, parentID uuid.UUID) string {
+	return filepath.Join("./files/", string(fileType), parentID.String(), file.ID.String(), file.Name)
+}
+
+func (file *File) APIPath(fileType FileType, parentID uuid.UUID) string {
 	return filepath.Join("/api/files/", string(fileType), parentID.String(), file.ID.String(), file.Name)
+
 }
 
 func (file *File) WriteFile(fileType FileType, parentID uuid.UUID, reader io.ReadSeeker) error {
-	filePath := file.Path(fileType, parentID)
+	filePath := file.FilePath(fileType, parentID)
 
 	err := os.MkdirAll(filepath.Dir(filePath), os.ModePerm)
 	if err != nil {
@@ -42,5 +47,5 @@ func (file *File) WriteFile(fileType FileType, parentID uuid.UUID, reader io.Rea
 }
 
 func (file *File) DeleteFile(fileType FileType, parentID uuid.UUID) error {
-	return os.Remove(file.Path(fileType, parentID))
+	return os.Remove(file.FilePath(fileType, parentID))
 }
