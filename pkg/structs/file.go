@@ -1,9 +1,11 @@
 package structs
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/google/uuid"
 )
@@ -20,19 +22,39 @@ type File struct {
 	Name string    `json:"name"`
 }
 
-func (file *File) FilePath(fileType FileType, parentID uuid.UUID) string {
-	return filepath.Join("./files/", string(fileType), parentID.String(), file.ID.String(), file.Name)
+func (file *File) Validate() error {
+	if strings.Contains(file.Name, "/") || strings.Contains(file.Name, "\\") || strings.Contains(file.Name, "..") {
+		return fmt.Errorf("invalid file name: %q", file.Name)
+	}
+	return nil
 }
 
-func (file *File) APIPath(fileType FileType, parentID uuid.UUID) string {
-	return filepath.Join("/api/files/", string(fileType), parentID.String(), file.ID.String(), file.Name)
+func (file *File) FilePath(fileType FileType, parentID uuid.UUID) (string, error) {
+	err := file.Validate()
+	if err != nil {
+		return "", err
+	}
+
+	return filepath.Join("./files/", string(fileType), parentID.String(), file.ID.String(), file.Name), nil
+}
+
+func (file *File) APIPath(fileType FileType, parentID uuid.UUID) (string, error) {
+	err := file.Validate()
+	if err != nil {
+		return "", err
+	}
+
+	return filepath.Join("/api/files/", string(fileType), parentID.String(), file.ID.String(), file.Name), nil
 
 }
 
 func (file *File) WriteFile(fileType FileType, parentID uuid.UUID, reader io.ReadSeeker) error {
-	filePath := file.FilePath(fileType, parentID)
+	filePath, err := file.FilePath(fileType, parentID)
+	if err != nil {
+		return err
+	}
 
-	err := os.MkdirAll(filepath.Dir(filePath), os.ModePerm)
+	err = os.MkdirAll(filepath.Dir(filePath), os.ModePerm)
 	if err != nil {
 		return err
 	}
@@ -47,5 +69,10 @@ func (file *File) WriteFile(fileType FileType, parentID uuid.UUID, reader io.Rea
 }
 
 func (file *File) DeleteFile(fileType FileType, parentID uuid.UUID) error {
-	return os.Remove(file.FilePath(fileType, parentID))
+	filePath, err := file.FilePath(fileType, parentID)
+	if err != nil {
+		return err
+	}
+
+	return os.Remove(filePath)
 }

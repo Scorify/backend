@@ -108,10 +108,16 @@ func (r *configResolver) User(ctx context.Context, obj *ent.CheckConfig) (*ent.U
 
 // Files is the resolver for the files field.
 func (r *injectResolver) Files(ctx context.Context, obj *ent.Inject) ([]string, error) {
+	var err error
+
 	files := make([]string, len(obj.Files))
 
 	for i, file := range obj.Files {
-		files[i] = file.APIPath(structs.FileTypeInject, obj.ID)
+		files[i], err = file.APIPath(structs.FileTypeInject, obj.ID)
+		if err != nil {
+			logrus.Errorf("failed to get file path: %v", err)
+		}
+
 	}
 
 	return files, nil
@@ -124,10 +130,15 @@ func (r *injectResolver) Submissions(ctx context.Context, obj *ent.Inject) ([]*e
 
 // Files is the resolver for the files field.
 func (r *injectSubmissionResolver) Files(ctx context.Context, obj *ent.InjectSubmission) ([]string, error) {
+	var err error
+
 	files := make([]string, len(obj.Files))
 
 	for i, file := range obj.Files {
-		files[i] = file.APIPath(structs.FileTypeSubmission, obj.ID)
+		files[i], err = file.APIPath(structs.FileTypeSubmission, obj.ID)
+		if err != nil {
+			logrus.Errorf("failed to get file path: %v", err)
+		}
 	}
 
 	return files, nil
