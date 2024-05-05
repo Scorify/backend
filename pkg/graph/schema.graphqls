@@ -1,5 +1,6 @@
 scalar JSON
 scalar Time
+scalar Upload
 
 directive @isAuthenticated on FIELD_DEFINITION
 directive @hasRole(roles: [Role]) on FIELD_DEFINITION
@@ -238,17 +239,17 @@ type Mutation {
     title: String!
     start_time: Time!
     end_time: Time!
-    files: [String!]!
+    files: [Upload!]!
   ): Inject! @hasRole(roles: [admin])
   updateInject(
     id: ID!
     title: String
     start_time: Time
     end_time: Time
-    files: [String!]
+    files: [Upload!]
   ): Inject! @hasRole(roles: [admin])
   deleteInject(id: ID!): Boolean! @hasRole(roles: [admin])
 
-  submitInject(injectID: ID!, files: [String!]!): InjectSubmission!
+  submitInject(injectID: ID!, files: [Upload!]!): InjectSubmission!
     @hasRole(roles: [user])
 }
