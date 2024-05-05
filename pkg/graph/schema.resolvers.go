@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/99designs/gqlgen/graphql"
 	"github.com/google/uuid"
 	"github.com/scorify/backend/pkg/auth"
 	"github.com/scorify/backend/pkg/cache"
@@ -853,12 +854,48 @@ func (r *mutationResolver) StopEngine(ctx context.Context) (bool, error) {
 }
 
 // CreateInject is the resolver for the createInject field.
-func (r *mutationResolver) CreateInject(ctx context.Context, title string, startTime time.Time, endTime time.Time, files []string) (*ent.Inject, error) {
-	panic(fmt.Errorf("not implemented: CreateInject - createInject"))
+func (r *mutationResolver) CreateInject(ctx context.Context, title string, startTime time.Time, endTime time.Time, files []*graphql.Upload) (*ent.Inject, error) {
+	structFiles := make([]structs.File, len(files))
+
+	for i, file := range files {
+		structFiles[i] = structs.File{
+			ID:   uuid.New(),
+			Name: file.Filename,
+		}
+	}
+
+	tx, err := r.Ent.Tx(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to start transaction: %v", err)
+	}
+
+	entInject, err := tx.Inject.Create().
+		SetTitle(title).
+		SetStartTime(startTime).
+		SetEndTime(endTime).
+		SetFiles(structFiles).
+		Save(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create inject: %v", err)
+	}
+
+	for i, file := range files {
+		err = structFiles[i].WriteFile(structs.FileTypeInject, entInject.ID, file.File)
+		if err != nil {
+			return nil, fmt.Errorf("failed to write file: %v", err)
+		}
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %v", err)
+	}
+
+	return entInject, nil
 }
 
 // UpdateInject is the resolver for the updateInject field.
-func (r *mutationResolver) UpdateInject(ctx context.Context, id uuid.UUID, title *string, startTime *time.Time, endTime *time.Time, files []string) (*ent.Inject, error) {
+func (r *mutationResolver) UpdateInject(ctx context.Context, id uuid.UUID, title *string, startTime *time.Time, endTime *time.Time, files []*graphql.Upload) (*ent.Inject, error) {
 	panic(fmt.Errorf("not implemented: UpdateInject - updateInject"))
 }
 
@@ -868,7 +905,7 @@ func (r *mutationResolver) DeleteInject(ctx context.Context, id uuid.UUID) (bool
 }
 
 // SubmitInject is the resolver for the submitInject field.
-func (r *mutationResolver) SubmitInject(ctx context.Context, injectID uuid.UUID, files []string) (*ent.InjectSubmission, error) {
+func (r *mutationResolver) SubmitInject(ctx context.Context, injectID uuid.UUID, files []*graphql.Upload) (*ent.InjectSubmission, error) {
 	panic(fmt.Errorf("not implemented: SubmitInject - submitInject"))
 }
 
