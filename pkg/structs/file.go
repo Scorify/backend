@@ -40,3 +40,7 @@ func (file *File) WriteFile(fileType FileType, parentID uuid.UUID, reader io.Rea
 	_, err = io.Copy(fileHandle, reader)
 	return err
 }
+
+func (file *File) DeleteFile(fileType FileType, parentID uuid.UUID) error {
+	return os.Remove(file.Path(fileType, parentID))
+}
