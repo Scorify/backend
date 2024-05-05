@@ -869,6 +869,8 @@ func (r *mutationResolver) CreateInject(ctx context.Context, title string, start
 		return nil, fmt.Errorf("failed to start transaction: %v", err)
 	}
 
+	defer tx.Rollback()
+
 	entInject, err := tx.Inject.Create().
 		SetTitle(title).
 		SetStartTime(startTime).
@@ -896,7 +898,54 @@ func (r *mutationResolver) CreateInject(ctx context.Context, title string, start
 
 // UpdateInject is the resolver for the updateInject field.
 func (r *mutationResolver) UpdateInject(ctx context.Context, id uuid.UUID, title *string, startTime *time.Time, endTime *time.Time, files []*graphql.Upload) (*ent.Inject, error) {
-	panic(fmt.Errorf("not implemented: UpdateInject - updateInject"))
+	structFiles := make([]structs.File, len(files))
+
+	for i, file := range files {
+		structFiles[i] = structs.File{
+			ID:   uuid.New(),
+			Name: file.Filename,
+		}
+
+		err := structFiles[i].WriteFile(structs.FileTypeInject, id, file.File)
+		if err != nil {
+			return nil, fmt.Errorf("failed to write file: %v", err)
+		}
+	}
+
+	tx, err := r.Ent.Tx(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to start transaction: %v", err)
+	}
+
+	defer tx.Rollback()
+
+	injectUpdate := tx.Inject.UpdateOneID(id)
+
+	if title != nil {
+		injectUpdate.SetTitle(*title)
+	}
+
+	if startTime != nil {
+		injectUpdate.SetStartTime(*startTime)
+	}
+
+	if endTime != nil {
+		injectUpdate.SetEndTime(*endTime)
+	}
+
+	injectUpdate.SetFiles(structFiles)
+
+	entInject, err := injectUpdate.Save(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update inject: %v", err)
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %v", err)
+	}
+
+	return entInject, nil
 }
 
 // DeleteInject is the resolver for the deleteInject field.
