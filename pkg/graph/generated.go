@@ -48,6 +48,8 @@ type ResolverRoot interface {
 	Check() CheckResolver
 	CheckConfig() CheckConfigResolver
 	Config() ConfigResolver
+	Inject() InjectResolver
+	InjectSubmission() InjectSubmissionResolver
 	Mutation() MutationResolver
 	Query() QueryResolver
 	Round() RoundResolver
@@ -94,6 +96,28 @@ type ComplexityRoot struct {
 		User   func(childComplexity int) int
 	}
 
+	Inject struct {
+		CreateTime  func(childComplexity int) int
+		EndTime     func(childComplexity int) int
+		Files       func(childComplexity int) int
+		ID          func(childComplexity int) int
+		StartTime   func(childComplexity int) int
+		Submissions func(childComplexity int) int
+		Title       func(childComplexity int) int
+		UpdateTime  func(childComplexity int) int
+	}
+
+	InjectSubmission struct {
+		CreateTime func(childComplexity int) int
+		Files      func(childComplexity int) int
+		ID         func(childComplexity int) int
+		Inject     func(childComplexity int) int
+		InjectID   func(childComplexity int) int
+		UpdateTime func(childComplexity int) int
+		User       func(childComplexity int) int
+		UserID     func(childComplexity int) int
+	}
+
 	LoginOutput struct {
 		Domain   func(childComplexity int) int
 		Expires  func(childComplexity int) int
@@ -109,15 +133,19 @@ type ComplexityRoot struct {
 		AdminLogin             func(childComplexity int, id uuid.UUID) int
 		ChangePassword         func(childComplexity int, oldPassword string, newPassword string) int
 		CreateCheck            func(childComplexity int, name string, source string, weight int, config string, editableFields []string) int
+		CreateInject           func(childComplexity int, title string, startTime time.Time, endTime time.Time, files []*graphql.Upload) int
 		CreateUser             func(childComplexity int, username string, password string, role user.Role, number *int) int
 		DeleteCheck            func(childComplexity int, id uuid.UUID) int
+		DeleteInject           func(childComplexity int, id uuid.UUID) int
 		DeleteUser             func(childComplexity int, id uuid.UUID) int
 		EditConfig             func(childComplexity int, id uuid.UUID, config string) int
 		Login                  func(childComplexity int, username string, password string) int
 		SendGlobalNotification func(childComplexity int, message string, typeArg model.NotificationType) int
 		StartEngine            func(childComplexity int) int
 		StopEngine             func(childComplexity int) int
+		SubmitInject           func(childComplexity int, injectID uuid.UUID, files []*graphql.Upload) int
 		UpdateCheck            func(childComplexity int, id uuid.UUID, name *string, weight *int, config *string, editableFields []string) int
+		UpdateInject           func(childComplexity int, id uuid.UUID, title *string, startTime *time.Time, endTime *time.Time, files []*graphql.Upload) int
 		UpdateUser             func(childComplexity int, id uuid.UUID, username *string, password *string, number *int) int
 	}
 
@@ -127,15 +155,19 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Check      func(childComplexity int, id *uuid.UUID, name *string) int
-		Checks     func(childComplexity int) int
-		Config     func(childComplexity int, id uuid.UUID) int
-		Configs    func(childComplexity int) int
-		Me         func(childComplexity int) int
-		Scoreboard func(childComplexity int, round *int) int
-		Source     func(childComplexity int, name string) int
-		Sources    func(childComplexity int) int
-		Users      func(childComplexity int) int
+		Check             func(childComplexity int, id *uuid.UUID, name *string) int
+		Checks            func(childComplexity int) int
+		Config            func(childComplexity int, id uuid.UUID) int
+		Configs           func(childComplexity int) int
+		Inject            func(childComplexity int, id uuid.UUID) int
+		InjectSubmission  func(childComplexity int, id uuid.UUID) int
+		InjectSubmissions func(childComplexity int) int
+		Injects           func(childComplexity int) int
+		Me                func(childComplexity int) int
+		Scoreboard        func(childComplexity int, round *int) int
+		Source            func(childComplexity int, name string) int
+		Sources           func(childComplexity int) int
+		Users             func(childComplexity int) int
 	}
 
 	Round struct {
@@ -200,15 +232,16 @@ type ComplexityRoot struct {
 	}
 
 	User struct {
-		Configs     func(childComplexity int) int
-		CreateTime  func(childComplexity int) int
-		ID          func(childComplexity int) int
-		Number      func(childComplexity int) int
-		Role        func(childComplexity int) int
-		ScoreCaches func(childComplexity int) int
-		Statuses    func(childComplexity int) int
-		UpdateTime  func(childComplexity int) int
-		Username    func(childComplexity int) int
+		Configs           func(childComplexity int) int
+		CreateTime        func(childComplexity int) int
+		ID                func(childComplexity int) int
+		InjectSubmissions func(childComplexity int) int
+		Number            func(childComplexity int) int
+		Role              func(childComplexity int) int
+		ScoreCaches       func(childComplexity int) int
+		Statuses          func(childComplexity int) int
+		UpdateTime        func(childComplexity int) int
+		Username          func(childComplexity int) int
 	}
 }
 
@@ -231,6 +264,16 @@ type ConfigResolver interface {
 	Check(ctx context.Context, obj *ent.CheckConfig) (*ent.Check, error)
 	User(ctx context.Context, obj *ent.CheckConfig) (*ent.User, error)
 }
+type InjectResolver interface {
+	Files(ctx context.Context, obj *ent.Inject) ([]string, error)
+	Submissions(ctx context.Context, obj *ent.Inject) ([]*ent.InjectSubmission, error)
+}
+type InjectSubmissionResolver interface {
+	Files(ctx context.Context, obj *ent.InjectSubmission) ([]string, error)
+
+	User(ctx context.Context, obj *ent.InjectSubmission) (*ent.User, error)
+	Inject(ctx context.Context, obj *ent.InjectSubmission) (*ent.Inject, error)
+}
 type MutationResolver interface {
 	Login(ctx context.Context, username string, password string) (*model.LoginOutput, error)
 	AdminLogin(ctx context.Context, id uuid.UUID) (*model.LoginOutput, error)
@@ -246,6 +289,10 @@ type MutationResolver interface {
 	SendGlobalNotification(ctx context.Context, message string, typeArg model.NotificationType) (bool, error)
 	StartEngine(ctx context.Context) (bool, error)
 	StopEngine(ctx context.Context) (bool, error)
+	CreateInject(ctx context.Context, title string, startTime time.Time, endTime time.Time, files []*graphql.Upload) (*ent.Inject, error)
+	UpdateInject(ctx context.Context, id uuid.UUID, title *string, startTime *time.Time, endTime *time.Time, files []*graphql.Upload) (*ent.Inject, error)
+	DeleteInject(ctx context.Context, id uuid.UUID) (bool, error)
+	SubmitInject(ctx context.Context, injectID uuid.UUID, files []*graphql.Upload) (*ent.InjectSubmission, error)
 }
 type QueryResolver interface {
 	Me(ctx context.Context) (*ent.User, error)
@@ -257,6 +304,10 @@ type QueryResolver interface {
 	Configs(ctx context.Context) ([]*ent.CheckConfig, error)
 	Config(ctx context.Context, id uuid.UUID) (*ent.CheckConfig, error)
 	Scoreboard(ctx context.Context, round *int) (*model.Scoreboard, error)
+	Injects(ctx context.Context) ([]*ent.Inject, error)
+	Inject(ctx context.Context, id uuid.UUID) (*ent.Inject, error)
+	InjectSubmissions(ctx context.Context) ([]*ent.InjectSubmission, error)
+	InjectSubmission(ctx context.Context, id uuid.UUID) (*ent.InjectSubmission, error)
 }
 type RoundResolver interface {
 	Statuses(ctx context.Context, obj *ent.Round) ([]*ent.Status, error)
@@ -281,6 +332,7 @@ type UserResolver interface {
 	Configs(ctx context.Context, obj *ent.User) ([]*ent.CheckConfig, error)
 	Statuses(ctx context.Context, obj *ent.User) ([]*ent.Status, error)
 	ScoreCaches(ctx context.Context, obj *ent.User) ([]*ent.ScoreCache, error)
+	InjectSubmissions(ctx context.Context, obj *ent.User) ([]*ent.InjectSubmission, error)
 }
 
 type executableSchema struct {
@@ -456,6 +508,118 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Config.User(childComplexity), true
 
+	case "Inject.create_time":
+		if e.complexity.Inject.CreateTime == nil {
+			break
+		}
+
+		return e.complexity.Inject.CreateTime(childComplexity), true
+
+	case "Inject.end_time":
+		if e.complexity.Inject.EndTime == nil {
+			break
+		}
+
+		return e.complexity.Inject.EndTime(childComplexity), true
+
+	case "Inject.files":
+		if e.complexity.Inject.Files == nil {
+			break
+		}
+
+		return e.complexity.Inject.Files(childComplexity), true
+
+	case "Inject.id":
+		if e.complexity.Inject.ID == nil {
+			break
+		}
+
+		return e.complexity.Inject.ID(childComplexity), true
+
+	case "Inject.start_time":
+		if e.complexity.Inject.StartTime == nil {
+			break
+		}
+
+		return e.complexity.Inject.StartTime(childComplexity), true
+
+	case "Inject.submissions":
+		if e.complexity.Inject.Submissions == nil {
+			break
+		}
+
+		return e.complexity.Inject.Submissions(childComplexity), true
+
+	case "Inject.title":
+		if e.complexity.Inject.Title == nil {
+			break
+		}
+
+		return e.complexity.Inject.Title(childComplexity), true
+
+	case "Inject.update_time":
+		if e.complexity.Inject.UpdateTime == nil {
+			break
+		}
+
+		return e.complexity.Inject.UpdateTime(childComplexity), true
+
+	case "InjectSubmission.create_time":
+		if e.complexity.InjectSubmission.CreateTime == nil {
+			break
+		}
+
+		return e.complexity.InjectSubmission.CreateTime(childComplexity), true
+
+	case "InjectSubmission.files":
+		if e.complexity.InjectSubmission.Files == nil {
+			break
+		}
+
+		return e.complexity.InjectSubmission.Files(childComplexity), true
+
+	case "InjectSubmission.id":
+		if e.complexity.InjectSubmission.ID == nil {
+			break
+		}
+
+		return e.complexity.InjectSubmission.ID(childComplexity), true
+
+	case "InjectSubmission.inject":
+		if e.complexity.InjectSubmission.Inject == nil {
+			break
+		}
+
+		return e.complexity.InjectSubmission.Inject(childComplexity), true
+
+	case "InjectSubmission.inject_id":
+		if e.complexity.InjectSubmission.InjectID == nil {
+			break
+		}
+
+		return e.complexity.InjectSubmission.InjectID(childComplexity), true
+
+	case "InjectSubmission.update_time":
+		if e.complexity.InjectSubmission.UpdateTime == nil {
+			break
+		}
+
+		return e.complexity.InjectSubmission.UpdateTime(childComplexity), true
+
+	case "InjectSubmission.user":
+		if e.complexity.InjectSubmission.User == nil {
+			break
+		}
+
+		return e.complexity.InjectSubmission.User(childComplexity), true
+
+	case "InjectSubmission.user_id":
+		if e.complexity.InjectSubmission.UserID == nil {
+			break
+		}
+
+		return e.complexity.InjectSubmission.UserID(childComplexity), true
+
 	case "LoginOutput.domain":
 		if e.complexity.LoginOutput.Domain == nil {
 			break
@@ -553,6 +717,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.CreateCheck(childComplexity, args["name"].(string), args["source"].(string), args["weight"].(int), args["config"].(string), args["editable_fields"].([]string)), true
 
+	case "Mutation.createInject":
+		if e.complexity.Mutation.CreateInject == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createInject_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.CreateInject(childComplexity, args["title"].(string), args["start_time"].(time.Time), args["end_time"].(time.Time), args["files"].([]*graphql.Upload)), true
+
 	case "Mutation.createUser":
 		if e.complexity.Mutation.CreateUser == nil {
 			break
@@ -576,6 +752,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.DeleteCheck(childComplexity, args["id"].(uuid.UUID)), true
+
+	case "Mutation.deleteInject":
+		if e.complexity.Mutation.DeleteInject == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteInject_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DeleteInject(childComplexity, args["id"].(uuid.UUID)), true
 
 	case "Mutation.deleteUser":
 		if e.complexity.Mutation.DeleteUser == nil {
@@ -639,6 +827,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.StopEngine(childComplexity), true
 
+	case "Mutation.submitInject":
+		if e.complexity.Mutation.SubmitInject == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_submitInject_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.SubmitInject(childComplexity, args["injectID"].(uuid.UUID), args["files"].([]*graphql.Upload)), true
+
 	case "Mutation.updateCheck":
 		if e.complexity.Mutation.UpdateCheck == nil {
 			break
@@ -650,6 +850,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.UpdateCheck(childComplexity, args["id"].(uuid.UUID), args["name"].(*string), args["weight"].(*int), args["config"].(*string), args["editable_fields"].([]string)), true
+
+	case "Mutation.updateInject":
+		if e.complexity.Mutation.UpdateInject == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateInject_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UpdateInject(childComplexity, args["id"].(uuid.UUID), args["title"].(*string), args["start_time"].(*time.Time), args["end_time"].(*time.Time), args["files"].([]*graphql.Upload)), true
 
 	case "Mutation.updateUser":
 		if e.complexity.Mutation.UpdateUser == nil {
@@ -714,6 +926,44 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Configs(childComplexity), true
+
+	case "Query.inject":
+		if e.complexity.Query.Inject == nil {
+			break
+		}
+
+		args, err := ec.field_Query_inject_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Inject(childComplexity, args["id"].(uuid.UUID)), true
+
+	case "Query.injectSubmission":
+		if e.complexity.Query.InjectSubmission == nil {
+			break
+		}
+
+		args, err := ec.field_Query_injectSubmission_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.InjectSubmission(childComplexity, args["id"].(uuid.UUID)), true
+
+	case "Query.injectSubmissions":
+		if e.complexity.Query.InjectSubmissions == nil {
+			break
+		}
+
+		return e.complexity.Query.InjectSubmissions(childComplexity), true
+
+	case "Query.injects":
+		if e.complexity.Query.Injects == nil {
+			break
+		}
+
+		return e.complexity.Query.Injects(childComplexity), true
 
 	case "Query.me":
 		if e.complexity.Query.Me == nil {
@@ -1061,6 +1311,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.User.ID(childComplexity), true
 
+	case "User.inject_submissions":
+		if e.complexity.User.InjectSubmissions == nil {
+			break
+		}
+
+		return e.complexity.User.InjectSubmissions(childComplexity), true
+
 	case "User.number":
 		if e.complexity.User.Number == nil {
 			break
@@ -1363,6 +1620,48 @@ func (ec *executionContext) field_Mutation_createCheck_args(ctx context.Context,
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_createInject_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["title"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("title"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["title"] = arg0
+	var arg1 time.Time
+	if tmp, ok := rawArgs["start_time"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("start_time"))
+		arg1, err = ec.unmarshalNTime2timeᚐTime(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["start_time"] = arg1
+	var arg2 time.Time
+	if tmp, ok := rawArgs["end_time"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("end_time"))
+		arg2, err = ec.unmarshalNTime2timeᚐTime(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["end_time"] = arg2
+	var arg3 []*graphql.Upload
+	if tmp, ok := rawArgs["files"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("files"))
+		arg3, err = ec.unmarshalNUpload2ᚕᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUploadᚄ(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["files"] = arg3
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_createUser_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -1406,6 +1705,21 @@ func (ec *executionContext) field_Mutation_createUser_args(ctx context.Context, 
 }
 
 func (ec *executionContext) field_Mutation_deleteCheck_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 uuid.UUID
+	if tmp, ok := rawArgs["id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+		arg0, err = ec.unmarshalNID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_deleteInject_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 uuid.UUID
@@ -1507,6 +1821,30 @@ func (ec *executionContext) field_Mutation_sendGlobalNotification_args(ctx conte
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_submitInject_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 uuid.UUID
+	if tmp, ok := rawArgs["injectID"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("injectID"))
+		arg0, err = ec.unmarshalNID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["injectID"] = arg0
+	var arg1 []*graphql.Upload
+	if tmp, ok := rawArgs["files"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("files"))
+		arg1, err = ec.unmarshalNUpload2ᚕᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUploadᚄ(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["files"] = arg1
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_updateCheck_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -1555,6 +1893,57 @@ func (ec *executionContext) field_Mutation_updateCheck_args(ctx context.Context,
 		}
 	}
 	args["editable_fields"] = arg4
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_updateInject_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 uuid.UUID
+	if tmp, ok := rawArgs["id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+		arg0, err = ec.unmarshalNID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	var arg1 *string
+	if tmp, ok := rawArgs["title"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("title"))
+		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["title"] = arg1
+	var arg2 *time.Time
+	if tmp, ok := rawArgs["start_time"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("start_time"))
+		arg2, err = ec.unmarshalOTime2ᚖtimeᚐTime(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["start_time"] = arg2
+	var arg3 *time.Time
+	if tmp, ok := rawArgs["end_time"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("end_time"))
+		arg3, err = ec.unmarshalOTime2ᚖtimeᚐTime(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["end_time"] = arg3
+	var arg4 []*graphql.Upload
+	if tmp, ok := rawArgs["files"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("files"))
+		arg4, err = ec.unmarshalOUpload2ᚕᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUploadᚄ(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["files"] = arg4
 	return args, nil
 }
 
@@ -1640,6 +2029,36 @@ func (ec *executionContext) field_Query_check_args(ctx context.Context, rawArgs 
 }
 
 func (ec *executionContext) field_Query_config_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 uuid.UUID
+	if tmp, ok := rawArgs["id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+		arg0, err = ec.unmarshalNID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_injectSubmission_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 uuid.UUID
+	if tmp, ok := rawArgs["id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+		arg0, err = ec.unmarshalNID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_inject_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 uuid.UUID
@@ -2647,6 +3066,8 @@ func (ec *executionContext) fieldContext_CheckConfig_user(ctx context.Context, f
 				return ec.fieldContext_User_statuses(ctx, field)
 			case "score_caches":
 				return ec.fieldContext_User_score_caches(ctx, field)
+			case "inject_submissions":
+				return ec.fieldContext_User_inject_submissions(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
@@ -2865,8 +3286,772 @@ func (ec *executionContext) fieldContext_Config_user(ctx context.Context, field 
 				return ec.fieldContext_User_statuses(ctx, field)
 			case "score_caches":
 				return ec.fieldContext_User_score_caches(ctx, field)
+			case "inject_submissions":
+				return ec.fieldContext_User_inject_submissions(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Inject_id(ctx context.Context, field graphql.CollectedField, obj *ent.Inject) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Inject_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(uuid.UUID)
+	fc.Result = res
+	return ec.marshalNID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Inject_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Inject",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Inject_title(ctx context.Context, field graphql.CollectedField, obj *ent.Inject) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Inject_title(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Title, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Inject_title(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Inject",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Inject_start_time(ctx context.Context, field graphql.CollectedField, obj *ent.Inject) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Inject_start_time(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.StartTime, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Inject_start_time(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Inject",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Inject_end_time(ctx context.Context, field graphql.CollectedField, obj *ent.Inject) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Inject_end_time(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EndTime, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Inject_end_time(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Inject",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Inject_create_time(ctx context.Context, field graphql.CollectedField, obj *ent.Inject) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Inject_create_time(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreateTime, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Inject_create_time(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Inject",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Inject_update_time(ctx context.Context, field graphql.CollectedField, obj *ent.Inject) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Inject_update_time(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UpdateTime, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Inject_update_time(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Inject",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Inject_files(ctx context.Context, field graphql.CollectedField, obj *ent.Inject) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Inject_files(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Inject().Files(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Inject_files(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Inject",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Inject_submissions(ctx context.Context, field graphql.CollectedField, obj *ent.Inject) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Inject_submissions(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Inject().Submissions(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*ent.InjectSubmission)
+	fc.Result = res
+	return ec.marshalNInjectSubmission2ᚕᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚐInjectSubmissionᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Inject_submissions(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Inject",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_InjectSubmission_id(ctx, field)
+			case "create_time":
+				return ec.fieldContext_InjectSubmission_create_time(ctx, field)
+			case "update_time":
+				return ec.fieldContext_InjectSubmission_update_time(ctx, field)
+			case "files":
+				return ec.fieldContext_InjectSubmission_files(ctx, field)
+			case "inject_id":
+				return ec.fieldContext_InjectSubmission_inject_id(ctx, field)
+			case "user_id":
+				return ec.fieldContext_InjectSubmission_user_id(ctx, field)
+			case "user":
+				return ec.fieldContext_InjectSubmission_user(ctx, field)
+			case "inject":
+				return ec.fieldContext_InjectSubmission_inject(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type InjectSubmission", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InjectSubmission_id(ctx context.Context, field graphql.CollectedField, obj *ent.InjectSubmission) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InjectSubmission_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(uuid.UUID)
+	fc.Result = res
+	return ec.marshalNID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InjectSubmission_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InjectSubmission",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InjectSubmission_create_time(ctx context.Context, field graphql.CollectedField, obj *ent.InjectSubmission) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InjectSubmission_create_time(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreateTime, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InjectSubmission_create_time(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InjectSubmission",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InjectSubmission_update_time(ctx context.Context, field graphql.CollectedField, obj *ent.InjectSubmission) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InjectSubmission_update_time(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UpdateTime, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InjectSubmission_update_time(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InjectSubmission",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InjectSubmission_files(ctx context.Context, field graphql.CollectedField, obj *ent.InjectSubmission) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InjectSubmission_files(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.InjectSubmission().Files(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InjectSubmission_files(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InjectSubmission",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InjectSubmission_inject_id(ctx context.Context, field graphql.CollectedField, obj *ent.InjectSubmission) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InjectSubmission_inject_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.InjectID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(uuid.UUID)
+	fc.Result = res
+	return ec.marshalNID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InjectSubmission_inject_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InjectSubmission",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InjectSubmission_user_id(ctx context.Context, field graphql.CollectedField, obj *ent.InjectSubmission) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InjectSubmission_user_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UserID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(uuid.UUID)
+	fc.Result = res
+	return ec.marshalNID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InjectSubmission_user_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InjectSubmission",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InjectSubmission_user(ctx context.Context, field graphql.CollectedField, obj *ent.InjectSubmission) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InjectSubmission_user(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.InjectSubmission().User(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*ent.User)
+	fc.Result = res
+	return ec.marshalNUser2ᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚐUser(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InjectSubmission_user(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InjectSubmission",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_User_id(ctx, field)
+			case "username":
+				return ec.fieldContext_User_username(ctx, field)
+			case "role":
+				return ec.fieldContext_User_role(ctx, field)
+			case "number":
+				return ec.fieldContext_User_number(ctx, field)
+			case "create_time":
+				return ec.fieldContext_User_create_time(ctx, field)
+			case "update_time":
+				return ec.fieldContext_User_update_time(ctx, field)
+			case "configs":
+				return ec.fieldContext_User_configs(ctx, field)
+			case "statuses":
+				return ec.fieldContext_User_statuses(ctx, field)
+			case "score_caches":
+				return ec.fieldContext_User_score_caches(ctx, field)
+			case "inject_submissions":
+				return ec.fieldContext_User_inject_submissions(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InjectSubmission_inject(ctx context.Context, field graphql.CollectedField, obj *ent.InjectSubmission) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InjectSubmission_inject(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.InjectSubmission().Inject(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*ent.Inject)
+	fc.Result = res
+	return ec.marshalNInject2ᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚐInject(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InjectSubmission_inject(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InjectSubmission",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Inject_id(ctx, field)
+			case "title":
+				return ec.fieldContext_Inject_title(ctx, field)
+			case "start_time":
+				return ec.fieldContext_Inject_start_time(ctx, field)
+			case "end_time":
+				return ec.fieldContext_Inject_end_time(ctx, field)
+			case "create_time":
+				return ec.fieldContext_Inject_create_time(ctx, field)
+			case "update_time":
+				return ec.fieldContext_Inject_update_time(ctx, field)
+			case "files":
+				return ec.fieldContext_Inject_files(ctx, field)
+			case "submissions":
+				return ec.fieldContext_Inject_submissions(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Inject", field.Name)
 		},
 	}
 	return fc, nil
@@ -3878,6 +5063,8 @@ func (ec *executionContext) fieldContext_Mutation_createUser(ctx context.Context
 				return ec.fieldContext_User_statuses(ctx, field)
 			case "score_caches":
 				return ec.fieldContext_User_score_caches(ctx, field)
+			case "inject_submissions":
+				return ec.fieldContext_User_inject_submissions(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
@@ -3977,6 +5164,8 @@ func (ec *executionContext) fieldContext_Mutation_updateUser(ctx context.Context
 				return ec.fieldContext_User_statuses(ctx, field)
 			case "score_caches":
 				return ec.fieldContext_User_score_caches(ctx, field)
+			case "inject_submissions":
+				return ec.fieldContext_User_inject_submissions(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
@@ -4374,6 +5563,376 @@ func (ec *executionContext) fieldContext_Mutation_stopEngine(ctx context.Context
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_createInject(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_createInject(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().CreateInject(rctx, fc.Args["title"].(string), fc.Args["start_time"].(time.Time), fc.Args["end_time"].(time.Time), fc.Args["files"].([]*graphql.Upload))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			roles, err := ec.unmarshalORole2ᚕᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚋuserᚐRole(ctx, []interface{}{"admin"})
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.HasRole == nil {
+				return nil, errors.New("directive hasRole is not implemented")
+			}
+			return ec.directives.HasRole(ctx, nil, directive0, roles)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*ent.Inject); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/scorify/backend/pkg/ent.Inject`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*ent.Inject)
+	fc.Result = res
+	return ec.marshalNInject2ᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚐInject(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_createInject(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Inject_id(ctx, field)
+			case "title":
+				return ec.fieldContext_Inject_title(ctx, field)
+			case "start_time":
+				return ec.fieldContext_Inject_start_time(ctx, field)
+			case "end_time":
+				return ec.fieldContext_Inject_end_time(ctx, field)
+			case "create_time":
+				return ec.fieldContext_Inject_create_time(ctx, field)
+			case "update_time":
+				return ec.fieldContext_Inject_update_time(ctx, field)
+			case "files":
+				return ec.fieldContext_Inject_files(ctx, field)
+			case "submissions":
+				return ec.fieldContext_Inject_submissions(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Inject", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_createInject_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_updateInject(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_updateInject(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().UpdateInject(rctx, fc.Args["id"].(uuid.UUID), fc.Args["title"].(*string), fc.Args["start_time"].(*time.Time), fc.Args["end_time"].(*time.Time), fc.Args["files"].([]*graphql.Upload))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			roles, err := ec.unmarshalORole2ᚕᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚋuserᚐRole(ctx, []interface{}{"admin"})
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.HasRole == nil {
+				return nil, errors.New("directive hasRole is not implemented")
+			}
+			return ec.directives.HasRole(ctx, nil, directive0, roles)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*ent.Inject); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/scorify/backend/pkg/ent.Inject`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*ent.Inject)
+	fc.Result = res
+	return ec.marshalNInject2ᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚐInject(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_updateInject(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Inject_id(ctx, field)
+			case "title":
+				return ec.fieldContext_Inject_title(ctx, field)
+			case "start_time":
+				return ec.fieldContext_Inject_start_time(ctx, field)
+			case "end_time":
+				return ec.fieldContext_Inject_end_time(ctx, field)
+			case "create_time":
+				return ec.fieldContext_Inject_create_time(ctx, field)
+			case "update_time":
+				return ec.fieldContext_Inject_update_time(ctx, field)
+			case "files":
+				return ec.fieldContext_Inject_files(ctx, field)
+			case "submissions":
+				return ec.fieldContext_Inject_submissions(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Inject", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_updateInject_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_deleteInject(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_deleteInject(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().DeleteInject(rctx, fc.Args["id"].(uuid.UUID))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			roles, err := ec.unmarshalORole2ᚕᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚋuserᚐRole(ctx, []interface{}{"admin"})
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.HasRole == nil {
+				return nil, errors.New("directive hasRole is not implemented")
+			}
+			return ec.directives.HasRole(ctx, nil, directive0, roles)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(bool); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be bool`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_deleteInject(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_deleteInject_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_submitInject(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_submitInject(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().SubmitInject(rctx, fc.Args["injectID"].(uuid.UUID), fc.Args["files"].([]*graphql.Upload))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			roles, err := ec.unmarshalORole2ᚕᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚋuserᚐRole(ctx, []interface{}{"user"})
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.HasRole == nil {
+				return nil, errors.New("directive hasRole is not implemented")
+			}
+			return ec.directives.HasRole(ctx, nil, directive0, roles)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*ent.InjectSubmission); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/scorify/backend/pkg/ent.InjectSubmission`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*ent.InjectSubmission)
+	fc.Result = res
+	return ec.marshalNInjectSubmission2ᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚐInjectSubmission(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_submitInject(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_InjectSubmission_id(ctx, field)
+			case "create_time":
+				return ec.fieldContext_InjectSubmission_create_time(ctx, field)
+			case "update_time":
+				return ec.fieldContext_InjectSubmission_update_time(ctx, field)
+			case "files":
+				return ec.fieldContext_InjectSubmission_files(ctx, field)
+			case "inject_id":
+				return ec.fieldContext_InjectSubmission_inject_id(ctx, field)
+			case "user_id":
+				return ec.fieldContext_InjectSubmission_user_id(ctx, field)
+			case "user":
+				return ec.fieldContext_InjectSubmission_user(ctx, field)
+			case "inject":
+				return ec.fieldContext_InjectSubmission_inject(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type InjectSubmission", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_submitInject_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Notification_message(ctx context.Context, field graphql.CollectedField, obj *model.Notification) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Notification_message(ctx, field)
 	if err != nil {
@@ -4516,6 +6075,8 @@ func (ec *executionContext) fieldContext_Query_me(ctx context.Context, field gra
 				return ec.fieldContext_User_statuses(ctx, field)
 			case "score_caches":
 				return ec.fieldContext_User_score_caches(ctx, field)
+			case "inject_submissions":
+				return ec.fieldContext_User_inject_submissions(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
@@ -4604,6 +6165,8 @@ func (ec *executionContext) fieldContext_Query_users(ctx context.Context, field 
 				return ec.fieldContext_User_statuses(ctx, field)
 			case "score_caches":
 				return ec.fieldContext_User_score_caches(ctx, field)
+			case "inject_submissions":
+				return ec.fieldContext_User_inject_submissions(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
@@ -5109,6 +6672,316 @@ func (ec *executionContext) fieldContext_Query_scoreboard(ctx context.Context, f
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_scoreboard_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_injects(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_injects(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Injects(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*ent.Inject)
+	fc.Result = res
+	return ec.marshalNInject2ᚕᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚐInjectᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_injects(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Inject_id(ctx, field)
+			case "title":
+				return ec.fieldContext_Inject_title(ctx, field)
+			case "start_time":
+				return ec.fieldContext_Inject_start_time(ctx, field)
+			case "end_time":
+				return ec.fieldContext_Inject_end_time(ctx, field)
+			case "create_time":
+				return ec.fieldContext_Inject_create_time(ctx, field)
+			case "update_time":
+				return ec.fieldContext_Inject_update_time(ctx, field)
+			case "files":
+				return ec.fieldContext_Inject_files(ctx, field)
+			case "submissions":
+				return ec.fieldContext_Inject_submissions(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Inject", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_inject(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_inject(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Inject(rctx, fc.Args["id"].(uuid.UUID))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*ent.Inject)
+	fc.Result = res
+	return ec.marshalNInject2ᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚐInject(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_inject(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Inject_id(ctx, field)
+			case "title":
+				return ec.fieldContext_Inject_title(ctx, field)
+			case "start_time":
+				return ec.fieldContext_Inject_start_time(ctx, field)
+			case "end_time":
+				return ec.fieldContext_Inject_end_time(ctx, field)
+			case "create_time":
+				return ec.fieldContext_Inject_create_time(ctx, field)
+			case "update_time":
+				return ec.fieldContext_Inject_update_time(ctx, field)
+			case "files":
+				return ec.fieldContext_Inject_files(ctx, field)
+			case "submissions":
+				return ec.fieldContext_Inject_submissions(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Inject", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_inject_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_injectSubmissions(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_injectSubmissions(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Query().InjectSubmissions(rctx)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.IsAuthenticated == nil {
+				return nil, errors.New("directive isAuthenticated is not implemented")
+			}
+			return ec.directives.IsAuthenticated(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.([]*ent.InjectSubmission); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*github.com/scorify/backend/pkg/ent.InjectSubmission`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*ent.InjectSubmission)
+	fc.Result = res
+	return ec.marshalNInjectSubmission2ᚕᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚐInjectSubmissionᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_injectSubmissions(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_InjectSubmission_id(ctx, field)
+			case "create_time":
+				return ec.fieldContext_InjectSubmission_create_time(ctx, field)
+			case "update_time":
+				return ec.fieldContext_InjectSubmission_update_time(ctx, field)
+			case "files":
+				return ec.fieldContext_InjectSubmission_files(ctx, field)
+			case "inject_id":
+				return ec.fieldContext_InjectSubmission_inject_id(ctx, field)
+			case "user_id":
+				return ec.fieldContext_InjectSubmission_user_id(ctx, field)
+			case "user":
+				return ec.fieldContext_InjectSubmission_user(ctx, field)
+			case "inject":
+				return ec.fieldContext_InjectSubmission_inject(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type InjectSubmission", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_injectSubmission(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_injectSubmission(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Query().InjectSubmission(rctx, fc.Args["id"].(uuid.UUID))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.IsAuthenticated == nil {
+				return nil, errors.New("directive isAuthenticated is not implemented")
+			}
+			return ec.directives.IsAuthenticated(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*ent.InjectSubmission); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/scorify/backend/pkg/ent.InjectSubmission`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*ent.InjectSubmission)
+	fc.Result = res
+	return ec.marshalNInjectSubmission2ᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚐInjectSubmission(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_injectSubmission(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_InjectSubmission_id(ctx, field)
+			case "create_time":
+				return ec.fieldContext_InjectSubmission_create_time(ctx, field)
+			case "update_time":
+				return ec.fieldContext_InjectSubmission_update_time(ctx, field)
+			case "files":
+				return ec.fieldContext_InjectSubmission_files(ctx, field)
+			case "inject_id":
+				return ec.fieldContext_InjectSubmission_inject_id(ctx, field)
+			case "user_id":
+				return ec.fieldContext_InjectSubmission_user_id(ctx, field)
+			case "user":
+				return ec.fieldContext_InjectSubmission_user(ctx, field)
+			case "inject":
+				return ec.fieldContext_InjectSubmission_inject(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type InjectSubmission", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_injectSubmission_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -5653,6 +7526,8 @@ func (ec *executionContext) fieldContext_Score_user(ctx context.Context, field g
 				return ec.fieldContext_User_statuses(ctx, field)
 			case "score_caches":
 				return ec.fieldContext_User_score_caches(ctx, field)
+			case "inject_submissions":
+				return ec.fieldContext_User_inject_submissions(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
@@ -6085,6 +7960,8 @@ func (ec *executionContext) fieldContext_ScoreCache_user(ctx context.Context, fi
 				return ec.fieldContext_User_statuses(ctx, field)
 			case "score_caches":
 				return ec.fieldContext_User_score_caches(ctx, field)
+			case "inject_submissions":
+				return ec.fieldContext_User_inject_submissions(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
@@ -6149,6 +8026,8 @@ func (ec *executionContext) fieldContext_Scoreboard_teams(ctx context.Context, f
 				return ec.fieldContext_User_statuses(ctx, field)
 			case "score_caches":
 				return ec.fieldContext_User_score_caches(ctx, field)
+			case "inject_submissions":
+				return ec.fieldContext_User_inject_submissions(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
@@ -7066,6 +8945,8 @@ func (ec *executionContext) fieldContext_Status_user(ctx context.Context, field 
 				return ec.fieldContext_User_statuses(ctx, field)
 			case "score_caches":
 				return ec.fieldContext_User_score_caches(ctx, field)
+			case "inject_submissions":
+				return ec.fieldContext_User_inject_submissions(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
@@ -7841,6 +9722,88 @@ func (ec *executionContext) fieldContext_User_score_caches(ctx context.Context, 
 				return ec.fieldContext_ScoreCache_user(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ScoreCache", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _User_inject_submissions(ctx context.Context, field graphql.CollectedField, obj *ent.User) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_User_inject_submissions(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.User().InjectSubmissions(rctx, obj)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.IsAuthenticated == nil {
+				return nil, errors.New("directive isAuthenticated is not implemented")
+			}
+			return ec.directives.IsAuthenticated(ctx, obj, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.([]*ent.InjectSubmission); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*github.com/scorify/backend/pkg/ent.InjectSubmission`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*ent.InjectSubmission)
+	fc.Result = res
+	return ec.marshalNInjectSubmission2ᚕᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚐInjectSubmissionᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_User_inject_submissions(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "User",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_InjectSubmission_id(ctx, field)
+			case "create_time":
+				return ec.fieldContext_InjectSubmission_create_time(ctx, field)
+			case "update_time":
+				return ec.fieldContext_InjectSubmission_update_time(ctx, field)
+			case "files":
+				return ec.fieldContext_InjectSubmission_files(ctx, field)
+			case "inject_id":
+				return ec.fieldContext_InjectSubmission_inject_id(ctx, field)
+			case "user_id":
+				return ec.fieldContext_InjectSubmission_user_id(ctx, field)
+			case "user":
+				return ec.fieldContext_InjectSubmission_user(ctx, field)
+			case "inject":
+				return ec.fieldContext_InjectSubmission_inject(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type InjectSubmission", field.Name)
 		},
 	}
 	return fc, nil
@@ -10149,6 +12112,309 @@ func (ec *executionContext) _Config(ctx context.Context, sel ast.SelectionSet, o
 	return out
 }
 
+var injectImplementors = []string{"Inject"}
+
+func (ec *executionContext) _Inject(ctx context.Context, sel ast.SelectionSet, obj *ent.Inject) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, injectImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Inject")
+		case "id":
+			out.Values[i] = ec._Inject_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "title":
+			out.Values[i] = ec._Inject_title(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "start_time":
+			out.Values[i] = ec._Inject_start_time(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "end_time":
+			out.Values[i] = ec._Inject_end_time(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "create_time":
+			out.Values[i] = ec._Inject_create_time(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "update_time":
+			out.Values[i] = ec._Inject_update_time(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "files":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Inject_files(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "submissions":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Inject_submissions(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var injectSubmissionImplementors = []string{"InjectSubmission"}
+
+func (ec *executionContext) _InjectSubmission(ctx context.Context, sel ast.SelectionSet, obj *ent.InjectSubmission) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, injectSubmissionImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("InjectSubmission")
+		case "id":
+			out.Values[i] = ec._InjectSubmission_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "create_time":
+			out.Values[i] = ec._InjectSubmission_create_time(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "update_time":
+			out.Values[i] = ec._InjectSubmission_update_time(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "files":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._InjectSubmission_files(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "inject_id":
+			out.Values[i] = ec._InjectSubmission_inject_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "user_id":
+			out.Values[i] = ec._InjectSubmission_user_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "user":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._InjectSubmission_user(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "inject":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._InjectSubmission_inject(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var loginOutputImplementors = []string{"LoginOutput"}
 
 func (ec *executionContext) _LoginOutput(ctx context.Context, sel ast.SelectionSet, obj *model.LoginOutput) graphql.Marshaler {
@@ -10331,6 +12597,34 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "stopEngine":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_stopEngine(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createInject":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_createInject(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updateInject":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updateInject(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "deleteInject":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_deleteInject(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "submitInject":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_submitInject(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -10604,6 +12898,94 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_scoreboard(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "injects":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_injects(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "inject":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_inject(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "injectSubmissions":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_injectSubmissions(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "injectSubmission":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_injectSubmission(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -11417,6 +13799,42 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "inject_submissions":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._User_inject_submissions(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -11976,6 +14394,122 @@ func (ec *executionContext) marshalNID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx c
 	return res
 }
 
+func (ec *executionContext) marshalNInject2githubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚐInject(ctx context.Context, sel ast.SelectionSet, v ent.Inject) graphql.Marshaler {
+	return ec._Inject(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNInject2ᚕᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚐInjectᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.Inject) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNInject2ᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚐInject(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNInject2ᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚐInject(ctx context.Context, sel ast.SelectionSet, v *ent.Inject) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._Inject(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNInjectSubmission2githubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚐInjectSubmission(ctx context.Context, sel ast.SelectionSet, v ent.InjectSubmission) graphql.Marshaler {
+	return ec._InjectSubmission(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNInjectSubmission2ᚕᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚐInjectSubmissionᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.InjectSubmission) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNInjectSubmission2ᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚐInjectSubmission(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNInjectSubmission2ᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚐInjectSubmission(ctx context.Context, sel ast.SelectionSet, v *ent.InjectSubmission) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._InjectSubmission(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v interface{}) (int, error) {
 	res, err := graphql.UnmarshalInt(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -12444,6 +14978,59 @@ func (ec *executionContext) unmarshalNTime2timeᚐTime(ctx context.Context, v in
 
 func (ec *executionContext) marshalNTime2timeᚐTime(ctx context.Context, sel ast.SelectionSet, v time.Time) graphql.Marshaler {
 	res := graphql.MarshalTime(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return res
+}
+
+func (ec *executionContext) unmarshalNUpload2ᚕᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUploadᚄ(ctx context.Context, v interface{}) ([]*graphql.Upload, error) {
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]*graphql.Upload, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNUpload2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUpload(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNUpload2ᚕᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUploadᚄ(ctx context.Context, sel ast.SelectionSet, v []*graphql.Upload) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNUpload2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUpload(ctx, sel, v[i])
+	}
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) unmarshalNUpload2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUpload(ctx context.Context, v interface{}) (*graphql.Upload, error) {
+	res, err := graphql.UnmarshalUpload(v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNUpload2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUpload(ctx context.Context, sel ast.SelectionSet, v *graphql.Upload) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	res := graphql.MarshalUpload(*v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
@@ -13001,6 +15588,60 @@ func (ec *executionContext) marshalOString2ᚖstring(ctx context.Context, sel as
 	}
 	res := graphql.MarshalString(*v)
 	return res
+}
+
+func (ec *executionContext) unmarshalOTime2ᚖtimeᚐTime(ctx context.Context, v interface{}) (*time.Time, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := graphql.UnmarshalTime(v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOTime2ᚖtimeᚐTime(ctx context.Context, sel ast.SelectionSet, v *time.Time) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	res := graphql.MarshalTime(*v)
+	return res
+}
+
+func (ec *executionContext) unmarshalOUpload2ᚕᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUploadᚄ(ctx context.Context, v interface{}) ([]*graphql.Upload, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]*graphql.Upload, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNUpload2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUpload(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOUpload2ᚕᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUploadᚄ(ctx context.Context, sel ast.SelectionSet, v []*graphql.Upload) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNUpload2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUpload(ctx, sel, v[i])
+	}
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) marshalOUser2ᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚐUser(ctx context.Context, sel ast.SelectionSet, v *ent.User) graphql.Marshaler {

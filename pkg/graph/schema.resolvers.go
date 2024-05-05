@@ -8,7 +8,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
+	"github.com/99designs/gqlgen/graphql"
 	"github.com/google/uuid"
 	"github.com/scorify/backend/pkg/auth"
 	"github.com/scorify/backend/pkg/cache"
@@ -17,6 +19,8 @@ import (
 	"github.com/scorify/backend/pkg/ent"
 	"github.com/scorify/backend/pkg/ent/check"
 	"github.com/scorify/backend/pkg/ent/checkconfig"
+	"github.com/scorify/backend/pkg/ent/inject"
+	"github.com/scorify/backend/pkg/ent/injectsubmission"
 	"github.com/scorify/backend/pkg/ent/predicate"
 	"github.com/scorify/backend/pkg/ent/round"
 	"github.com/scorify/backend/pkg/ent/scorecache"
@@ -24,6 +28,7 @@ import (
 	"github.com/scorify/backend/pkg/ent/user"
 	"github.com/scorify/backend/pkg/graph/model"
 	"github.com/scorify/backend/pkg/helpers"
+	"github.com/scorify/backend/pkg/structs"
 	"github.com/sirupsen/logrus"
 )
 
@@ -99,6 +104,54 @@ func (r *configResolver) Check(ctx context.Context, obj *ent.CheckConfig) (*ent.
 // User is the resolver for the user field.
 func (r *configResolver) User(ctx context.Context, obj *ent.CheckConfig) (*ent.User, error) {
 	return obj.QueryUser().Only(ctx)
+}
+
+// Files is the resolver for the files field.
+func (r *injectResolver) Files(ctx context.Context, obj *ent.Inject) ([]string, error) {
+	var err error
+
+	files := make([]string, len(obj.Files))
+
+	for i, file := range obj.Files {
+		files[i], err = file.APIPath(structs.FileTypeInject, obj.ID)
+		if err != nil {
+			logrus.Errorf("failed to get file path: %v", err)
+		}
+
+	}
+
+	return files, nil
+}
+
+// Submissions is the resolver for the submissions field.
+func (r *injectResolver) Submissions(ctx context.Context, obj *ent.Inject) ([]*ent.InjectSubmission, error) {
+	return obj.QuerySubmissions().All(ctx)
+}
+
+// Files is the resolver for the files field.
+func (r *injectSubmissionResolver) Files(ctx context.Context, obj *ent.InjectSubmission) ([]string, error) {
+	var err error
+
+	files := make([]string, len(obj.Files))
+
+	for i, file := range obj.Files {
+		files[i], err = file.APIPath(structs.FileTypeSubmission, obj.ID)
+		if err != nil {
+			logrus.Errorf("failed to get file path: %v", err)
+		}
+	}
+
+	return files, nil
+}
+
+// User is the resolver for the user field.
+func (r *injectSubmissionResolver) User(ctx context.Context, obj *ent.InjectSubmission) (*ent.User, error) {
+	return obj.QueryUser().Only(ctx)
+}
+
+// Inject is the resolver for the inject field.
+func (r *injectSubmissionResolver) Inject(ctx context.Context, obj *ent.InjectSubmission) (*ent.Inject, error) {
+	return obj.QueryInject().Only(ctx)
 }
 
 // Login is the resolver for the login field.
@@ -813,6 +866,162 @@ func (r *mutationResolver) StopEngine(ctx context.Context) (bool, error) {
 	return err == nil, err
 }
 
+// CreateInject is the resolver for the createInject field.
+func (r *mutationResolver) CreateInject(ctx context.Context, title string, startTime time.Time, endTime time.Time, files []*graphql.Upload) (*ent.Inject, error) {
+	structFiles := make([]structs.File, len(files))
+
+	for i, file := range files {
+		structFiles[i] = structs.File{
+			ID:   uuid.New(),
+			Name: file.Filename,
+		}
+	}
+
+	tx, err := r.Ent.Tx(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to start transaction: %v", err)
+	}
+
+	defer tx.Rollback()
+
+	entInject, err := tx.Inject.Create().
+		SetTitle(title).
+		SetStartTime(startTime).
+		SetEndTime(endTime).
+		SetFiles(structFiles).
+		Save(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create inject: %v", err)
+	}
+
+	for i, file := range files {
+		err = structFiles[i].WriteFile(structs.FileTypeInject, entInject.ID, file.File)
+		if err != nil {
+			return nil, fmt.Errorf("failed to write file: %v", err)
+		}
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %v", err)
+	}
+
+	return entInject, nil
+}
+
+// UpdateInject is the resolver for the updateInject field.
+func (r *mutationResolver) UpdateInject(ctx context.Context, id uuid.UUID, title *string, startTime *time.Time, endTime *time.Time, files []*graphql.Upload) (*ent.Inject, error) {
+	structFiles := make([]structs.File, len(files))
+
+	for i, file := range files {
+		structFiles[i] = structs.File{
+			ID:   uuid.New(),
+			Name: file.Filename,
+		}
+
+		err := structFiles[i].WriteFile(structs.FileTypeInject, id, file.File)
+		if err != nil {
+			return nil, fmt.Errorf("failed to write file: %v", err)
+		}
+	}
+
+	tx, err := r.Ent.Tx(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to start transaction: %v", err)
+	}
+
+	defer tx.Rollback()
+
+	injectUpdate := tx.Inject.UpdateOneID(id)
+
+	if title != nil {
+		injectUpdate.SetTitle(*title)
+	}
+
+	if startTime != nil {
+		injectUpdate.SetStartTime(*startTime)
+	}
+
+	if endTime != nil {
+		injectUpdate.SetEndTime(*endTime)
+	}
+
+	injectUpdate.SetFiles(structFiles)
+
+	entInject, err := injectUpdate.Save(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update inject: %v", err)
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %v", err)
+	}
+
+	return entInject, nil
+}
+
+// DeleteInject is the resolver for the deleteInject field.
+func (r *mutationResolver) DeleteInject(ctx context.Context, id uuid.UUID) (bool, error) {
+	entInject, err := r.Ent.Inject.Query().
+		Where(
+			inject.IDEQ(id),
+		).Only(ctx)
+	if err != nil {
+		return false, fmt.Errorf("failed to get inject: %v", err)
+	}
+
+	tx, err := r.Ent.Tx(ctx)
+	if err != nil {
+		return false, fmt.Errorf("failed to start transaction: %v", err)
+	}
+
+	defer tx.Rollback()
+
+	for _, file := range entInject.Files {
+		err = file.DeleteFile(structs.FileTypeInject, id)
+		if err != nil {
+			return false, fmt.Errorf("failed to delete file: %v", err)
+		}
+	}
+
+	err = tx.Inject.DeleteOneID(id).Exec(ctx)
+	if err != nil {
+		return false, fmt.Errorf("failed to delete inject: %v", err)
+	}
+
+	err = tx.Commit()
+	return err == nil, err
+}
+
+// SubmitInject is the resolver for the submitInject field.
+func (r *mutationResolver) SubmitInject(ctx context.Context, injectID uuid.UUID, files []*graphql.Upload) (*ent.InjectSubmission, error) {
+	entUser, err := auth.Parse(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("invalid user")
+	}
+
+	structFiles := make([]structs.File, len(files))
+
+	for i, file := range files {
+		structFiles[i] = structs.File{
+			ID:   uuid.New(),
+			Name: file.Filename,
+		}
+
+		err := structFiles[i].WriteFile(structs.FileTypeSubmission, injectID, file.File)
+		if err != nil {
+			return nil, fmt.Errorf("failed to write file: %v", err)
+		}
+	}
+
+	return r.Ent.InjectSubmission.Create().
+		SetUser(entUser).
+		SetInjectID(injectID).
+		SetFiles(structFiles).
+		Save(ctx)
+}
+
 // Me is the resolver for the me field.
 func (r *queryResolver) Me(ctx context.Context) (*ent.User, error) {
 	entUser, err := auth.Parse(ctx)
@@ -943,6 +1152,32 @@ func (r *queryResolver) Scoreboard(ctx context.Context, round *int) (*model.Scor
 	}
 
 	return scoreboard, nil
+}
+
+// Injects is the resolver for the injects field.
+func (r *queryResolver) Injects(ctx context.Context) ([]*ent.Inject, error) {
+	return r.Ent.Inject.Query().All(ctx)
+}
+
+// Inject is the resolver for the inject field.
+func (r *queryResolver) Inject(ctx context.Context, id uuid.UUID) (*ent.Inject, error) {
+	return r.Ent.Inject.Query().
+		Where(
+			inject.IDEQ(id),
+		).Only(ctx)
+}
+
+// InjectSubmissions is the resolver for the injectSubmissions field.
+func (r *queryResolver) InjectSubmissions(ctx context.Context) ([]*ent.InjectSubmission, error) {
+	return r.Ent.InjectSubmission.Query().All(ctx)
+}
+
+// InjectSubmission is the resolver for the injectSubmission field.
+func (r *queryResolver) InjectSubmission(ctx context.Context, id uuid.UUID) (*ent.InjectSubmission, error) {
+	return r.Ent.InjectSubmission.Query().
+		Where(
+			injectsubmission.IDEQ(id),
+		).Only(ctx)
 }
 
 // Statuses is the resolver for the statuses field.
@@ -1133,6 +1368,11 @@ func (r *userResolver) ScoreCaches(ctx context.Context, obj *ent.User) ([]*ent.S
 	return obj.QueryScoreCaches().All(ctx)
 }
 
+// InjectSubmissions is the resolver for the inject_submissions field.
+func (r *userResolver) InjectSubmissions(ctx context.Context, obj *ent.User) ([]*ent.InjectSubmission, error) {
+	return obj.QuerySubmissions().All(ctx)
+}
+
 // Check returns CheckResolver implementation.
 func (r *Resolver) Check() CheckResolver { return &checkResolver{r} }
 
@@ -1141,6 +1381,12 @@ func (r *Resolver) CheckConfig() CheckConfigResolver { return &checkConfigResolv
 
 // Config returns ConfigResolver implementation.
 func (r *Resolver) Config() ConfigResolver { return &configResolver{r} }
+
+// Inject returns InjectResolver implementation.
+func (r *Resolver) Inject() InjectResolver { return &injectResolver{r} }
+
+// InjectSubmission returns InjectSubmissionResolver implementation.
+func (r *Resolver) InjectSubmission() InjectSubmissionResolver { return &injectSubmissionResolver{r} }
 
 // Mutation returns MutationResolver implementation.
 func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
@@ -1166,6 +1412,8 @@ func (r *Resolver) User() UserResolver { return &userResolver{r} }
 type checkResolver struct{ *Resolver }
 type checkConfigResolver struct{ *Resolver }
 type configResolver struct{ *Resolver }
+type injectResolver struct{ *Resolver }
+type injectSubmissionResolver struct{ *Resolver }
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
 type roundResolver struct{ *Resolver }

@@ -1,5 +1,6 @@
 scalar JSON
 scalar Time
+scalar Upload
 
 directive @isAuthenticated on FIELD_DEFINITION
 directive @hasRole(roles: [Role]) on FIELD_DEFINITION
@@ -50,6 +51,7 @@ type User {
   configs: [Config!]! @isAuthenticated
   statuses: [Status!]! @isAuthenticated
   score_caches: [ScoreCache!]! @isAuthenticated
+  inject_submissions: [InjectSubmission!]! @isAuthenticated
 }
 
 type Source {
@@ -124,6 +126,28 @@ type Round {
   score_caches: [ScoreCache!]!
 }
 
+type Inject {
+  id: ID!
+  title: String!
+  start_time: Time!
+  end_time: Time!
+  create_time: Time!
+  update_time: Time!
+  files: [String!]!
+  submissions: [InjectSubmission!]!
+}
+
+type InjectSubmission {
+  id: ID!
+  create_time: Time!
+  update_time: Time!
+  files: [String!]!
+  inject_id: ID!
+  user_id: ID!
+  user: User!
+  inject: Inject!
+}
+
 type Notification {
   message: String!
   type: NotificationType!
@@ -163,6 +187,11 @@ type Query {
   config(id: ID!): Config! @isAuthenticated
 
   scoreboard(round: Int): Scoreboard!
+
+  injects: [Inject!]!
+  inject(id: ID!): Inject!
+  injectSubmissions: [InjectSubmission!]! @isAuthenticated
+  injectSubmission(id: ID!): InjectSubmission! @isAuthenticated
 }
 
 type Mutation {
@@ -205,4 +234,22 @@ type Mutation {
 
   startEngine: Boolean! @hasRole(roles: [admin])
   stopEngine: Boolean! @hasRole(roles: [admin])
+
+  createInject(
+    title: String!
+    start_time: Time!
+    end_time: Time!
+    files: [Upload!]!
+  ): Inject! @hasRole(roles: [admin])
+  updateInject(
+    id: ID!
+    title: String
+    start_time: Time
+    end_time: Time
+    files: [Upload!]
+  ): Inject! @hasRole(roles: [admin])
+  deleteInject(id: ID!): Boolean! @hasRole(roles: [admin])
+
+  submitInject(injectID: ID!, files: [Upload!]!): InjectSubmission!
+    @hasRole(roles: [user])
 }
