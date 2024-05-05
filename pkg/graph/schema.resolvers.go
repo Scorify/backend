@@ -19,6 +19,7 @@ import (
 	"github.com/scorify/backend/pkg/ent"
 	"github.com/scorify/backend/pkg/ent/check"
 	"github.com/scorify/backend/pkg/ent/checkconfig"
+	"github.com/scorify/backend/pkg/ent/inject"
 	"github.com/scorify/backend/pkg/ent/predicate"
 	"github.com/scorify/backend/pkg/ent/round"
 	"github.com/scorify/backend/pkg/ent/scorecache"
@@ -950,7 +951,35 @@ func (r *mutationResolver) UpdateInject(ctx context.Context, id uuid.UUID, title
 
 // DeleteInject is the resolver for the deleteInject field.
 func (r *mutationResolver) DeleteInject(ctx context.Context, id uuid.UUID) (bool, error) {
-	panic(fmt.Errorf("not implemented: DeleteInject - deleteInject"))
+	entInject, err := r.Ent.Inject.Query().
+		Where(
+			inject.IDEQ(id),
+		).Only(ctx)
+	if err != nil {
+		return false, fmt.Errorf("failed to get inject: %v", err)
+	}
+
+	tx, err := r.Ent.Tx(ctx)
+	if err != nil {
+		return false, fmt.Errorf("failed to start transaction: %v", err)
+	}
+
+	defer tx.Rollback()
+
+	for _, file := range entInject.Files {
+		err = file.DeleteFile(structs.FileTypeInject, id)
+		if err != nil {
+			return false, fmt.Errorf("failed to delete file: %v", err)
+		}
+	}
+
+	err = tx.Inject.DeleteOneID(id).Exec(ctx)
+	if err != nil {
+		return false, fmt.Errorf("failed to delete inject: %v", err)
+	}
+
+	err = tx.Commit()
+	return err == nil, err
 }
 
 // SubmitInject is the resolver for the submitInject field.
