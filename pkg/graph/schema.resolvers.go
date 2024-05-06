@@ -134,14 +134,18 @@ func (r *injectResolver) Submissions(ctx context.Context, obj *ent.Inject) ([]*e
 
 // Files is the resolver for the files field.
 func (r *injectSubmissionResolver) Files(ctx context.Context, obj *ent.InjectSubmission) ([]*model.File, error) {
-	var err error
-
-	files := make([]string, len(obj.Files))
+	files := make([]*model.File, len(obj.Files))
 
 	for i, file := range obj.Files {
-		files[i], err = file.APIPath(structs.FileTypeSubmission, obj.ID)
+		url, err := file.APIPath(structs.FileTypeSubmission, obj.ID)
 		if err != nil {
 			logrus.Errorf("failed to get file path: %v", err)
+		}
+
+		files[i] = &model.File{
+			ID:   file.ID,
+			Name: file.Name,
+			URL:  url,
 		}
 	}
 
