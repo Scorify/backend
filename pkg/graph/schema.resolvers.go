@@ -911,18 +911,8 @@ func (r *mutationResolver) CreateInject(ctx context.Context, title string, start
 
 // UpdateInject is the resolver for the updateInject field.
 func (r *mutationResolver) UpdateInject(ctx context.Context, id uuid.UUID, title *string, startTime *time.Time, endTime *time.Time) (*ent.Inject, error) {
-	structFiles := make([]structs.File, len(files))
-
-	for i, file := range files {
-		structFiles[i] = structs.File{
-			ID:   uuid.New(),
-			Name: file.Filename,
-		}
-
-		err := structFiles[i].WriteFile(structs.FileTypeInject, id, file.File)
-		if err != nil {
-			return nil, fmt.Errorf("failed to write file: %v", err)
-		}
+	if title == nil && startTime == nil && endTime == nil {
+		return nil, fmt.Errorf("no fields to update")
 	}
 
 	tx, err := r.Ent.Tx(ctx)
@@ -945,8 +935,6 @@ func (r *mutationResolver) UpdateInject(ctx context.Context, id uuid.UUID, title
 	if endTime != nil {
 		injectUpdate.SetEndTime(*endTime)
 	}
-
-	injectUpdate.SetFiles(structFiles)
 
 	entInject, err := injectUpdate.Save(ctx)
 	if err != nil {
