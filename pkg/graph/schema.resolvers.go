@@ -910,7 +910,7 @@ func (r *mutationResolver) CreateInject(ctx context.Context, title string, start
 }
 
 // UpdateInject is the resolver for the updateInject field.
-func (r *mutationResolver) UpdateInject(ctx context.Context, id uuid.UUID, title *string, startTime *time.Time, endTime *time.Time, files []*graphql.Upload) (*ent.Inject, error) {
+func (r *mutationResolver) UpdateInject(ctx context.Context, id uuid.UUID, title *string, startTime *time.Time, endTime *time.Time) (*ent.Inject, error) {
 	structFiles := make([]structs.File, len(files))
 
 	for i, file := range files {
@@ -959,6 +959,16 @@ func (r *mutationResolver) UpdateInject(ctx context.Context, id uuid.UUID, title
 	}
 
 	return entInject, nil
+}
+
+// AddInjectFiles is the resolver for the addInjectFiles field.
+func (r *mutationResolver) AddInjectFiles(ctx context.Context, id uuid.UUID, files []*graphql.Upload) (*ent.Inject, error) {
+	panic(fmt.Errorf("not implemented: AddInjectFiles - addInjectFiles"))
+}
+
+// DeleteInjectFile is the resolver for the deleteInjectFile field.
+func (r *mutationResolver) DeleteInjectFile(ctx context.Context, id uuid.UUID, file string) (*ent.Inject, error) {
+	panic(fmt.Errorf("not implemented: DeleteInjectFile - deleteInjectFile"))
 }
 
 // DeleteInject is the resolver for the deleteInject field.
