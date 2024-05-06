@@ -126,6 +126,12 @@ type Round {
   score_caches: [ScoreCache!]!
 }
 
+type File {
+  id: ID!
+  name: String!
+  url: String!
+}
+
 type Inject {
   id: ID!
   title: String!
@@ -133,7 +139,7 @@ type Inject {
   end_time: Time!
   create_time: Time!
   update_time: Time!
-  files: [String!]!
+  files: [File!]!
   submissions: [InjectSubmission!]!
 }
 
@@ -141,7 +147,7 @@ type InjectSubmission {
   id: ID!
   create_time: Time!
   update_time: Time!
-  files: [String!]!
+  files: [File!]!
   inject_id: ID!
   user_id: ID!
   user: User!
