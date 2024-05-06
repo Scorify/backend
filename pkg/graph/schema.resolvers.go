@@ -107,7 +107,7 @@ func (r *configResolver) User(ctx context.Context, obj *ent.CheckConfig) (*ent.U
 }
 
 // Files is the resolver for the files field.
-func (r *injectResolver) Files(ctx context.Context, obj *ent.Inject) ([]string, error) {
+func (r *injectResolver) Files(ctx context.Context, obj *ent.Inject) ([]*model.File, error) {
 	var err error
 
 	files := make([]string, len(obj.Files))
@@ -129,7 +129,7 @@ func (r *injectResolver) Submissions(ctx context.Context, obj *ent.Inject) ([]*e
 }
 
 // Files is the resolver for the files field.
-func (r *injectSubmissionResolver) Files(ctx context.Context, obj *ent.InjectSubmission) ([]string, error) {
+func (r *injectSubmissionResolver) Files(ctx context.Context, obj *ent.InjectSubmission) ([]*model.File, error) {
 	var err error
 
 	files := make([]string, len(obj.Files))
