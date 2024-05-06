@@ -951,7 +951,31 @@ func (r *mutationResolver) UpdateInject(ctx context.Context, id uuid.UUID, title
 
 // AddInjectFiles is the resolver for the addInjectFiles field.
 func (r *mutationResolver) AddInjectFiles(ctx context.Context, id uuid.UUID, files []*graphql.Upload) (*ent.Inject, error) {
-	panic(fmt.Errorf("not implemented: AddInjectFiles - addInjectFiles"))
+	entInject, err := r.Ent.Inject.Query().
+		Where(
+			inject.IDEQ(id),
+		).Only(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get inject: %v", err)
+	}
+
+	structFiles := make([]structs.File, len(files))
+
+	for i, file := range files {
+		structFiles[i] = structs.File{
+			ID:   uuid.New(),
+			Name: file.Filename,
+		}
+
+		err := structFiles[i].WriteFile(structs.FileTypeInject, id, file.File)
+		if err != nil {
+			return nil, fmt.Errorf("failed to write file: %v", err)
+		}
+	}
+
+	return r.Ent.Inject.UpdateOneID(id).
+		SetFiles(append(entInject.Files, structFiles...)).
+		Save(ctx)
 }
 
 // DeleteInjectFile is the resolver for the deleteInjectFile field.
