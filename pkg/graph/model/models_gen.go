@@ -7,8 +7,15 @@ import (
 	"io"
 	"strconv"
 
+	"github.com/google/uuid"
 	"github.com/scorify/backend/pkg/ent"
 )
+
+type File struct {
+	ID   uuid.UUID `json:"id"`
+	Name string    `json:"name"`
+	URL  string    `json:"url"`
+}
 
 type LoginOutput struct {
 	Name     string `json:"name"`

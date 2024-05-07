@@ -107,15 +107,19 @@ func (r *configResolver) User(ctx context.Context, obj *ent.CheckConfig) (*ent.U
 }
 
 // Files is the resolver for the files field.
-func (r *injectResolver) Files(ctx context.Context, obj *ent.Inject) ([]string, error) {
-	var err error
-
-	files := make([]string, len(obj.Files))
+func (r *injectResolver) Files(ctx context.Context, obj *ent.Inject) ([]*model.File, error) {
+	files := make([]*model.File, len(obj.Files))
 
 	for i, file := range obj.Files {
-		files[i], err = file.APIPath(structs.FileTypeInject, obj.ID)
+		url, err := file.APIPath(structs.FileTypeInject, obj.ID)
 		if err != nil {
 			logrus.Errorf("failed to get file path: %v", err)
+		}
+
+		files[i] = &model.File{
+			ID:   file.ID,
+			Name: file.Name,
+			URL:  url,
 		}
 
 	}
@@ -129,15 +133,19 @@ func (r *injectResolver) Submissions(ctx context.Context, obj *ent.Inject) ([]*e
 }
 
 // Files is the resolver for the files field.
-func (r *injectSubmissionResolver) Files(ctx context.Context, obj *ent.InjectSubmission) ([]string, error) {
-	var err error
-
-	files := make([]string, len(obj.Files))
+func (r *injectSubmissionResolver) Files(ctx context.Context, obj *ent.InjectSubmission) ([]*model.File, error) {
+	files := make([]*model.File, len(obj.Files))
 
 	for i, file := range obj.Files {
-		files[i], err = file.APIPath(structs.FileTypeSubmission, obj.ID)
+		url, err := file.APIPath(structs.FileTypeSubmission, obj.ID)
 		if err != nil {
 			logrus.Errorf("failed to get file path: %v", err)
+		}
+
+		files[i] = &model.File{
+			ID:   file.ID,
+			Name: file.Name,
+			URL:  url,
 		}
 	}
 
@@ -910,19 +918,9 @@ func (r *mutationResolver) CreateInject(ctx context.Context, title string, start
 }
 
 // UpdateInject is the resolver for the updateInject field.
-func (r *mutationResolver) UpdateInject(ctx context.Context, id uuid.UUID, title *string, startTime *time.Time, endTime *time.Time, files []*graphql.Upload) (*ent.Inject, error) {
-	structFiles := make([]structs.File, len(files))
-
-	for i, file := range files {
-		structFiles[i] = structs.File{
-			ID:   uuid.New(),
-			Name: file.Filename,
-		}
-
-		err := structFiles[i].WriteFile(structs.FileTypeInject, id, file.File)
-		if err != nil {
-			return nil, fmt.Errorf("failed to write file: %v", err)
-		}
+func (r *mutationResolver) UpdateInject(ctx context.Context, id uuid.UUID, title *string, startTime *time.Time, endTime *time.Time) (*ent.Inject, error) {
+	if title == nil && startTime == nil && endTime == nil {
+		return nil, fmt.Errorf("no fields to update")
 	}
 
 	tx, err := r.Ent.Tx(ctx)
@@ -946,8 +944,6 @@ func (r *mutationResolver) UpdateInject(ctx context.Context, id uuid.UUID, title
 		injectUpdate.SetEndTime(*endTime)
 	}
 
-	injectUpdate.SetFiles(structFiles)
-
 	entInject, err := injectUpdate.Save(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update inject: %v", err)
@@ -959,6 +955,70 @@ func (r *mutationResolver) UpdateInject(ctx context.Context, id uuid.UUID, title
 	}
 
 	return entInject, nil
+}
+
+// AddInjectFiles is the resolver for the addInjectFiles field.
+func (r *mutationResolver) AddInjectFiles(ctx context.Context, id uuid.UUID, files []*graphql.Upload) (*ent.Inject, error) {
+	entInject, err := r.Ent.Inject.Query().
+		Where(
+			inject.IDEQ(id),
+		).Only(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get inject: %v", err)
+	}
+
+	structFiles := make([]structs.File, len(files))
+
+	for i, file := range files {
+		structFiles[i] = structs.File{
+			ID:   uuid.New(),
+			Name: file.Filename,
+		}
+
+		err := structFiles[i].WriteFile(structs.FileTypeInject, id, file.File)
+		if err != nil {
+			return nil, fmt.Errorf("failed to write file: %v", err)
+		}
+	}
+
+	return r.Ent.Inject.UpdateOneID(id).
+		SetFiles(append(entInject.Files, structFiles...)).
+		Save(ctx)
+}
+
+// DeleteInjectFile is the resolver for the deleteInjectFile field.
+func (r *mutationResolver) DeleteInjectFile(ctx context.Context, id uuid.UUID, file string) (*ent.Inject, error) {
+	entInject, err := r.Ent.Inject.Query().
+		Where(
+			inject.IDEQ(id),
+		).Only(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get inject: %v", err)
+	}
+
+	removed := false
+
+	for i, entFile := range entInject.Files {
+		if entFile.Name == file {
+			err = entFile.DeleteFile(structs.FileTypeInject, id)
+			if err != nil {
+				return nil, fmt.Errorf("failed to delete file: %v", err)
+			}
+
+			entInject.Files = append(entInject.Files[:i], entInject.Files[i+1:]...)
+
+			removed = true
+			break
+		}
+	}
+
+	if !removed {
+		return nil, fmt.Errorf("file not found")
+	}
+
+	return r.Ent.Inject.UpdateOneID(id).
+		SetFiles(entInject.Files).
+		Save(ctx)
 }
 
 // DeleteInject is the resolver for the deleteInject field.
