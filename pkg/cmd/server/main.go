@@ -23,6 +23,7 @@ import (
 	"github.com/scorify/backend/pkg/engine"
 	"github.com/scorify/backend/pkg/ent"
 	"github.com/scorify/backend/pkg/ent/inject"
+	"github.com/scorify/backend/pkg/ent/injectsubmission"
 	"github.com/scorify/backend/pkg/ent/user"
 	"github.com/scorify/backend/pkg/graph"
 	"github.com/scorify/backend/pkg/graph/directives"
@@ -97,15 +98,9 @@ func injectFileHandler(entClient *ent.Client) gin.HandlerFunc {
 			return
 		}
 
-		fileType := c.Param("fileType")
 		parentID := c.Param("parentID")
 		fileID := c.Param("fileID")
 		fileName := c.Param("filename")
-
-		if fileType != string(structs.FileTypeInject) && fileType != string(structs.FileTypeSubmission) {
-			c.JSON(http.StatusNotFound, gin.H{"error": "file type not found"})
-			return
-		}
 
 		parentUUID, err := uuid.Parse(parentID)
 		if err != nil {
@@ -162,7 +157,86 @@ func injectFileHandler(entClient *ent.Client) gin.HandlerFunc {
 			return
 		}
 
-		filePath, err := file.FilePath(structs.FileType(fileType), parentUUID)
+		filePath, err := file.FilePath(structs.FileTypeInject, parentUUID)
+		if err != nil {
+			logrus.WithError(err).Error("failed to get file path")
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+			return
+		}
+
+		c.File(filePath)
+	}
+}
+
+func injectSubmissionFileHandler(entClient *ent.Client) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		entUser, err := auth.Parse(c)
+		if err != nil {
+			fmt.Println("here")
+			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+			return
+		}
+
+		parentID := c.Param("parentID")
+		fileID := c.Param("fileID")
+		fileName := c.Param("fileName")
+
+		parentUUID, err := uuid.Parse(parentID)
+		if err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "invalid parent id"})
+			return
+		}
+
+		fileUUID, err := uuid.Parse(fileID)
+		if err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "invalid file id"})
+			return
+		}
+
+		var entInjectSubmission *ent.InjectSubmission
+
+		if entUser.Role == user.RoleAdmin {
+			// Admins can access all files
+			entInjectSubmission, err = entClient.InjectSubmission.Query().
+				Where(
+					injectsubmission.ID(parentUUID),
+				).
+				Only(c)
+		} else {
+			// Users can only access files their submissions
+			entInjectSubmission, err = entClient.InjectSubmission.Query().
+				Where(
+					injectsubmission.ID(parentUUID),
+					injectsubmission.HasUserWith(
+						user.ID(entUser.ID),
+					),
+				).
+				Only(c)
+		}
+		if err != nil {
+			logrus.WithError(err).Error("failed to get inject submission")
+			c.JSON(http.StatusNotFound, gin.H{"error": "inject submission not found"})
+			return
+		}
+
+		var file *structs.File
+
+		for _, f := range entInjectSubmission.Files {
+			if f.ID == fileUUID && f.Name == fileName {
+				file = &structs.File{
+					ID:   f.ID,
+					Name: f.Name,
+				}
+				break
+			}
+		}
+
+		if file == nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "file not found"})
+			return
+		}
+
+		filePath, err := file.FilePath(structs.FileTypeSubmission, parentUUID)
 		if err != nil {
 			logrus.WithError(err).Error("failed to get file path")
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
@@ -207,6 +281,7 @@ func startWebServer(wg *sync.WaitGroup, entClient *ent.Client, redisClient *redi
 	router.POST("/query", graphqlHandler(entClient, redisClient, engineClient, scoreTaskChan, scoreTaskReponseChan))
 	router.GET("/query", graphqlHandler(entClient, redisClient, engineClient, scoreTaskChan, scoreTaskReponseChan))
 	router.GET("/api/files/inject/:parentID/:fileID/:fileName", injectFileHandler(entClient))
+	router.GET("/api/files/submission/:parentID/:fileID/:fileName", injectSubmissionFileHandler(entClient))
 
 	logrus.Printf("Starting web server on http://%s:%d", config.Domain, config.Port)
 
