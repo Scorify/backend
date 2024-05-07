@@ -92,7 +92,7 @@ func graphqlHandler(entClient *ent.Client, redisClient *redis.Client, engineClie
 
 func injectFileHandler(entClient *ent.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		entUser, err := auth.Parse(c)
+		entUser, err := auth.Parse(c.Request.Context())
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 			return
@@ -170,7 +170,7 @@ func injectFileHandler(entClient *ent.Client) gin.HandlerFunc {
 
 func injectSubmissionFileHandler(entClient *ent.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		entUser, err := auth.Parse(c)
+		entUser, err := auth.Parse(c.Request.Context())
 		if err != nil {
 			fmt.Println("here")
 			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
