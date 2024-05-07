@@ -988,7 +988,37 @@ func (r *mutationResolver) AddInjectFiles(ctx context.Context, id uuid.UUID, fil
 
 // DeleteInjectFile is the resolver for the deleteInjectFile field.
 func (r *mutationResolver) DeleteInjectFile(ctx context.Context, id uuid.UUID, file string) (*ent.Inject, error) {
-	panic(fmt.Errorf("not implemented: DeleteInjectFile - deleteInjectFile"))
+	entInject, err := r.Ent.Inject.Query().
+		Where(
+			inject.IDEQ(id),
+		).Only(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get inject: %v", err)
+	}
+
+	removed := false
+
+	for i, entFile := range entInject.Files {
+		if entFile.Name == file {
+			err = entFile.DeleteFile(structs.FileTypeInject, id)
+			if err != nil {
+				return nil, fmt.Errorf("failed to delete file: %v", err)
+			}
+
+			entInject.Files = append(entInject.Files[:i], entInject.Files[i+1:]...)
+
+			removed = true
+			break
+		}
+	}
+
+	if !removed {
+		return nil, fmt.Errorf("file not found")
+	}
+
+	return r.Ent.Inject.UpdateOneID(id).
+		SetFiles(entInject.Files).
+		Save(ctx)
 }
 
 // DeleteInject is the resolver for the deleteInject field.
