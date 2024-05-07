@@ -135,8 +135,7 @@ func injectFileHandler(entClient *ent.Client) gin.HandlerFunc {
 				Only(c)
 		}
 		if err != nil {
-			logrus.WithError(err).Error("failed to get inject")
-			c.JSON(http.StatusNotFound, gin.H{"error": "inject not found"})
+			c.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("inject not found: %s", err.Error())})
 			return
 		}
 
@@ -159,8 +158,7 @@ func injectFileHandler(entClient *ent.Client) gin.HandlerFunc {
 
 		filePath, err := file.FilePath(structs.FileTypeInject, parentUUID)
 		if err != nil {
-			logrus.WithError(err).Error("failed to get file path")
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get file path: %s", err.Error())})
 			return
 		}
 
@@ -172,7 +170,6 @@ func injectSubmissionFileHandler(entClient *ent.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		entUser, err := auth.Parse(c.Request.Context())
 		if err != nil {
-			fmt.Println("here")
 			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 			return
 		}
@@ -214,8 +211,7 @@ func injectSubmissionFileHandler(entClient *ent.Client) gin.HandlerFunc {
 				Only(c)
 		}
 		if err != nil {
-			logrus.WithError(err).Error("failed to get inject submission")
-			c.JSON(http.StatusNotFound, gin.H{"error": "inject submission not found"})
+			c.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("failed to get inject submission: %s", err.Error())})
 			return
 		}
 
@@ -238,8 +234,7 @@ func injectSubmissionFileHandler(entClient *ent.Client) gin.HandlerFunc {
 
 		filePath, err := file.FilePath(structs.FileTypeSubmission, parentUUID)
 		if err != nil {
-			logrus.WithError(err).Error("failed to get file path")
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get file path: %s", err.Error())})
 			return
 		}
 
