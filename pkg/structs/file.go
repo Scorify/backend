@@ -45,7 +45,10 @@ func (file *File) APIPath(fileType FileType, parentID uuid.UUID) (string, error)
 	}
 
 	return filepath.Join("/api/files/", string(fileType), parentID.String(), file.ID.String(), file.Name), nil
+}
 
+func RemoveInject(parentID uuid.UUID) error {
+	return os.RemoveAll(filepath.Join("./files/", string(FileTypeInject), parentID.String()))
 }
 
 func (file *File) WriteFile(fileType FileType, parentID uuid.UUID, reader io.ReadSeeker) error {

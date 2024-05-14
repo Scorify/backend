@@ -1005,27 +1005,17 @@ func (r *mutationResolver) DeleteInject(ctx context.Context, id uuid.UUID) (bool
 		return false, fmt.Errorf("failed to get inject: %v", err)
 	}
 
-	tx, err := r.Ent.Tx(ctx)
+	err = structs.RemoveInject(entInject.ID)
 	if err != nil {
-		return false, fmt.Errorf("failed to start transaction: %v", err)
+		return false, fmt.Errorf("failed to remove inject: %v", err)
 	}
 
-	defer tx.Rollback()
-
-	for _, file := range entInject.Files {
-		err = file.DeleteFile(structs.FileTypeInject, id)
-		if err != nil {
-			return false, fmt.Errorf("failed to delete file: %v", err)
-		}
-	}
-
-	err = tx.Inject.DeleteOneID(id).Exec(ctx)
+	err = r.Ent.Inject.DeleteOneID(id).Exec(ctx)
 	if err != nil {
 		return false, fmt.Errorf("failed to delete inject: %v", err)
 	}
 
-	err = tx.Commit()
-	return err == nil, err
+	return true, nil
 }
 
 // SubmitInject is the resolver for the submitInject field.
