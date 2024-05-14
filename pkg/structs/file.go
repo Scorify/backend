@@ -74,5 +74,5 @@ func (file *File) DeleteFile(fileType FileType, parentID uuid.UUID) error {
 		return err
 	}
 
-	return os.Remove(filePath)
+	return os.RemoveAll(filepath.Dir(filePath))
 }
