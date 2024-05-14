@@ -919,7 +919,7 @@ func (r *mutationResolver) CreateInject(ctx context.Context, title string, start
 
 // UpdateInject is the resolver for the updateInject field.
 func (r *mutationResolver) UpdateInject(ctx context.Context, id uuid.UUID, title *string, startTime *time.Time, endTime *time.Time, deleteFiles []uuid.UUID, addFiles []*graphql.Upload) (*ent.Inject, error) {
-	if title == nil && startTime == nil && endTime == nil {
+	if title == nil && startTime == nil && endTime == nil && len(deleteFiles) == 0 && len(addFiles) == 0 {
 		return nil, fmt.Errorf("no fields to update")
 	}
 
@@ -986,6 +986,10 @@ func (r *mutationResolver) UpdateInject(ctx context.Context, id uuid.UUID, title
 		}
 
 		entInject.Files = append(entInject.Files, structFiles...)
+	}
+
+	if len(deleteFiles) > 0 || len(addFiles) > 0 {
+		injectUpdate.SetFiles(entInject.Files)
 	}
 
 	return injectUpdate.Save(ctx)
