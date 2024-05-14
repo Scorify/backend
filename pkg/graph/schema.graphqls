@@ -252,9 +252,9 @@ type Mutation {
     title: String
     start_time: Time
     end_time: Time
+    delete_files: [ID!]
+    add_files: [Upload!]
   ): Inject! @hasRole(roles: [admin])
-  addInjectFiles(id: ID!, files: [Upload!]!): Inject! @hasRole(roles: [admin])
-  deleteInjectFile(id: ID!, file: String!): Inject! @hasRole(roles: [admin])
   deleteInject(id: ID!): Boolean! @hasRole(roles: [admin])
 
   submitInject(injectID: ID!, files: [Upload!]!): InjectSubmission!
