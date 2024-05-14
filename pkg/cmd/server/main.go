@@ -275,8 +275,8 @@ func startWebServer(wg *sync.WaitGroup, entClient *ent.Client, redisClient *redi
 	router.GET("/", gin.WrapH(playground.Handler("GraphQL playground", "/query")))
 	router.POST("/query", graphqlHandler(entClient, redisClient, engineClient, scoreTaskChan, scoreTaskReponseChan))
 	router.GET("/query", graphqlHandler(entClient, redisClient, engineClient, scoreTaskChan, scoreTaskReponseChan))
-	router.GET("/api/files/inject/:parentID/:fileID/:fileName", injectFileHandler(entClient))
-	router.GET("/api/files/submission/:parentID/:fileID/:fileName", injectSubmissionFileHandler(entClient))
+	router.GET("/api/files/inject/:parentID/:fileID/:filename", injectFileHandler(entClient))
+	router.GET("/api/files/submission/:parentID/:fileID/:filename", injectSubmissionFileHandler(entClient))
 
 	logrus.Printf("Starting web server on http://%s:%d", config.Domain, config.Port)
 
