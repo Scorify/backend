@@ -34,6 +34,12 @@ func (InjectSubmission) Fields() []ent.Field {
 			StructTag(`json:"user_id"`).
 			Comment("The user this submission belongs to").
 			Immutable(),
+		field.String("notes").
+			StructTag(`json:"notes"`).
+			Comment("The notes of the inject submission"),
+		field.JSON("rubric", structs.Rubric{}).
+			StructTag(`json:"rubric"`).
+			Comment("The rubric of the inject submission"),
 	}
 }
 
