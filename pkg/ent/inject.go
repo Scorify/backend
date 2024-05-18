@@ -34,7 +34,7 @@ type Inject struct {
 	// The files of the inject
 	Files []structs.File `json:"files"`
 	// The rubric of the inject
-	Rubric structs.Rubric `json:"rubric"`
+	Rubric structs.RubricTemplate `json:"rubric"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the InjectQuery when eager-loading is set.
 	Edges        InjectEdges `json:"edges"`

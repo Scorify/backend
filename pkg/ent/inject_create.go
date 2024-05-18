@@ -76,8 +76,8 @@ func (ic *InjectCreate) SetFiles(s []structs.File) *InjectCreate {
 }
 
 // SetRubric sets the "rubric" field.
-func (ic *InjectCreate) SetRubric(s structs.Rubric) *InjectCreate {
-	ic.mutation.SetRubric(s)
+func (ic *InjectCreate) SetRubric(st structs.RubricTemplate) *InjectCreate {
+	ic.mutation.SetRubric(st)
 	return ic
 }
 

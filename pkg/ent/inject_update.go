@@ -93,15 +93,15 @@ func (iu *InjectUpdate) AppendFiles(s []structs.File) *InjectUpdate {
 }
 
 // SetRubric sets the "rubric" field.
-func (iu *InjectUpdate) SetRubric(s structs.Rubric) *InjectUpdate {
-	iu.mutation.SetRubric(s)
+func (iu *InjectUpdate) SetRubric(st structs.RubricTemplate) *InjectUpdate {
+	iu.mutation.SetRubric(st)
 	return iu
 }
 
 // SetNillableRubric sets the "rubric" field if the given value is not nil.
-func (iu *InjectUpdate) SetNillableRubric(s *structs.Rubric) *InjectUpdate {
-	if s != nil {
-		iu.SetRubric(*s)
+func (iu *InjectUpdate) SetNillableRubric(st *structs.RubricTemplate) *InjectUpdate {
+	if st != nil {
+		iu.SetRubric(*st)
 	}
 	return iu
 }
@@ -354,15 +354,15 @@ func (iuo *InjectUpdateOne) AppendFiles(s []structs.File) *InjectUpdateOne {
 }
 
 // SetRubric sets the "rubric" field.
-func (iuo *InjectUpdateOne) SetRubric(s structs.Rubric) *InjectUpdateOne {
-	iuo.mutation.SetRubric(s)
+func (iuo *InjectUpdateOne) SetRubric(st structs.RubricTemplate) *InjectUpdateOne {
+	iuo.mutation.SetRubric(st)
 	return iuo
 }
 
 // SetNillableRubric sets the "rubric" field if the given value is not nil.
-func (iuo *InjectUpdateOne) SetNillableRubric(s *structs.Rubric) *InjectUpdateOne {
-	if s != nil {
-		iuo.SetRubric(*s)
+func (iuo *InjectUpdateOne) SetNillableRubric(st *structs.RubricTemplate) *InjectUpdateOne {
+	if st != nil {
+		iuo.SetRubric(*st)
 	}
 	return iuo
 }
