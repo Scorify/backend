@@ -27,6 +27,8 @@ const (
 	FieldEndTime = "end_time"
 	// FieldFiles holds the string denoting the files field in the database.
 	FieldFiles = "files"
+	// FieldRubric holds the string denoting the rubric field in the database.
+	FieldRubric = "rubric"
 	// EdgeSubmissions holds the string denoting the submissions edge name in mutations.
 	EdgeSubmissions = "submissions"
 	// Table holds the table name of the inject in the database.
@@ -49,6 +51,7 @@ var Columns = []string{
 	FieldStartTime,
 	FieldEndTime,
 	FieldFiles,
+	FieldRubric,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).

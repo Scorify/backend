@@ -39,6 +39,9 @@ func (Inject) Fields() []ent.Field {
 		field.JSON("files", []structs.File{}).
 			StructTag(`json:"files"`).
 			Comment("The files of the inject"),
+		field.JSON("rubric", structs.RubricTemplate{}).
+			StructTag(`json:"rubric"`).
+			Comment("The rubric of the inject"),
 	}
 }
 

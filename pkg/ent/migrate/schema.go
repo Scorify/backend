@@ -77,6 +77,7 @@ var (
 		{Name: "start_time", Type: field.TypeTime},
 		{Name: "end_time", Type: field.TypeTime},
 		{Name: "files", Type: field.TypeJSON},
+		{Name: "rubric", Type: field.TypeJSON},
 	}
 	// InjectsTable holds the schema information for the "injects" table.
 	InjectsTable = &schema.Table{
@@ -97,6 +98,8 @@ var (
 		{Name: "create_time", Type: field.TypeTime},
 		{Name: "update_time", Type: field.TypeTime},
 		{Name: "files", Type: field.TypeJSON},
+		{Name: "notes", Type: field.TypeString},
+		{Name: "rubric", Type: field.TypeJSON},
 		{Name: "inject_id", Type: field.TypeUUID},
 		{Name: "user_id", Type: field.TypeUUID},
 	}
@@ -108,13 +111,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "inject_submissions_injects_submissions",
-				Columns:    []*schema.Column{InjectSubmissionsColumns[4]},
+				Columns:    []*schema.Column{InjectSubmissionsColumns[6]},
 				RefColumns: []*schema.Column{InjectsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "inject_submissions_users_submissions",
-				Columns:    []*schema.Column{InjectSubmissionsColumns[5]},
+				Columns:    []*schema.Column{InjectSubmissionsColumns[7]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.Cascade,
 			},

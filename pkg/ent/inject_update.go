@@ -92,6 +92,20 @@ func (iu *InjectUpdate) AppendFiles(s []structs.File) *InjectUpdate {
 	return iu
 }
 
+// SetRubric sets the "rubric" field.
+func (iu *InjectUpdate) SetRubric(st structs.RubricTemplate) *InjectUpdate {
+	iu.mutation.SetRubric(st)
+	return iu
+}
+
+// SetNillableRubric sets the "rubric" field if the given value is not nil.
+func (iu *InjectUpdate) SetNillableRubric(st *structs.RubricTemplate) *InjectUpdate {
+	if st != nil {
+		iu.SetRubric(*st)
+	}
+	return iu
+}
+
 // AddSubmissionIDs adds the "submissions" edge to the InjectSubmission entity by IDs.
 func (iu *InjectUpdate) AddSubmissionIDs(ids ...uuid.UUID) *InjectUpdate {
 	iu.mutation.AddSubmissionIDs(ids...)
@@ -210,6 +224,9 @@ func (iu *InjectUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		_spec.AddModifier(func(u *sql.UpdateBuilder) {
 			sqljson.Append(u, inject.FieldFiles, value)
 		})
+	}
+	if value, ok := iu.mutation.Rubric(); ok {
+		_spec.SetField(inject.FieldRubric, field.TypeJSON, value)
 	}
 	if iu.mutation.SubmissionsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -333,6 +350,20 @@ func (iuo *InjectUpdateOne) SetFiles(s []structs.File) *InjectUpdateOne {
 // AppendFiles appends s to the "files" field.
 func (iuo *InjectUpdateOne) AppendFiles(s []structs.File) *InjectUpdateOne {
 	iuo.mutation.AppendFiles(s)
+	return iuo
+}
+
+// SetRubric sets the "rubric" field.
+func (iuo *InjectUpdateOne) SetRubric(st structs.RubricTemplate) *InjectUpdateOne {
+	iuo.mutation.SetRubric(st)
+	return iuo
+}
+
+// SetNillableRubric sets the "rubric" field if the given value is not nil.
+func (iuo *InjectUpdateOne) SetNillableRubric(st *structs.RubricTemplate) *InjectUpdateOne {
+	if st != nil {
+		iuo.SetRubric(*st)
+	}
 	return iuo
 }
 
@@ -484,6 +515,9 @@ func (iuo *InjectUpdateOne) sqlSave(ctx context.Context) (_node *Inject, err err
 		_spec.AddModifier(func(u *sql.UpdateBuilder) {
 			sqljson.Append(u, inject.FieldFiles, value)
 		})
+	}
+	if value, ok := iuo.mutation.Rubric(); ok {
+		_spec.SetField(inject.FieldRubric, field.TypeJSON, value)
 	}
 	if iuo.mutation.SubmissionsCleared() {
 		edge := &sqlgraph.EdgeSpec{

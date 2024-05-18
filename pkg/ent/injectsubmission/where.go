@@ -76,6 +76,11 @@ func UserID(v uuid.UUID) predicate.InjectSubmission {
 	return predicate.InjectSubmission(sql.FieldEQ(FieldUserID, v))
 }
 
+// Notes applies equality check predicate on the "notes" field. It's identical to NotesEQ.
+func Notes(v string) predicate.InjectSubmission {
+	return predicate.InjectSubmission(sql.FieldEQ(FieldNotes, v))
+}
+
 // CreateTimeEQ applies the EQ predicate on the "create_time" field.
 func CreateTimeEQ(v time.Time) predicate.InjectSubmission {
 	return predicate.InjectSubmission(sql.FieldEQ(FieldCreateTime, v))
@@ -194,6 +199,71 @@ func UserIDIn(vs ...uuid.UUID) predicate.InjectSubmission {
 // UserIDNotIn applies the NotIn predicate on the "user_id" field.
 func UserIDNotIn(vs ...uuid.UUID) predicate.InjectSubmission {
 	return predicate.InjectSubmission(sql.FieldNotIn(FieldUserID, vs...))
+}
+
+// NotesEQ applies the EQ predicate on the "notes" field.
+func NotesEQ(v string) predicate.InjectSubmission {
+	return predicate.InjectSubmission(sql.FieldEQ(FieldNotes, v))
+}
+
+// NotesNEQ applies the NEQ predicate on the "notes" field.
+func NotesNEQ(v string) predicate.InjectSubmission {
+	return predicate.InjectSubmission(sql.FieldNEQ(FieldNotes, v))
+}
+
+// NotesIn applies the In predicate on the "notes" field.
+func NotesIn(vs ...string) predicate.InjectSubmission {
+	return predicate.InjectSubmission(sql.FieldIn(FieldNotes, vs...))
+}
+
+// NotesNotIn applies the NotIn predicate on the "notes" field.
+func NotesNotIn(vs ...string) predicate.InjectSubmission {
+	return predicate.InjectSubmission(sql.FieldNotIn(FieldNotes, vs...))
+}
+
+// NotesGT applies the GT predicate on the "notes" field.
+func NotesGT(v string) predicate.InjectSubmission {
+	return predicate.InjectSubmission(sql.FieldGT(FieldNotes, v))
+}
+
+// NotesGTE applies the GTE predicate on the "notes" field.
+func NotesGTE(v string) predicate.InjectSubmission {
+	return predicate.InjectSubmission(sql.FieldGTE(FieldNotes, v))
+}
+
+// NotesLT applies the LT predicate on the "notes" field.
+func NotesLT(v string) predicate.InjectSubmission {
+	return predicate.InjectSubmission(sql.FieldLT(FieldNotes, v))
+}
+
+// NotesLTE applies the LTE predicate on the "notes" field.
+func NotesLTE(v string) predicate.InjectSubmission {
+	return predicate.InjectSubmission(sql.FieldLTE(FieldNotes, v))
+}
+
+// NotesContains applies the Contains predicate on the "notes" field.
+func NotesContains(v string) predicate.InjectSubmission {
+	return predicate.InjectSubmission(sql.FieldContains(FieldNotes, v))
+}
+
+// NotesHasPrefix applies the HasPrefix predicate on the "notes" field.
+func NotesHasPrefix(v string) predicate.InjectSubmission {
+	return predicate.InjectSubmission(sql.FieldHasPrefix(FieldNotes, v))
+}
+
+// NotesHasSuffix applies the HasSuffix predicate on the "notes" field.
+func NotesHasSuffix(v string) predicate.InjectSubmission {
+	return predicate.InjectSubmission(sql.FieldHasSuffix(FieldNotes, v))
+}
+
+// NotesEqualFold applies the EqualFold predicate on the "notes" field.
+func NotesEqualFold(v string) predicate.InjectSubmission {
+	return predicate.InjectSubmission(sql.FieldEqualFold(FieldNotes, v))
+}
+
+// NotesContainsFold applies the ContainsFold predicate on the "notes" field.
+func NotesContainsFold(v string) predicate.InjectSubmission {
+	return predicate.InjectSubmission(sql.FieldContainsFold(FieldNotes, v))
 }
 
 // HasInject applies the HasEdge predicate on the "inject" edge.

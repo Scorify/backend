@@ -33,6 +33,10 @@ type InjectSubmission struct {
 	InjectID uuid.UUID `json:"inject_id"`
 	// The user this submission belongs to
 	UserID uuid.UUID `json:"user_id"`
+	// The notes of the inject submission
+	Notes string `json:"notes"`
+	// The rubric of the inject submission
+	Rubric structs.Rubric `json:"rubric"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the InjectSubmissionQuery when eager-loading is set.
 	Edges        InjectSubmissionEdges `json:"edges"`
@@ -77,8 +81,10 @@ func (*InjectSubmission) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case injectsubmission.FieldFiles:
+		case injectsubmission.FieldFiles, injectsubmission.FieldRubric:
 			values[i] = new([]byte)
+		case injectsubmission.FieldNotes:
+			values[i] = new(sql.NullString)
 		case injectsubmission.FieldCreateTime, injectsubmission.FieldUpdateTime:
 			values[i] = new(sql.NullTime)
 		case injectsubmission.FieldID, injectsubmission.FieldInjectID, injectsubmission.FieldUserID:
@@ -135,6 +141,20 @@ func (is *InjectSubmission) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field user_id", values[i])
 			} else if value != nil {
 				is.UserID = *value
+			}
+		case injectsubmission.FieldNotes:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field notes", values[i])
+			} else if value.Valid {
+				is.Notes = value.String
+			}
+		case injectsubmission.FieldRubric:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field rubric", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &is.Rubric); err != nil {
+					return fmt.Errorf("unmarshal field rubric: %w", err)
+				}
 			}
 		default:
 			is.selectValues.Set(columns[i], values[i])
@@ -196,6 +216,12 @@ func (is *InjectSubmission) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("user_id=")
 	builder.WriteString(fmt.Sprintf("%v", is.UserID))
+	builder.WriteString(", ")
+	builder.WriteString("notes=")
+	builder.WriteString(is.Notes)
+	builder.WriteString(", ")
+	builder.WriteString("rubric=")
+	builder.WriteString(fmt.Sprintf("%v", is.Rubric))
 	builder.WriteByte(')')
 	return builder.String()
 }

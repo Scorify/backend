@@ -75,6 +75,12 @@ func (ic *InjectCreate) SetFiles(s []structs.File) *InjectCreate {
 	return ic
 }
 
+// SetRubric sets the "rubric" field.
+func (ic *InjectCreate) SetRubric(st structs.RubricTemplate) *InjectCreate {
+	ic.mutation.SetRubric(st)
+	return ic
+}
+
 // SetID sets the "id" field.
 func (ic *InjectCreate) SetID(u uuid.UUID) *InjectCreate {
 	ic.mutation.SetID(u)
@@ -178,6 +184,9 @@ func (ic *InjectCreate) check() error {
 	if _, ok := ic.mutation.Files(); !ok {
 		return &ValidationError{Name: "files", err: errors.New(`ent: missing required field "Inject.files"`)}
 	}
+	if _, ok := ic.mutation.Rubric(); !ok {
+		return &ValidationError{Name: "rubric", err: errors.New(`ent: missing required field "Inject.rubric"`)}
+	}
 	return nil
 }
 
@@ -236,6 +245,10 @@ func (ic *InjectCreate) createSpec() (*Inject, *sqlgraph.CreateSpec) {
 	if value, ok := ic.mutation.Files(); ok {
 		_spec.SetField(inject.FieldFiles, field.TypeJSON, value)
 		_node.Files = value
+	}
+	if value, ok := ic.mutation.Rubric(); ok {
+		_spec.SetField(inject.FieldRubric, field.TypeJSON, value)
+		_node.Rubric = value
 	}
 	if nodes := ic.mutation.SubmissionsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
