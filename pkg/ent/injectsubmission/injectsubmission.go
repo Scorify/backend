@@ -25,6 +25,10 @@ const (
 	FieldInjectID = "inject_id"
 	// FieldUserID holds the string denoting the user_id field in the database.
 	FieldUserID = "user_id"
+	// FieldNotes holds the string denoting the notes field in the database.
+	FieldNotes = "notes"
+	// FieldRubric holds the string denoting the rubric field in the database.
+	FieldRubric = "rubric"
 	// EdgeInject holds the string denoting the inject edge name in mutations.
 	EdgeInject = "inject"
 	// EdgeUser holds the string denoting the user edge name in mutations.
@@ -55,6 +59,8 @@ var Columns = []string{
 	FieldFiles,
 	FieldInjectID,
 	FieldUserID,
+	FieldNotes,
+	FieldRubric,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -104,6 +110,11 @@ func ByInjectID(opts ...sql.OrderTermOption) OrderOption {
 // ByUserID orders the results by the user_id field.
 func ByUserID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldUserID, opts...).ToFunc()
+}
+
+// ByNotes orders the results by the notes field.
+func ByNotes(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldNotes, opts...).ToFunc()
 }
 
 // ByInjectField orders the results by inject field.

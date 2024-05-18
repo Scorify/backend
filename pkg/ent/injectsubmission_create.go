@@ -70,6 +70,18 @@ func (isc *InjectSubmissionCreate) SetUserID(u uuid.UUID) *InjectSubmissionCreat
 	return isc
 }
 
+// SetNotes sets the "notes" field.
+func (isc *InjectSubmissionCreate) SetNotes(s string) *InjectSubmissionCreate {
+	isc.mutation.SetNotes(s)
+	return isc
+}
+
+// SetRubric sets the "rubric" field.
+func (isc *InjectSubmissionCreate) SetRubric(s structs.Rubric) *InjectSubmissionCreate {
+	isc.mutation.SetRubric(s)
+	return isc
+}
+
 // SetID sets the "id" field.
 func (isc *InjectSubmissionCreate) SetID(u uuid.UUID) *InjectSubmissionCreate {
 	isc.mutation.SetID(u)
@@ -160,6 +172,12 @@ func (isc *InjectSubmissionCreate) check() error {
 	if _, ok := isc.mutation.UserID(); !ok {
 		return &ValidationError{Name: "user_id", err: errors.New(`ent: missing required field "InjectSubmission.user_id"`)}
 	}
+	if _, ok := isc.mutation.Notes(); !ok {
+		return &ValidationError{Name: "notes", err: errors.New(`ent: missing required field "InjectSubmission.notes"`)}
+	}
+	if _, ok := isc.mutation.Rubric(); !ok {
+		return &ValidationError{Name: "rubric", err: errors.New(`ent: missing required field "InjectSubmission.rubric"`)}
+	}
 	if _, ok := isc.mutation.InjectID(); !ok {
 		return &ValidationError{Name: "inject", err: errors.New(`ent: missing required edge "InjectSubmission.inject"`)}
 	}
@@ -212,6 +230,14 @@ func (isc *InjectSubmissionCreate) createSpec() (*InjectSubmission, *sqlgraph.Cr
 	if value, ok := isc.mutation.Files(); ok {
 		_spec.SetField(injectsubmission.FieldFiles, field.TypeJSON, value)
 		_node.Files = value
+	}
+	if value, ok := isc.mutation.Notes(); ok {
+		_spec.SetField(injectsubmission.FieldNotes, field.TypeString, value)
+		_node.Notes = value
+	}
+	if value, ok := isc.mutation.Rubric(); ok {
+		_spec.SetField(injectsubmission.FieldRubric, field.TypeJSON, value)
+		_node.Rubric = value
 	}
 	if nodes := isc.mutation.InjectIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

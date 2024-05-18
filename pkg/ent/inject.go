@@ -33,6 +33,8 @@ type Inject struct {
 	EndTime time.Time `json:"end_time"`
 	// The files of the inject
 	Files []structs.File `json:"files"`
+	// The rubric of the inject
+	Rubric structs.Rubric `json:"rubric"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the InjectQuery when eager-loading is set.
 	Edges        InjectEdges `json:"edges"`
@@ -62,7 +64,7 @@ func (*Inject) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case inject.FieldFiles:
+		case inject.FieldFiles, inject.FieldRubric:
 			values[i] = new([]byte)
 		case inject.FieldTitle:
 			values[i] = new(sql.NullString)
@@ -129,6 +131,14 @@ func (i *Inject) assignValues(columns []string, values []any) error {
 					return fmt.Errorf("unmarshal field files: %w", err)
 				}
 			}
+		case inject.FieldRubric:
+			if value, ok := values[j].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field rubric", values[j])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &i.Rubric); err != nil {
+					return fmt.Errorf("unmarshal field rubric: %w", err)
+				}
+			}
 		default:
 			i.selectValues.Set(columns[j], values[j])
 		}
@@ -187,6 +197,9 @@ func (i *Inject) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("files=")
 	builder.WriteString(fmt.Sprintf("%v", i.Files))
+	builder.WriteString(", ")
+	builder.WriteString("rubric=")
+	builder.WriteString(fmt.Sprintf("%v", i.Rubric))
 	builder.WriteByte(')')
 	return builder.String()
 }

@@ -48,6 +48,34 @@ func (isu *InjectSubmissionUpdate) AppendFiles(s []structs.File) *InjectSubmissi
 	return isu
 }
 
+// SetNotes sets the "notes" field.
+func (isu *InjectSubmissionUpdate) SetNotes(s string) *InjectSubmissionUpdate {
+	isu.mutation.SetNotes(s)
+	return isu
+}
+
+// SetNillableNotes sets the "notes" field if the given value is not nil.
+func (isu *InjectSubmissionUpdate) SetNillableNotes(s *string) *InjectSubmissionUpdate {
+	if s != nil {
+		isu.SetNotes(*s)
+	}
+	return isu
+}
+
+// SetRubric sets the "rubric" field.
+func (isu *InjectSubmissionUpdate) SetRubric(s structs.Rubric) *InjectSubmissionUpdate {
+	isu.mutation.SetRubric(s)
+	return isu
+}
+
+// SetNillableRubric sets the "rubric" field if the given value is not nil.
+func (isu *InjectSubmissionUpdate) SetNillableRubric(s *structs.Rubric) *InjectSubmissionUpdate {
+	if s != nil {
+		isu.SetRubric(*s)
+	}
+	return isu
+}
+
 // Mutation returns the InjectSubmissionMutation object of the builder.
 func (isu *InjectSubmissionUpdate) Mutation() *InjectSubmissionMutation {
 	return isu.mutation
@@ -123,6 +151,12 @@ func (isu *InjectSubmissionUpdate) sqlSave(ctx context.Context) (n int, err erro
 			sqljson.Append(u, injectsubmission.FieldFiles, value)
 		})
 	}
+	if value, ok := isu.mutation.Notes(); ok {
+		_spec.SetField(injectsubmission.FieldNotes, field.TypeString, value)
+	}
+	if value, ok := isu.mutation.Rubric(); ok {
+		_spec.SetField(injectsubmission.FieldRubric, field.TypeJSON, value)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, isu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{injectsubmission.Label}
@@ -158,6 +192,34 @@ func (isuo *InjectSubmissionUpdateOne) SetFiles(s []structs.File) *InjectSubmiss
 // AppendFiles appends s to the "files" field.
 func (isuo *InjectSubmissionUpdateOne) AppendFiles(s []structs.File) *InjectSubmissionUpdateOne {
 	isuo.mutation.AppendFiles(s)
+	return isuo
+}
+
+// SetNotes sets the "notes" field.
+func (isuo *InjectSubmissionUpdateOne) SetNotes(s string) *InjectSubmissionUpdateOne {
+	isuo.mutation.SetNotes(s)
+	return isuo
+}
+
+// SetNillableNotes sets the "notes" field if the given value is not nil.
+func (isuo *InjectSubmissionUpdateOne) SetNillableNotes(s *string) *InjectSubmissionUpdateOne {
+	if s != nil {
+		isuo.SetNotes(*s)
+	}
+	return isuo
+}
+
+// SetRubric sets the "rubric" field.
+func (isuo *InjectSubmissionUpdateOne) SetRubric(s structs.Rubric) *InjectSubmissionUpdateOne {
+	isuo.mutation.SetRubric(s)
+	return isuo
+}
+
+// SetNillableRubric sets the "rubric" field if the given value is not nil.
+func (isuo *InjectSubmissionUpdateOne) SetNillableRubric(s *structs.Rubric) *InjectSubmissionUpdateOne {
+	if s != nil {
+		isuo.SetRubric(*s)
+	}
 	return isuo
 }
 
@@ -265,6 +327,12 @@ func (isuo *InjectSubmissionUpdateOne) sqlSave(ctx context.Context) (_node *Inje
 		_spec.AddModifier(func(u *sql.UpdateBuilder) {
 			sqljson.Append(u, injectsubmission.FieldFiles, value)
 		})
+	}
+	if value, ok := isuo.mutation.Notes(); ok {
+		_spec.SetField(injectsubmission.FieldNotes, field.TypeString, value)
+	}
+	if value, ok := isuo.mutation.Rubric(); ok {
+		_spec.SetField(injectsubmission.FieldRubric, field.TypeJSON, value)
 	}
 	_node = &InjectSubmission{config: isuo.config}
 	_spec.Assign = _node.assignValues

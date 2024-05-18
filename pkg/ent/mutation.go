@@ -1588,6 +1588,7 @@ type InjectMutation struct {
 	end_time           *time.Time
 	files              *[]structs.File
 	appendfiles        []structs.File
+	rubric             *structs.Rubric
 	clearedFields      map[string]struct{}
 	submissions        map[uuid.UUID]struct{}
 	removedsubmissions map[uuid.UUID]struct{}
@@ -1932,6 +1933,42 @@ func (m *InjectMutation) ResetFiles() {
 	m.appendfiles = nil
 }
 
+// SetRubric sets the "rubric" field.
+func (m *InjectMutation) SetRubric(s structs.Rubric) {
+	m.rubric = &s
+}
+
+// Rubric returns the value of the "rubric" field in the mutation.
+func (m *InjectMutation) Rubric() (r structs.Rubric, exists bool) {
+	v := m.rubric
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRubric returns the old "rubric" field's value of the Inject entity.
+// If the Inject object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *InjectMutation) OldRubric(ctx context.Context) (v structs.Rubric, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRubric is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRubric requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRubric: %w", err)
+	}
+	return oldValue.Rubric, nil
+}
+
+// ResetRubric resets all changes to the "rubric" field.
+func (m *InjectMutation) ResetRubric() {
+	m.rubric = nil
+}
+
 // AddSubmissionIDs adds the "submissions" edge to the InjectSubmission entity by ids.
 func (m *InjectMutation) AddSubmissionIDs(ids ...uuid.UUID) {
 	if m.submissions == nil {
@@ -2020,7 +2057,7 @@ func (m *InjectMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *InjectMutation) Fields() []string {
-	fields := make([]string, 0, 6)
+	fields := make([]string, 0, 7)
 	if m.create_time != nil {
 		fields = append(fields, inject.FieldCreateTime)
 	}
@@ -2038,6 +2075,9 @@ func (m *InjectMutation) Fields() []string {
 	}
 	if m.files != nil {
 		fields = append(fields, inject.FieldFiles)
+	}
+	if m.rubric != nil {
+		fields = append(fields, inject.FieldRubric)
 	}
 	return fields
 }
@@ -2059,6 +2099,8 @@ func (m *InjectMutation) Field(name string) (ent.Value, bool) {
 		return m.EndTime()
 	case inject.FieldFiles:
 		return m.Files()
+	case inject.FieldRubric:
+		return m.Rubric()
 	}
 	return nil, false
 }
@@ -2080,6 +2122,8 @@ func (m *InjectMutation) OldField(ctx context.Context, name string) (ent.Value, 
 		return m.OldEndTime(ctx)
 	case inject.FieldFiles:
 		return m.OldFiles(ctx)
+	case inject.FieldRubric:
+		return m.OldRubric(ctx)
 	}
 	return nil, fmt.Errorf("unknown Inject field %s", name)
 }
@@ -2130,6 +2174,13 @@ func (m *InjectMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetFiles(v)
+		return nil
+	case inject.FieldRubric:
+		v, ok := value.(structs.Rubric)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRubric(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Inject field %s", name)
@@ -2197,6 +2248,9 @@ func (m *InjectMutation) ResetField(name string) error {
 		return nil
 	case inject.FieldFiles:
 		m.ResetFiles()
+		return nil
+	case inject.FieldRubric:
+		m.ResetRubric()
 		return nil
 	}
 	return fmt.Errorf("unknown Inject field %s", name)
@@ -2296,6 +2350,8 @@ type InjectSubmissionMutation struct {
 	update_time   *time.Time
 	files         *[]structs.File
 	appendfiles   []structs.File
+	notes         *string
+	rubric        *structs.Rubric
 	clearedFields map[string]struct{}
 	inject        *uuid.UUID
 	clearedinject bool
@@ -2605,6 +2661,78 @@ func (m *InjectSubmissionMutation) ResetUserID() {
 	m.user = nil
 }
 
+// SetNotes sets the "notes" field.
+func (m *InjectSubmissionMutation) SetNotes(s string) {
+	m.notes = &s
+}
+
+// Notes returns the value of the "notes" field in the mutation.
+func (m *InjectSubmissionMutation) Notes() (r string, exists bool) {
+	v := m.notes
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldNotes returns the old "notes" field's value of the InjectSubmission entity.
+// If the InjectSubmission object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *InjectSubmissionMutation) OldNotes(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldNotes is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldNotes requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldNotes: %w", err)
+	}
+	return oldValue.Notes, nil
+}
+
+// ResetNotes resets all changes to the "notes" field.
+func (m *InjectSubmissionMutation) ResetNotes() {
+	m.notes = nil
+}
+
+// SetRubric sets the "rubric" field.
+func (m *InjectSubmissionMutation) SetRubric(s structs.Rubric) {
+	m.rubric = &s
+}
+
+// Rubric returns the value of the "rubric" field in the mutation.
+func (m *InjectSubmissionMutation) Rubric() (r structs.Rubric, exists bool) {
+	v := m.rubric
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRubric returns the old "rubric" field's value of the InjectSubmission entity.
+// If the InjectSubmission object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *InjectSubmissionMutation) OldRubric(ctx context.Context) (v structs.Rubric, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRubric is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRubric requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRubric: %w", err)
+	}
+	return oldValue.Rubric, nil
+}
+
+// ResetRubric resets all changes to the "rubric" field.
+func (m *InjectSubmissionMutation) ResetRubric() {
+	m.rubric = nil
+}
+
 // ClearInject clears the "inject" edge to the Inject entity.
 func (m *InjectSubmissionMutation) ClearInject() {
 	m.clearedinject = true
@@ -2693,7 +2821,7 @@ func (m *InjectSubmissionMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *InjectSubmissionMutation) Fields() []string {
-	fields := make([]string, 0, 5)
+	fields := make([]string, 0, 7)
 	if m.create_time != nil {
 		fields = append(fields, injectsubmission.FieldCreateTime)
 	}
@@ -2708,6 +2836,12 @@ func (m *InjectSubmissionMutation) Fields() []string {
 	}
 	if m.user != nil {
 		fields = append(fields, injectsubmission.FieldUserID)
+	}
+	if m.notes != nil {
+		fields = append(fields, injectsubmission.FieldNotes)
+	}
+	if m.rubric != nil {
+		fields = append(fields, injectsubmission.FieldRubric)
 	}
 	return fields
 }
@@ -2727,6 +2861,10 @@ func (m *InjectSubmissionMutation) Field(name string) (ent.Value, bool) {
 		return m.InjectID()
 	case injectsubmission.FieldUserID:
 		return m.UserID()
+	case injectsubmission.FieldNotes:
+		return m.Notes()
+	case injectsubmission.FieldRubric:
+		return m.Rubric()
 	}
 	return nil, false
 }
@@ -2746,6 +2884,10 @@ func (m *InjectSubmissionMutation) OldField(ctx context.Context, name string) (e
 		return m.OldInjectID(ctx)
 	case injectsubmission.FieldUserID:
 		return m.OldUserID(ctx)
+	case injectsubmission.FieldNotes:
+		return m.OldNotes(ctx)
+	case injectsubmission.FieldRubric:
+		return m.OldRubric(ctx)
 	}
 	return nil, fmt.Errorf("unknown InjectSubmission field %s", name)
 }
@@ -2789,6 +2931,20 @@ func (m *InjectSubmissionMutation) SetField(name string, value ent.Value) error 
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetUserID(v)
+		return nil
+	case injectsubmission.FieldNotes:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetNotes(v)
+		return nil
+	case injectsubmission.FieldRubric:
+		v, ok := value.(structs.Rubric)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRubric(v)
 		return nil
 	}
 	return fmt.Errorf("unknown InjectSubmission field %s", name)
@@ -2853,6 +3009,12 @@ func (m *InjectSubmissionMutation) ResetField(name string) error {
 		return nil
 	case injectsubmission.FieldUserID:
 		m.ResetUserID()
+		return nil
+	case injectsubmission.FieldNotes:
+		m.ResetNotes()
+		return nil
+	case injectsubmission.FieldRubric:
+		m.ResetRubric()
 		return nil
 	}
 	return fmt.Errorf("unknown InjectSubmission field %s", name)
