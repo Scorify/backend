@@ -22,5 +22,4 @@ type Rubric struct {
 	Score    int           `json:"score"`
 	MaxScore int           `json:"max_score"`
 	Notes    string        `json:"notes"`
-	Graded   bool          `json:"graded"`
 }
