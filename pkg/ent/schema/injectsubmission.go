@@ -40,6 +40,9 @@ func (InjectSubmission) Fields() []ent.Field {
 		field.JSON("rubric", structs.Rubric{}).
 			StructTag(`json:"rubric"`).
 			Comment("The rubric of the inject submission"),
+		field.Bool("graded").
+			StructTag(`json:"graded"`).
+			Comment("The graded status of the inject submission"),
 	}
 }
 
