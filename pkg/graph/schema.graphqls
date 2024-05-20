@@ -137,8 +137,18 @@ type RubricTemplateField {
   max_score: Int!
 }
 
+input RubricTemplateFieldInput {
+  name: String!
+  max_score: Int!
+}
+
 type RubricTemplate {
   fields: [RubricTemplateField!]!
+  max_score: Int!
+}
+
+input RubricTemplateInput {
+  fields: [RubricTemplateFieldInput!]!
   max_score: Int!
 }
 
@@ -149,8 +159,22 @@ type RubricField {
   notes: String
 }
 
+input RubricFieldInput {
+  name: String!
+  score: Int!
+  max_score: Int!
+  notes: String
+}
+
 type Rubric {
   fields: [RubricField!]!
+  score: Int!
+  max_score: Int!
+  notes: String
+}
+
+input RubricInput {
+  fields: [RubricFieldInput!]!
   score: Int!
   max_score: Int!
   notes: String
@@ -273,7 +297,7 @@ type Mutation {
     start_time: Time!
     end_time: Time!
     files: [Upload!]!
-    rubric: RubricTemplate!
+    rubric: RubricTemplateInput!
   ): Inject! @hasRole(roles: [admin])
   updateInject(
     id: ID!
@@ -282,7 +306,7 @@ type Mutation {
     end_time: Time
     delete_files: [ID!]
     add_files: [Upload!]
-    rubric: RubricTemplate
+    rubric: RubricTemplateInput
   ): Inject! @hasRole(roles: [admin])
   deleteInject(id: ID!): Boolean! @hasRole(roles: [admin])
 
