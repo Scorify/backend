@@ -29,6 +29,8 @@ const (
 	FieldNotes = "notes"
 	// FieldRubric holds the string denoting the rubric field in the database.
 	FieldRubric = "rubric"
+	// FieldGraded holds the string denoting the graded field in the database.
+	FieldGraded = "graded"
 	// EdgeInject holds the string denoting the inject edge name in mutations.
 	EdgeInject = "inject"
 	// EdgeUser holds the string denoting the user edge name in mutations.
@@ -61,6 +63,7 @@ var Columns = []string{
 	FieldUserID,
 	FieldNotes,
 	FieldRubric,
+	FieldGraded,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -115,6 +118,11 @@ func ByUserID(opts ...sql.OrderTermOption) OrderOption {
 // ByNotes orders the results by the notes field.
 func ByNotes(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldNotes, opts...).ToFunc()
+}
+
+// ByGraded orders the results by the graded field.
+func ByGraded(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldGraded, opts...).ToFunc()
 }
 
 // ByInjectField orders the results by inject field.

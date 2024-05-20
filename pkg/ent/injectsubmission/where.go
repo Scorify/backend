@@ -81,6 +81,11 @@ func Notes(v string) predicate.InjectSubmission {
 	return predicate.InjectSubmission(sql.FieldEQ(FieldNotes, v))
 }
 
+// Graded applies equality check predicate on the "graded" field. It's identical to GradedEQ.
+func Graded(v bool) predicate.InjectSubmission {
+	return predicate.InjectSubmission(sql.FieldEQ(FieldGraded, v))
+}
+
 // CreateTimeEQ applies the EQ predicate on the "create_time" field.
 func CreateTimeEQ(v time.Time) predicate.InjectSubmission {
 	return predicate.InjectSubmission(sql.FieldEQ(FieldCreateTime, v))
@@ -264,6 +269,16 @@ func NotesEqualFold(v string) predicate.InjectSubmission {
 // NotesContainsFold applies the ContainsFold predicate on the "notes" field.
 func NotesContainsFold(v string) predicate.InjectSubmission {
 	return predicate.InjectSubmission(sql.FieldContainsFold(FieldNotes, v))
+}
+
+// GradedEQ applies the EQ predicate on the "graded" field.
+func GradedEQ(v bool) predicate.InjectSubmission {
+	return predicate.InjectSubmission(sql.FieldEQ(FieldGraded, v))
+}
+
+// GradedNEQ applies the NEQ predicate on the "graded" field.
+func GradedNEQ(v bool) predicate.InjectSubmission {
+	return predicate.InjectSubmission(sql.FieldNEQ(FieldGraded, v))
 }
 
 // HasInject applies the HasEdge predicate on the "inject" edge.

@@ -2352,6 +2352,7 @@ type InjectSubmissionMutation struct {
 	appendfiles   []structs.File
 	notes         *string
 	rubric        *structs.Rubric
+	graded        *bool
 	clearedFields map[string]struct{}
 	inject        *uuid.UUID
 	clearedinject bool
@@ -2733,6 +2734,42 @@ func (m *InjectSubmissionMutation) ResetRubric() {
 	m.rubric = nil
 }
 
+// SetGraded sets the "graded" field.
+func (m *InjectSubmissionMutation) SetGraded(b bool) {
+	m.graded = &b
+}
+
+// Graded returns the value of the "graded" field in the mutation.
+func (m *InjectSubmissionMutation) Graded() (r bool, exists bool) {
+	v := m.graded
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldGraded returns the old "graded" field's value of the InjectSubmission entity.
+// If the InjectSubmission object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *InjectSubmissionMutation) OldGraded(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldGraded is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldGraded requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldGraded: %w", err)
+	}
+	return oldValue.Graded, nil
+}
+
+// ResetGraded resets all changes to the "graded" field.
+func (m *InjectSubmissionMutation) ResetGraded() {
+	m.graded = nil
+}
+
 // ClearInject clears the "inject" edge to the Inject entity.
 func (m *InjectSubmissionMutation) ClearInject() {
 	m.clearedinject = true
@@ -2821,7 +2858,7 @@ func (m *InjectSubmissionMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *InjectSubmissionMutation) Fields() []string {
-	fields := make([]string, 0, 7)
+	fields := make([]string, 0, 8)
 	if m.create_time != nil {
 		fields = append(fields, injectsubmission.FieldCreateTime)
 	}
@@ -2842,6 +2879,9 @@ func (m *InjectSubmissionMutation) Fields() []string {
 	}
 	if m.rubric != nil {
 		fields = append(fields, injectsubmission.FieldRubric)
+	}
+	if m.graded != nil {
+		fields = append(fields, injectsubmission.FieldGraded)
 	}
 	return fields
 }
@@ -2865,6 +2905,8 @@ func (m *InjectSubmissionMutation) Field(name string) (ent.Value, bool) {
 		return m.Notes()
 	case injectsubmission.FieldRubric:
 		return m.Rubric()
+	case injectsubmission.FieldGraded:
+		return m.Graded()
 	}
 	return nil, false
 }
@@ -2888,6 +2930,8 @@ func (m *InjectSubmissionMutation) OldField(ctx context.Context, name string) (e
 		return m.OldNotes(ctx)
 	case injectsubmission.FieldRubric:
 		return m.OldRubric(ctx)
+	case injectsubmission.FieldGraded:
+		return m.OldGraded(ctx)
 	}
 	return nil, fmt.Errorf("unknown InjectSubmission field %s", name)
 }
@@ -2945,6 +2989,13 @@ func (m *InjectSubmissionMutation) SetField(name string, value ent.Value) error 
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetRubric(v)
+		return nil
+	case injectsubmission.FieldGraded:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetGraded(v)
 		return nil
 	}
 	return fmt.Errorf("unknown InjectSubmission field %s", name)
@@ -3015,6 +3066,9 @@ func (m *InjectSubmissionMutation) ResetField(name string) error {
 		return nil
 	case injectsubmission.FieldRubric:
 		m.ResetRubric()
+		return nil
+	case injectsubmission.FieldGraded:
+		m.ResetGraded()
 		return nil
 	}
 	return fmt.Errorf("unknown InjectSubmission field %s", name)

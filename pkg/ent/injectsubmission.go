@@ -37,6 +37,8 @@ type InjectSubmission struct {
 	Notes string `json:"notes"`
 	// The rubric of the inject submission
 	Rubric structs.Rubric `json:"rubric"`
+	// The graded status of the inject submission
+	Graded bool `json:"graded"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the InjectSubmissionQuery when eager-loading is set.
 	Edges        InjectSubmissionEdges `json:"edges"`
@@ -83,6 +85,8 @@ func (*InjectSubmission) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case injectsubmission.FieldFiles, injectsubmission.FieldRubric:
 			values[i] = new([]byte)
+		case injectsubmission.FieldGraded:
+			values[i] = new(sql.NullBool)
 		case injectsubmission.FieldNotes:
 			values[i] = new(sql.NullString)
 		case injectsubmission.FieldCreateTime, injectsubmission.FieldUpdateTime:
@@ -156,6 +160,12 @@ func (is *InjectSubmission) assignValues(columns []string, values []any) error {
 					return fmt.Errorf("unmarshal field rubric: %w", err)
 				}
 			}
+		case injectsubmission.FieldGraded:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field graded", values[i])
+			} else if value.Valid {
+				is.Graded = value.Bool
+			}
 		default:
 			is.selectValues.Set(columns[i], values[i])
 		}
@@ -222,6 +232,9 @@ func (is *InjectSubmission) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("rubric=")
 	builder.WriteString(fmt.Sprintf("%v", is.Rubric))
+	builder.WriteString(", ")
+	builder.WriteString("graded=")
+	builder.WriteString(fmt.Sprintf("%v", is.Graded))
 	builder.WriteByte(')')
 	return builder.String()
 }
