@@ -132,6 +132,11 @@ func (r *injectResolver) Submissions(ctx context.Context, obj *ent.Inject) ([]*e
 	return obj.QuerySubmissions().All(ctx)
 }
 
+// Rubric is the resolver for the rubric field.
+func (r *injectResolver) Rubric(ctx context.Context, obj *ent.Inject) (*model.RubricTemplate, error) {
+	panic(fmt.Errorf("not implemented: Rubric - rubric"))
+}
+
 // Files is the resolver for the files field.
 func (r *injectSubmissionResolver) Files(ctx context.Context, obj *ent.InjectSubmission) ([]*model.File, error) {
 	files := make([]*model.File, len(obj.Files))
@@ -160,6 +165,11 @@ func (r *injectSubmissionResolver) User(ctx context.Context, obj *ent.InjectSubm
 // Inject is the resolver for the inject field.
 func (r *injectSubmissionResolver) Inject(ctx context.Context, obj *ent.InjectSubmission) (*ent.Inject, error) {
 	return obj.QueryInject().Only(ctx)
+}
+
+// Rubric is the resolver for the rubric field.
+func (r *injectSubmissionResolver) Rubric(ctx context.Context, obj *ent.InjectSubmission) (*model.Rubric, error) {
+	panic(fmt.Errorf("not implemented: Rubric - rubric"))
 }
 
 // Login is the resolver for the login field.
@@ -875,7 +885,7 @@ func (r *mutationResolver) StopEngine(ctx context.Context) (bool, error) {
 }
 
 // CreateInject is the resolver for the createInject field.
-func (r *mutationResolver) CreateInject(ctx context.Context, title string, startTime time.Time, endTime time.Time, files []*graphql.Upload) (*ent.Inject, error) {
+func (r *mutationResolver) CreateInject(ctx context.Context, title string, startTime time.Time, endTime time.Time, files []*graphql.Upload, rubric model.RubricTemplateInput) (*ent.Inject, error) {
 	structFiles := make([]structs.File, len(files))
 
 	for i, file := range files {
@@ -918,7 +928,7 @@ func (r *mutationResolver) CreateInject(ctx context.Context, title string, start
 }
 
 // UpdateInject is the resolver for the updateInject field.
-func (r *mutationResolver) UpdateInject(ctx context.Context, id uuid.UUID, title *string, startTime *time.Time, endTime *time.Time, deleteFiles []uuid.UUID, addFiles []*graphql.Upload) (*ent.Inject, error) {
+func (r *mutationResolver) UpdateInject(ctx context.Context, id uuid.UUID, title *string, startTime *time.Time, endTime *time.Time, deleteFiles []uuid.UUID, addFiles []*graphql.Upload, rubric *model.RubricTemplateInput) (*ent.Inject, error) {
 	if title == nil && startTime == nil && endTime == nil && len(deleteFiles) == 0 && len(addFiles) == 0 {
 		return nil, fmt.Errorf("no fields to update")
 	}

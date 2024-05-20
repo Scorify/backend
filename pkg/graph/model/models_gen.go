@@ -32,6 +32,54 @@ type Notification struct {
 	Type    NotificationType `json:"type"`
 }
 
+type Rubric struct {
+	Fields   []*RubricField `json:"fields"`
+	Score    int            `json:"score"`
+	MaxScore int            `json:"max_score"`
+	Notes    *string        `json:"notes,omitempty"`
+}
+
+type RubricField struct {
+	Name     string  `json:"name"`
+	Score    int     `json:"score"`
+	MaxScore int     `json:"max_score"`
+	Notes    *string `json:"notes,omitempty"`
+}
+
+type RubricFieldInput struct {
+	Name     string  `json:"name"`
+	Score    int     `json:"score"`
+	MaxScore int     `json:"max_score"`
+	Notes    *string `json:"notes,omitempty"`
+}
+
+type RubricInput struct {
+	Fields   []*RubricFieldInput `json:"fields"`
+	Score    int                 `json:"score"`
+	MaxScore int                 `json:"max_score"`
+	Notes    *string             `json:"notes,omitempty"`
+}
+
+type RubricTemplate struct {
+	Fields   []*RubricTemplateField `json:"fields"`
+	MaxScore int                    `json:"max_score"`
+}
+
+type RubricTemplateField struct {
+	Name     string `json:"name"`
+	MaxScore int    `json:"max_score"`
+}
+
+type RubricTemplateFieldInput struct {
+	Name     string `json:"name"`
+	MaxScore int    `json:"max_score"`
+}
+
+type RubricTemplateInput struct {
+	Fields   []*RubricTemplateFieldInput `json:"fields"`
+	MaxScore int                         `json:"max_score"`
+}
+
 type Score struct {
 	User  *ent.User `json:"user"`
 	Score int       `json:"score"`
