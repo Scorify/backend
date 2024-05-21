@@ -100,6 +100,7 @@ var (
 		{Name: "files", Type: field.TypeJSON},
 		{Name: "notes", Type: field.TypeString},
 		{Name: "rubric", Type: field.TypeJSON},
+		{Name: "graded", Type: field.TypeBool},
 		{Name: "inject_id", Type: field.TypeUUID},
 		{Name: "user_id", Type: field.TypeUUID},
 	}
@@ -111,13 +112,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "inject_submissions_injects_submissions",
-				Columns:    []*schema.Column{InjectSubmissionsColumns[6]},
+				Columns:    []*schema.Column{InjectSubmissionsColumns[7]},
 				RefColumns: []*schema.Column{InjectsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "inject_submissions_users_submissions",
-				Columns:    []*schema.Column{InjectSubmissionsColumns[7]},
+				Columns:    []*schema.Column{InjectSubmissionsColumns[8]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.Cascade,
 			},

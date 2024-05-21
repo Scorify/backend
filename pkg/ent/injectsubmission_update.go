@@ -76,6 +76,20 @@ func (isu *InjectSubmissionUpdate) SetNillableRubric(s *structs.Rubric) *InjectS
 	return isu
 }
 
+// SetGraded sets the "graded" field.
+func (isu *InjectSubmissionUpdate) SetGraded(b bool) *InjectSubmissionUpdate {
+	isu.mutation.SetGraded(b)
+	return isu
+}
+
+// SetNillableGraded sets the "graded" field if the given value is not nil.
+func (isu *InjectSubmissionUpdate) SetNillableGraded(b *bool) *InjectSubmissionUpdate {
+	if b != nil {
+		isu.SetGraded(*b)
+	}
+	return isu
+}
+
 // Mutation returns the InjectSubmissionMutation object of the builder.
 func (isu *InjectSubmissionUpdate) Mutation() *InjectSubmissionMutation {
 	return isu.mutation
@@ -157,6 +171,9 @@ func (isu *InjectSubmissionUpdate) sqlSave(ctx context.Context) (n int, err erro
 	if value, ok := isu.mutation.Rubric(); ok {
 		_spec.SetField(injectsubmission.FieldRubric, field.TypeJSON, value)
 	}
+	if value, ok := isu.mutation.Graded(); ok {
+		_spec.SetField(injectsubmission.FieldGraded, field.TypeBool, value)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, isu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{injectsubmission.Label}
@@ -219,6 +236,20 @@ func (isuo *InjectSubmissionUpdateOne) SetRubric(s structs.Rubric) *InjectSubmis
 func (isuo *InjectSubmissionUpdateOne) SetNillableRubric(s *structs.Rubric) *InjectSubmissionUpdateOne {
 	if s != nil {
 		isuo.SetRubric(*s)
+	}
+	return isuo
+}
+
+// SetGraded sets the "graded" field.
+func (isuo *InjectSubmissionUpdateOne) SetGraded(b bool) *InjectSubmissionUpdateOne {
+	isuo.mutation.SetGraded(b)
+	return isuo
+}
+
+// SetNillableGraded sets the "graded" field if the given value is not nil.
+func (isuo *InjectSubmissionUpdateOne) SetNillableGraded(b *bool) *InjectSubmissionUpdateOne {
+	if b != nil {
+		isuo.SetGraded(*b)
 	}
 	return isuo
 }
@@ -333,6 +364,9 @@ func (isuo *InjectSubmissionUpdateOne) sqlSave(ctx context.Context) (_node *Inje
 	}
 	if value, ok := isuo.mutation.Rubric(); ok {
 		_spec.SetField(injectsubmission.FieldRubric, field.TypeJSON, value)
+	}
+	if value, ok := isuo.mutation.Graded(); ok {
+		_spec.SetField(injectsubmission.FieldGraded, field.TypeBool, value)
 	}
 	_node = &InjectSubmission{config: isuo.config}
 	_spec.Assign = _node.assignValues

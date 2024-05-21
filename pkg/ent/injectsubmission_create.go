@@ -82,6 +82,12 @@ func (isc *InjectSubmissionCreate) SetRubric(s structs.Rubric) *InjectSubmission
 	return isc
 }
 
+// SetGraded sets the "graded" field.
+func (isc *InjectSubmissionCreate) SetGraded(b bool) *InjectSubmissionCreate {
+	isc.mutation.SetGraded(b)
+	return isc
+}
+
 // SetID sets the "id" field.
 func (isc *InjectSubmissionCreate) SetID(u uuid.UUID) *InjectSubmissionCreate {
 	isc.mutation.SetID(u)
@@ -178,6 +184,9 @@ func (isc *InjectSubmissionCreate) check() error {
 	if _, ok := isc.mutation.Rubric(); !ok {
 		return &ValidationError{Name: "rubric", err: errors.New(`ent: missing required field "InjectSubmission.rubric"`)}
 	}
+	if _, ok := isc.mutation.Graded(); !ok {
+		return &ValidationError{Name: "graded", err: errors.New(`ent: missing required field "InjectSubmission.graded"`)}
+	}
 	if _, ok := isc.mutation.InjectID(); !ok {
 		return &ValidationError{Name: "inject", err: errors.New(`ent: missing required edge "InjectSubmission.inject"`)}
 	}
@@ -238,6 +247,10 @@ func (isc *InjectSubmissionCreate) createSpec() (*InjectSubmission, *sqlgraph.Cr
 	if value, ok := isc.mutation.Rubric(); ok {
 		_spec.SetField(injectsubmission.FieldRubric, field.TypeJSON, value)
 		_node.Rubric = value
+	}
+	if value, ok := isc.mutation.Graded(); ok {
+		_spec.SetField(injectsubmission.FieldGraded, field.TypeBool, value)
+		_node.Graded = value
 	}
 	if nodes := isc.mutation.InjectIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
