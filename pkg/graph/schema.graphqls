@@ -155,7 +155,6 @@ input RubricTemplateInput {
 type RubricField {
   name: String!
   score: Int!
-  max_score: Int!
   notes: String
 }
 
