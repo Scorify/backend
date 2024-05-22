@@ -33,10 +33,8 @@ type Notification struct {
 }
 
 type Rubric struct {
-	Fields   []*RubricField `json:"fields"`
-	Score    int            `json:"score"`
-	MaxScore int            `json:"max_score"`
-	Notes    *string        `json:"notes,omitempty"`
+	Fields []*RubricField `json:"fields"`
+	Notes  *string        `json:"notes,omitempty"`
 }
 
 type RubricField struct {
@@ -47,10 +45,9 @@ type RubricField struct {
 }
 
 type RubricFieldInput struct {
-	Name     string  `json:"name"`
-	Score    int     `json:"score"`
-	MaxScore int     `json:"max_score"`
-	Notes    *string `json:"notes,omitempty"`
+	Name  string  `json:"name"`
+	Score int     `json:"score"`
+	Notes *string `json:"notes,omitempty"`
 }
 
 type RubricInput struct {
@@ -58,11 +55,6 @@ type RubricInput struct {
 	Score    int                 `json:"score"`
 	MaxScore int                 `json:"max_score"`
 	Notes    *string             `json:"notes,omitempty"`
-}
-
-type RubricTemplate struct {
-	Fields   []*RubricTemplateField `json:"fields"`
-	MaxScore int                    `json:"max_score"`
 }
 
 type RubricTemplateField struct {

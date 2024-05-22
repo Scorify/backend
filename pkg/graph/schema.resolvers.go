@@ -132,11 +132,6 @@ func (r *injectResolver) Submissions(ctx context.Context, obj *ent.Inject) ([]*e
 	return obj.QuerySubmissions().All(ctx)
 }
 
-// Rubric is the resolver for the rubric field.
-func (r *injectResolver) Rubric(ctx context.Context, obj *ent.Inject) (*model.RubricTemplate, error) {
-	panic(fmt.Errorf("not implemented: Rubric - rubric"))
-}
-
 // Files is the resolver for the files field.
 func (r *injectSubmissionResolver) Files(ctx context.Context, obj *ent.InjectSubmission) ([]*model.File, error) {
 	files := make([]*model.File, len(obj.Files))
@@ -886,6 +881,7 @@ func (r *mutationResolver) StopEngine(ctx context.Context) (bool, error) {
 
 // CreateInject is the resolver for the createInject field.
 func (r *mutationResolver) CreateInject(ctx context.Context, title string, startTime time.Time, endTime time.Time, files []*graphql.Upload, rubric model.RubricTemplateInput) (*ent.Inject, error) {
+	// TODO: Implement use of rubric
 	structFiles := make([]structs.File, len(files))
 
 	for i, file := range files {
@@ -929,6 +925,7 @@ func (r *mutationResolver) CreateInject(ctx context.Context, title string, start
 
 // UpdateInject is the resolver for the updateInject field.
 func (r *mutationResolver) UpdateInject(ctx context.Context, id uuid.UUID, title *string, startTime *time.Time, endTime *time.Time, deleteFiles []uuid.UUID, addFiles []*graphql.Upload, rubric *model.RubricTemplateInput) (*ent.Inject, error) {
+	// TODO: Implement use of rubric
 	if title == nil && startTime == nil && endTime == nil && len(deleteFiles) == 0 && len(addFiles) == 0 {
 		return nil, fmt.Errorf("no fields to update")
 	}
@@ -1234,6 +1231,11 @@ func (r *roundResolver) ScoreCaches(ctx context.Context, obj *ent.Round) ([]*ent
 		).All(ctx)
 }
 
+// Fields is the resolver for the fields field.
+func (r *rubricTemplateResolver) Fields(ctx context.Context, obj *structs.RubricTemplate) ([]*model.RubricTemplateField, error) {
+	panic(fmt.Errorf("not implemented: Fields - fields"))
+}
+
 // Round is the resolver for the round field.
 func (r *scoreCacheResolver) Round(ctx context.Context, obj *ent.ScoreCache) (*ent.Round, error) {
 	return obj.QueryRound().Only(ctx)
@@ -1431,6 +1433,9 @@ func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 // Round returns RoundResolver implementation.
 func (r *Resolver) Round() RoundResolver { return &roundResolver{r} }
 
+// RubricTemplate returns RubricTemplateResolver implementation.
+func (r *Resolver) RubricTemplate() RubricTemplateResolver { return &rubricTemplateResolver{r} }
+
 // ScoreCache returns ScoreCacheResolver implementation.
 func (r *Resolver) ScoreCache() ScoreCacheResolver { return &scoreCacheResolver{r} }
 
@@ -1451,6 +1456,7 @@ type injectSubmissionResolver struct{ *Resolver }
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
 type roundResolver struct{ *Resolver }
+type rubricTemplateResolver struct{ *Resolver }
 type scoreCacheResolver struct{ *Resolver }
 type statusResolver struct{ *Resolver }
 type subscriptionResolver struct{ *Resolver }
