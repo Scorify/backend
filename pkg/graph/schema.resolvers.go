@@ -876,7 +876,6 @@ func (r *mutationResolver) StopEngine(ctx context.Context) (bool, error) {
 
 // CreateInject is the resolver for the createInject field.
 func (r *mutationResolver) CreateInject(ctx context.Context, title string, startTime time.Time, endTime time.Time, files []*graphql.Upload, rubric model.RubricTemplateInput) (*ent.Inject, error) {
-	// TODO: Implement use of rubric
 	structFiles := make([]structs.File, len(files))
 
 	for i, file := range files {
@@ -884,6 +883,19 @@ func (r *mutationResolver) CreateInject(ctx context.Context, title string, start
 			ID:   uuid.New(),
 			Name: file.Filename,
 		}
+	}
+
+	rubricTemplateFields := make([]structs.RubricTemplateField, len(rubric.Fields))
+	for i, field := range rubric.Fields {
+		rubricTemplateFields[i] = structs.RubricTemplateField{
+			Name:     field.Name,
+			MaxScore: field.MaxScore,
+		}
+	}
+
+	rubricTemplate := structs.RubricTemplate{
+		Fields:   rubricTemplateFields,
+		MaxScore: rubric.MaxScore,
 	}
 
 	tx, err := r.Ent.Tx(ctx)
@@ -898,6 +910,7 @@ func (r *mutationResolver) CreateInject(ctx context.Context, title string, start
 		SetStartTime(startTime).
 		SetEndTime(endTime).
 		SetFiles(structFiles).
+		SetRubric(rubricTemplate).
 		Save(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create inject: %v", err)
