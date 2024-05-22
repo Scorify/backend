@@ -99,4 +99,8 @@ models:
   StatusEnum:
     model:
       - github.com/scorify/backend/pkg/ent/status.Status
+  
+  RubricTemplate:
+   model:
+     - github.com/scorify/backend/pkg/structs.RubricTemplate
 
