@@ -57,11 +57,6 @@ type RubricInput struct {
 	Notes    *string             `json:"notes,omitempty"`
 }
 
-type RubricTemplateField struct {
-	Name     string `json:"name"`
-	MaxScore int    `json:"max_score"`
-}
-
 type RubricTemplateFieldInput struct {
 	Name     string `json:"name"`
 	MaxScore int    `json:"max_score"`

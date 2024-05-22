@@ -1231,11 +1231,6 @@ func (r *roundResolver) ScoreCaches(ctx context.Context, obj *ent.Round) ([]*ent
 		).All(ctx)
 }
 
-// Fields is the resolver for the fields field.
-func (r *rubricTemplateResolver) Fields(ctx context.Context, obj *structs.RubricTemplate) ([]*model.RubricTemplateField, error) {
-	panic(fmt.Errorf("not implemented: Fields - fields"))
-}
-
 // Round is the resolver for the round field.
 func (r *scoreCacheResolver) Round(ctx context.Context, obj *ent.ScoreCache) (*ent.Round, error) {
 	return obj.QueryRound().Only(ctx)
@@ -1433,9 +1428,6 @@ func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 // Round returns RoundResolver implementation.
 func (r *Resolver) Round() RoundResolver { return &roundResolver{r} }
 
-// RubricTemplate returns RubricTemplateResolver implementation.
-func (r *Resolver) RubricTemplate() RubricTemplateResolver { return &rubricTemplateResolver{r} }
-
 // ScoreCache returns ScoreCacheResolver implementation.
 func (r *Resolver) ScoreCache() ScoreCacheResolver { return &scoreCacheResolver{r} }
 
@@ -1456,7 +1448,6 @@ type injectSubmissionResolver struct{ *Resolver }
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
 type roundResolver struct{ *Resolver }
-type rubricTemplateResolver struct{ *Resolver }
 type scoreCacheResolver struct{ *Resolver }
 type statusResolver struct{ *Resolver }
 type subscriptionResolver struct{ *Resolver }
