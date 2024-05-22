@@ -103,4 +103,8 @@ models:
   RubricTemplate:
    model:
      - github.com/scorify/backend/pkg/structs.RubricTemplate
+    
+  RubricTemplateField:
+    model:
+      - github.com/scorify/backend/pkg/structs.RubricTemplateField
 
