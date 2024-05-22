@@ -1226,11 +1226,6 @@ func (r *roundResolver) ScoreCaches(ctx context.Context, obj *ent.Round) ([]*ent
 		).All(ctx)
 }
 
-// MaxScore is the resolver for the max_score field.
-func (r *rubricFieldResolver) MaxScore(ctx context.Context, obj *structs.RubricField) (int, error) {
-	panic(fmt.Errorf("not implemented: MaxScore - max_score"))
-}
-
 // Round is the resolver for the round field.
 func (r *scoreCacheResolver) Round(ctx context.Context, obj *ent.ScoreCache) (*ent.Round, error) {
 	return obj.QueryRound().Only(ctx)
@@ -1428,9 +1423,6 @@ func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 // Round returns RoundResolver implementation.
 func (r *Resolver) Round() RoundResolver { return &roundResolver{r} }
 
-// RubricField returns RubricFieldResolver implementation.
-func (r *Resolver) RubricField() RubricFieldResolver { return &rubricFieldResolver{r} }
-
 // ScoreCache returns ScoreCacheResolver implementation.
 func (r *Resolver) ScoreCache() ScoreCacheResolver { return &scoreCacheResolver{r} }
 
@@ -1451,7 +1443,6 @@ type injectSubmissionResolver struct{ *Resolver }
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
 type roundResolver struct{ *Resolver }
-type rubricFieldResolver struct{ *Resolver }
 type scoreCacheResolver struct{ *Resolver }
 type statusResolver struct{ *Resolver }
 type subscriptionResolver struct{ *Resolver }
