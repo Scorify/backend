@@ -54,6 +54,7 @@ type ResolverRoot interface {
 	Mutation() MutationResolver
 	Query() QueryResolver
 	Round() RoundResolver
+	RubricField() RubricFieldResolver
 	ScoreCache() ScoreCacheResolver
 	Status() StatusResolver
 	Subscription() SubscriptionResolver
@@ -305,7 +306,6 @@ type InjectSubmissionResolver interface {
 
 	User(ctx context.Context, obj *ent.InjectSubmission) (*ent.User, error)
 	Inject(ctx context.Context, obj *ent.InjectSubmission) (*ent.Inject, error)
-	Rubric(ctx context.Context, obj *ent.InjectSubmission) (*model.Rubric, error)
 }
 type MutationResolver interface {
 	Login(ctx context.Context, username string, password string) (*model.LoginOutput, error)
@@ -345,6 +345,9 @@ type QueryResolver interface {
 type RoundResolver interface {
 	Statuses(ctx context.Context, obj *ent.Round) ([]*ent.Status, error)
 	ScoreCaches(ctx context.Context, obj *ent.Round) ([]*ent.ScoreCache, error)
+}
+type RubricFieldResolver interface {
+	MaxScore(ctx context.Context, obj *structs.RubricField) (int, error)
 }
 type ScoreCacheResolver interface {
 	Round(ctx context.Context, obj *ent.ScoreCache) (*ent.Round, error)
@@ -4452,7 +4455,7 @@ func (ec *executionContext) _InjectSubmission_rubric(ctx context.Context, field 
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.InjectSubmission().Rubric(rctx, obj)
+		return obj.Rubric, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4464,17 +4467,17 @@ func (ec *executionContext) _InjectSubmission_rubric(ctx context.Context, field 
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.Rubric)
+	res := resTmp.(structs.Rubric)
 	fc.Result = res
-	return ec.marshalNRubric2ᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋgraphᚋmodelᚐRubric(ctx, field.Selections, res)
+	return ec.marshalNRubric2githubᚗcomᚋscorifyᚋbackendᚋpkgᚋstructsᚐRubric(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_InjectSubmission_rubric(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "InjectSubmission",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "fields":
@@ -7964,7 +7967,7 @@ func (ec *executionContext) fieldContext_Round_score_caches(ctx context.Context,
 	return fc, nil
 }
 
-func (ec *executionContext) _Rubric_fields(ctx context.Context, field graphql.CollectedField, obj *model.Rubric) (ret graphql.Marshaler) {
+func (ec *executionContext) _Rubric_fields(ctx context.Context, field graphql.CollectedField, obj *structs.Rubric) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Rubric_fields(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -7990,9 +7993,9 @@ func (ec *executionContext) _Rubric_fields(ctx context.Context, field graphql.Co
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*model.RubricField)
+	res := resTmp.([]structs.RubricField)
 	fc.Result = res
-	return ec.marshalNRubricField2ᚕᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋgraphᚋmodelᚐRubricFieldᚄ(ctx, field.Selections, res)
+	return ec.marshalNRubricField2ᚕgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋstructsᚐRubricFieldᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Rubric_fields(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -8018,7 +8021,7 @@ func (ec *executionContext) fieldContext_Rubric_fields(ctx context.Context, fiel
 	return fc, nil
 }
 
-func (ec *executionContext) _Rubric_notes(ctx context.Context, field graphql.CollectedField, obj *model.Rubric) (ret graphql.Marshaler) {
+func (ec *executionContext) _Rubric_notes(ctx context.Context, field graphql.CollectedField, obj *structs.Rubric) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Rubric_notes(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -8041,9 +8044,9 @@ func (ec *executionContext) _Rubric_notes(ctx context.Context, field graphql.Col
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Rubric_notes(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -8059,7 +8062,7 @@ func (ec *executionContext) fieldContext_Rubric_notes(ctx context.Context, field
 	return fc, nil
 }
 
-func (ec *executionContext) _RubricField_name(ctx context.Context, field graphql.CollectedField, obj *model.RubricField) (ret graphql.Marshaler) {
+func (ec *executionContext) _RubricField_name(ctx context.Context, field graphql.CollectedField, obj *structs.RubricField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_RubricField_name(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -8103,7 +8106,7 @@ func (ec *executionContext) fieldContext_RubricField_name(ctx context.Context, f
 	return fc, nil
 }
 
-func (ec *executionContext) _RubricField_score(ctx context.Context, field graphql.CollectedField, obj *model.RubricField) (ret graphql.Marshaler) {
+func (ec *executionContext) _RubricField_score(ctx context.Context, field graphql.CollectedField, obj *structs.RubricField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_RubricField_score(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -8147,7 +8150,7 @@ func (ec *executionContext) fieldContext_RubricField_score(ctx context.Context, 
 	return fc, nil
 }
 
-func (ec *executionContext) _RubricField_max_score(ctx context.Context, field graphql.CollectedField, obj *model.RubricField) (ret graphql.Marshaler) {
+func (ec *executionContext) _RubricField_max_score(ctx context.Context, field graphql.CollectedField, obj *structs.RubricField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_RubricField_max_score(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -8161,7 +8164,7 @@ func (ec *executionContext) _RubricField_max_score(ctx context.Context, field gr
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.MaxScore, nil
+		return ec.resolvers.RubricField().MaxScore(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8182,8 +8185,8 @@ func (ec *executionContext) fieldContext_RubricField_max_score(ctx context.Conte
 	fc = &graphql.FieldContext{
 		Object:     "RubricField",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Int does not have child fields")
 		},
@@ -8191,7 +8194,7 @@ func (ec *executionContext) fieldContext_RubricField_max_score(ctx context.Conte
 	return fc, nil
 }
 
-func (ec *executionContext) _RubricField_notes(ctx context.Context, field graphql.CollectedField, obj *model.RubricField) (ret graphql.Marshaler) {
+func (ec *executionContext) _RubricField_notes(ctx context.Context, field graphql.CollectedField, obj *structs.RubricField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_RubricField_notes(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -8214,9 +8217,9 @@ func (ec *executionContext) _RubricField_notes(ctx context.Context, field graphq
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_RubricField_notes(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -13553,41 +13556,10 @@ func (ec *executionContext) _InjectSubmission(ctx context.Context, sel ast.Selec
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "rubric":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._InjectSubmission_rubric(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
+			out.Values[i] = ec._InjectSubmission_rubric(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
 			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "graded":
 			out.Values[i] = ec._InjectSubmission_graded(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -14363,7 +14335,7 @@ func (ec *executionContext) _Round(ctx context.Context, sel ast.SelectionSet, ob
 
 var rubricImplementors = []string{"Rubric"}
 
-func (ec *executionContext) _Rubric(ctx context.Context, sel ast.SelectionSet, obj *model.Rubric) graphql.Marshaler {
+func (ec *executionContext) _Rubric(ctx context.Context, sel ast.SelectionSet, obj *structs.Rubric) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, rubricImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -14404,7 +14376,7 @@ func (ec *executionContext) _Rubric(ctx context.Context, sel ast.SelectionSet, o
 
 var rubricFieldImplementors = []string{"RubricField"}
 
-func (ec *executionContext) _RubricField(ctx context.Context, sel ast.SelectionSet, obj *model.RubricField) graphql.Marshaler {
+func (ec *executionContext) _RubricField(ctx context.Context, sel ast.SelectionSet, obj *structs.RubricField) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, rubricFieldImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -14416,18 +14388,49 @@ func (ec *executionContext) _RubricField(ctx context.Context, sel ast.SelectionS
 		case "name":
 			out.Values[i] = ec._RubricField_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "score":
 			out.Values[i] = ec._RubricField_score(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "max_score":
-			out.Values[i] = ec._RubricField_max_score(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._RubricField_max_score(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
 			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "notes":
 			out.Values[i] = ec._RubricField_notes(ctx, field, obj)
 		default:
@@ -16043,21 +16046,15 @@ func (ec *executionContext) marshalNRound2ᚖgithubᚗcomᚋscorifyᚋbackendᚋ
 	return ec._Round(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNRubric2githubᚗcomᚋscorifyᚋbackendᚋpkgᚋgraphᚋmodelᚐRubric(ctx context.Context, sel ast.SelectionSet, v model.Rubric) graphql.Marshaler {
+func (ec *executionContext) marshalNRubric2githubᚗcomᚋscorifyᚋbackendᚋpkgᚋstructsᚐRubric(ctx context.Context, sel ast.SelectionSet, v structs.Rubric) graphql.Marshaler {
 	return ec._Rubric(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNRubric2ᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋgraphᚋmodelᚐRubric(ctx context.Context, sel ast.SelectionSet, v *model.Rubric) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-		return graphql.Null
-	}
-	return ec._Rubric(ctx, sel, v)
+func (ec *executionContext) marshalNRubricField2githubᚗcomᚋscorifyᚋbackendᚋpkgᚋstructsᚐRubricField(ctx context.Context, sel ast.SelectionSet, v structs.RubricField) graphql.Marshaler {
+	return ec._RubricField(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNRubricField2ᚕᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋgraphᚋmodelᚐRubricFieldᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.RubricField) graphql.Marshaler {
+func (ec *executionContext) marshalNRubricField2ᚕgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋstructsᚐRubricFieldᚄ(ctx context.Context, sel ast.SelectionSet, v []structs.RubricField) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -16081,7 +16078,7 @@ func (ec *executionContext) marshalNRubricField2ᚕᚖgithubᚗcomᚋscorifyᚋb
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNRubricField2ᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋgraphᚋmodelᚐRubricField(ctx, sel, v[i])
+			ret[i] = ec.marshalNRubricField2githubᚗcomᚋscorifyᚋbackendᚋpkgᚋstructsᚐRubricField(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -16099,16 +16096,6 @@ func (ec *executionContext) marshalNRubricField2ᚕᚖgithubᚗcomᚋscorifyᚋb
 	}
 
 	return ret
-}
-
-func (ec *executionContext) marshalNRubricField2ᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋgraphᚋmodelᚐRubricField(ctx context.Context, sel ast.SelectionSet, v *model.RubricField) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-		return graphql.Null
-	}
-	return ec._RubricField(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNRubricFieldInput2ᚕᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋgraphᚋmodelᚐRubricFieldInputᚄ(ctx context.Context, v interface{}) ([]*model.RubricFieldInput, error) {
