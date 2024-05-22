@@ -933,8 +933,7 @@ func (r *mutationResolver) CreateInject(ctx context.Context, title string, start
 
 // UpdateInject is the resolver for the updateInject field.
 func (r *mutationResolver) UpdateInject(ctx context.Context, id uuid.UUID, title *string, startTime *time.Time, endTime *time.Time, deleteFiles []uuid.UUID, addFiles []*graphql.Upload, rubric *model.RubricTemplateInput) (*ent.Inject, error) {
-	// TODO: Implement use of rubric
-	if title == nil && startTime == nil && endTime == nil && len(deleteFiles) == 0 && len(addFiles) == 0 {
+	if title == nil && startTime == nil && endTime == nil && len(deleteFiles) == 0 && len(addFiles) == 0 && rubric == nil {
 		return nil, fmt.Errorf("no fields to update")
 	}
 
@@ -1005,6 +1004,23 @@ func (r *mutationResolver) UpdateInject(ctx context.Context, id uuid.UUID, title
 
 	if len(deleteFiles) > 0 || len(addFiles) > 0 {
 		injectUpdate.SetFiles(entInject.Files)
+	}
+
+	if rubric != nil {
+		rubricTemplateFields := make([]structs.RubricTemplateField, len(rubric.Fields))
+		for i, field := range rubric.Fields {
+			rubricTemplateFields[i] = structs.RubricTemplateField{
+				Name:     field.Name,
+				MaxScore: field.MaxScore,
+			}
+		}
+
+		rubricTemplate := structs.RubricTemplate{
+			Fields:   rubricTemplateFields,
+			MaxScore: rubric.MaxScore,
+		}
+
+		injectUpdate.SetRubric(rubricTemplate)
 	}
 
 	return injectUpdate.Save(ctx)
