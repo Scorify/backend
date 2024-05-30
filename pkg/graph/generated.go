@@ -153,7 +153,7 @@ type ComplexityRoot struct {
 		SendGlobalNotification func(childComplexity int, message string, typeArg model.NotificationType) int
 		StartEngine            func(childComplexity int) int
 		StopEngine             func(childComplexity int) int
-		SubmitInject           func(childComplexity int, injectID uuid.UUID, files []*graphql.Upload) int
+		SubmitInject           func(childComplexity int, injectID uuid.UUID, notes *string, files []*graphql.Upload) int
 		UpdateCheck            func(childComplexity int, id uuid.UUID, name *string, weight *int, config *string, editableFields []string) int
 		UpdateInject           func(childComplexity int, id uuid.UUID, title *string, startTime *time.Time, endTime *time.Time, deleteFiles []uuid.UUID, addFiles []*graphql.Upload, rubric *model.RubricTemplateInput) int
 		UpdateUser             func(childComplexity int, id uuid.UUID, username *string, password *string, number *int) int
@@ -323,7 +323,7 @@ type MutationResolver interface {
 	CreateInject(ctx context.Context, title string, startTime time.Time, endTime time.Time, files []*graphql.Upload, rubric model.RubricTemplateInput) (*ent.Inject, error)
 	UpdateInject(ctx context.Context, id uuid.UUID, title *string, startTime *time.Time, endTime *time.Time, deleteFiles []uuid.UUID, addFiles []*graphql.Upload, rubric *model.RubricTemplateInput) (*ent.Inject, error)
 	DeleteInject(ctx context.Context, id uuid.UUID) (bool, error)
-	SubmitInject(ctx context.Context, injectID uuid.UUID, files []*graphql.Upload) (*ent.InjectSubmission, error)
+	SubmitInject(ctx context.Context, injectID uuid.UUID, notes *string, files []*graphql.Upload) (*ent.InjectSubmission, error)
 }
 type QueryResolver interface {
 	Me(ctx context.Context) (*ent.User, error)
@@ -910,7 +910,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.SubmitInject(childComplexity, args["injectID"].(uuid.UUID), args["files"].([]*graphql.Upload)), true
+		return e.complexity.Mutation.SubmitInject(childComplexity, args["injectID"].(uuid.UUID), args["notes"].(*string), args["files"].([]*graphql.Upload)), true
 
 	case "Mutation.updateCheck":
 		if e.complexity.Mutation.UpdateCheck == nil {
@@ -1983,15 +1983,24 @@ func (ec *executionContext) field_Mutation_submitInject_args(ctx context.Context
 		}
 	}
 	args["injectID"] = arg0
-	var arg1 []*graphql.Upload
-	if tmp, ok := rawArgs["files"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("files"))
-		arg1, err = ec.unmarshalNUpload2ᚕᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUploadᚄ(ctx, tmp)
+	var arg1 *string
+	if tmp, ok := rawArgs["notes"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("notes"))
+		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["files"] = arg1
+	args["notes"] = arg1
+	var arg2 []*graphql.Upload
+	if tmp, ok := rawArgs["files"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("files"))
+		arg2, err = ec.unmarshalNUpload2ᚕᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUploadᚄ(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["files"] = arg2
 	return args, nil
 }
 
@@ -6321,7 +6330,7 @@ func (ec *executionContext) _Mutation_submitInject(ctx context.Context, field gr
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().SubmitInject(rctx, fc.Args["injectID"].(uuid.UUID), fc.Args["files"].([]*graphql.Upload))
+			return ec.resolvers.Mutation().SubmitInject(rctx, fc.Args["injectID"].(uuid.UUID), fc.Args["notes"].(*string), fc.Args["files"].([]*graphql.Upload))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			roles, err := ec.unmarshalORole2ᚕᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚋuserᚐRole(ctx, []interface{}{"user"})
