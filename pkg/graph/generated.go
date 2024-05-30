@@ -122,6 +122,7 @@ type ComplexityRoot struct {
 		ID         func(childComplexity int) int
 		Inject     func(childComplexity int) int
 		InjectID   func(childComplexity int) int
+		Notes      func(childComplexity int) int
 		Rubric     func(childComplexity int) int
 		UpdateTime func(childComplexity int) int
 		User       func(childComplexity int) int
@@ -153,7 +154,7 @@ type ComplexityRoot struct {
 		SendGlobalNotification func(childComplexity int, message string, typeArg model.NotificationType) int
 		StartEngine            func(childComplexity int) int
 		StopEngine             func(childComplexity int) int
-		SubmitInject           func(childComplexity int, injectID uuid.UUID, notes *string, files []*graphql.Upload) int
+		SubmitInject           func(childComplexity int, injectID uuid.UUID, notes string, files []*graphql.Upload) int
 		UpdateCheck            func(childComplexity int, id uuid.UUID, name *string, weight *int, config *string, editableFields []string) int
 		UpdateInject           func(childComplexity int, id uuid.UUID, title *string, startTime *time.Time, endTime *time.Time, deleteFiles []uuid.UUID, addFiles []*graphql.Upload, rubric *model.RubricTemplateInput) int
 		UpdateUser             func(childComplexity int, id uuid.UUID, username *string, password *string, number *int) int
@@ -323,7 +324,7 @@ type MutationResolver interface {
 	CreateInject(ctx context.Context, title string, startTime time.Time, endTime time.Time, files []*graphql.Upload, rubric model.RubricTemplateInput) (*ent.Inject, error)
 	UpdateInject(ctx context.Context, id uuid.UUID, title *string, startTime *time.Time, endTime *time.Time, deleteFiles []uuid.UUID, addFiles []*graphql.Upload, rubric *model.RubricTemplateInput) (*ent.Inject, error)
 	DeleteInject(ctx context.Context, id uuid.UUID) (bool, error)
-	SubmitInject(ctx context.Context, injectID uuid.UUID, notes *string, files []*graphql.Upload) (*ent.InjectSubmission, error)
+	SubmitInject(ctx context.Context, injectID uuid.UUID, notes string, files []*graphql.Upload) (*ent.InjectSubmission, error)
 }
 type QueryResolver interface {
 	Me(ctx context.Context) (*ent.User, error)
@@ -665,6 +666,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.InjectSubmission.InjectID(childComplexity), true
 
+	case "InjectSubmission.notes":
+		if e.complexity.InjectSubmission.Notes == nil {
+			break
+		}
+
+		return e.complexity.InjectSubmission.Notes(childComplexity), true
+
 	case "InjectSubmission.rubric":
 		if e.complexity.InjectSubmission.Rubric == nil {
 			break
@@ -910,7 +918,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.SubmitInject(childComplexity, args["injectID"].(uuid.UUID), args["notes"].(*string), args["files"].([]*graphql.Upload)), true
+		return e.complexity.Mutation.SubmitInject(childComplexity, args["injectID"].(uuid.UUID), args["notes"].(string), args["files"].([]*graphql.Upload)), true
 
 	case "Mutation.updateCheck":
 		if e.complexity.Mutation.UpdateCheck == nil {
@@ -1983,10 +1991,10 @@ func (ec *executionContext) field_Mutation_submitInject_args(ctx context.Context
 		}
 	}
 	args["injectID"] = arg0
-	var arg1 *string
+	var arg1 string
 	if tmp, ok := rawArgs["notes"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("notes"))
-		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -3979,6 +3987,8 @@ func (ec *executionContext) fieldContext_Inject_submissions(ctx context.Context,
 				return ec.fieldContext_InjectSubmission_rubric(ctx, field)
 			case "graded":
 				return ec.fieldContext_InjectSubmission_graded(ctx, field)
+			case "notes":
+				return ec.fieldContext_InjectSubmission_notes(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type InjectSubmission", field.Name)
 		},
@@ -4527,6 +4537,50 @@ func (ec *executionContext) fieldContext_InjectSubmission_graded(ctx context.Con
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InjectSubmission_notes(ctx context.Context, field graphql.CollectedField, obj *ent.InjectSubmission) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InjectSubmission_notes(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Notes, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InjectSubmission_notes(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InjectSubmission",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -6330,7 +6384,7 @@ func (ec *executionContext) _Mutation_submitInject(ctx context.Context, field gr
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().SubmitInject(rctx, fc.Args["injectID"].(uuid.UUID), fc.Args["notes"].(*string), fc.Args["files"].([]*graphql.Upload))
+			return ec.resolvers.Mutation().SubmitInject(rctx, fc.Args["injectID"].(uuid.UUID), fc.Args["notes"].(string), fc.Args["files"].([]*graphql.Upload))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			roles, err := ec.unmarshalORole2ᚕᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚋuserᚐRole(ctx, []interface{}{"user"})
@@ -6398,6 +6452,8 @@ func (ec *executionContext) fieldContext_Mutation_submitInject(ctx context.Conte
 				return ec.fieldContext_InjectSubmission_rubric(ctx, field)
 			case "graded":
 				return ec.fieldContext_InjectSubmission_graded(ctx, field)
+			case "notes":
+				return ec.fieldContext_InjectSubmission_notes(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type InjectSubmission", field.Name)
 		},
@@ -7379,6 +7435,8 @@ func (ec *executionContext) fieldContext_Query_injectSubmissions(ctx context.Con
 				return ec.fieldContext_InjectSubmission_rubric(ctx, field)
 			case "graded":
 				return ec.fieldContext_InjectSubmission_graded(ctx, field)
+			case "notes":
+				return ec.fieldContext_InjectSubmission_notes(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type InjectSubmission", field.Name)
 		},
@@ -7465,6 +7523,8 @@ func (ec *executionContext) fieldContext_Query_injectSubmission(ctx context.Cont
 				return ec.fieldContext_InjectSubmission_rubric(ctx, field)
 			case "graded":
 				return ec.fieldContext_InjectSubmission_graded(ctx, field)
+			case "notes":
+				return ec.fieldContext_InjectSubmission_notes(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type InjectSubmission", field.Name)
 		},
@@ -10705,6 +10765,8 @@ func (ec *executionContext) fieldContext_User_inject_submissions(ctx context.Con
 				return ec.fieldContext_InjectSubmission_rubric(ctx, field)
 			case "graded":
 				return ec.fieldContext_InjectSubmission_graded(ctx, field)
+			case "notes":
+				return ec.fieldContext_InjectSubmission_notes(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type InjectSubmission", field.Name)
 		},
@@ -13513,6 +13575,11 @@ func (ec *executionContext) _InjectSubmission(ctx context.Context, sel ast.Selec
 			}
 		case "graded":
 			out.Values[i] = ec._InjectSubmission_graded(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "notes":
+			out.Values[i] = ec._InjectSubmission_notes(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}

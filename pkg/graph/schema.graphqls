@@ -199,6 +199,7 @@ type InjectSubmission {
   inject: Inject!
   rubric: Rubric!
   graded: Boolean!
+  notes: String!
 }
 
 type Notification {
@@ -308,7 +309,7 @@ type Mutation {
 
   submitInject(
     injectID: ID!
-    notes: String
+    notes: String!
     files: [Upload!]!
   ): InjectSubmission! @hasRole(roles: [user])
 }
