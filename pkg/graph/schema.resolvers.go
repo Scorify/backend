@@ -1050,7 +1050,7 @@ func (r *mutationResolver) DeleteInject(ctx context.Context, id uuid.UUID) (bool
 }
 
 // SubmitInject is the resolver for the submitInject field.
-func (r *mutationResolver) SubmitInject(ctx context.Context, injectID uuid.UUID, files []*graphql.Upload) (*ent.InjectSubmission, error) {
+func (r *mutationResolver) SubmitInject(ctx context.Context, injectID uuid.UUID, notes *string, files []*graphql.Upload) (*ent.InjectSubmission, error) {
 	entUser, err := auth.Parse(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("invalid user")
@@ -1211,7 +1211,19 @@ func (r *queryResolver) Scoreboard(ctx context.Context, round *int) (*model.Scor
 
 // Injects is the resolver for the injects field.
 func (r *queryResolver) Injects(ctx context.Context) ([]*ent.Inject, error) {
-	return r.Ent.Inject.Query().All(ctx)
+	entUser, err := auth.Parse(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("invalid user")
+	}
+
+	if entUser.Role == user.RoleAdmin {
+		return r.Ent.Inject.Query().All(ctx)
+	}
+
+	return r.Ent.Inject.Query().
+		Where(
+			inject.StartTimeLTE(time.Now()),
+		).All(ctx)
 }
 
 // Inject is the resolver for the inject field.
