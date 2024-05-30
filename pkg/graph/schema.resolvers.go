@@ -1070,11 +1070,16 @@ func (r *mutationResolver) SubmitInject(ctx context.Context, injectID uuid.UUID,
 		}
 	}
 
-	return r.Ent.InjectSubmission.Create().
+	entInjectSubmissionCreate := r.Ent.InjectSubmission.Create().
 		SetUser(entUser).
 		SetInjectID(injectID).
-		SetFiles(structFiles).
-		Save(ctx)
+		SetFiles(structFiles)
+
+	if notes != nil {
+		entInjectSubmissionCreate.SetNotes(*notes)
+	}
+
+	return entInjectSubmissionCreate.Save(ctx)
 }
 
 // Me is the resolver for the me field.
