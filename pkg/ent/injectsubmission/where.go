@@ -271,6 +271,16 @@ func NotesContainsFold(v string) predicate.InjectSubmission {
 	return predicate.InjectSubmission(sql.FieldContainsFold(FieldNotes, v))
 }
 
+// RubricIsNil applies the IsNil predicate on the "rubric" field.
+func RubricIsNil() predicate.InjectSubmission {
+	return predicate.InjectSubmission(sql.FieldIsNull(FieldRubric))
+}
+
+// RubricNotNil applies the NotNil predicate on the "rubric" field.
+func RubricNotNil() predicate.InjectSubmission {
+	return predicate.InjectSubmission(sql.FieldNotNull(FieldRubric))
+}
+
 // GradedEQ applies the EQ predicate on the "graded" field.
 func GradedEQ(v bool) predicate.InjectSubmission {
 	return predicate.InjectSubmission(sql.FieldEQ(FieldGraded, v))

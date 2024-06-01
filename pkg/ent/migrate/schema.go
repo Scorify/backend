@@ -99,8 +99,8 @@ var (
 		{Name: "update_time", Type: field.TypeTime},
 		{Name: "files", Type: field.TypeJSON},
 		{Name: "notes", Type: field.TypeString},
-		{Name: "rubric", Type: field.TypeJSON},
-		{Name: "graded", Type: field.TypeBool},
+		{Name: "rubric", Type: field.TypeJSON, Nullable: true},
+		{Name: "graded", Type: field.TypeBool, Default: false},
 		{Name: "inject_id", Type: field.TypeUUID},
 		{Name: "user_id", Type: field.TypeUUID},
 	}

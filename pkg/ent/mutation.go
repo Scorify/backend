@@ -2729,9 +2729,22 @@ func (m *InjectSubmissionMutation) OldRubric(ctx context.Context) (v structs.Rub
 	return oldValue.Rubric, nil
 }
 
+// ClearRubric clears the value of the "rubric" field.
+func (m *InjectSubmissionMutation) ClearRubric() {
+	m.rubric = nil
+	m.clearedFields[injectsubmission.FieldRubric] = struct{}{}
+}
+
+// RubricCleared returns if the "rubric" field was cleared in this mutation.
+func (m *InjectSubmissionMutation) RubricCleared() bool {
+	_, ok := m.clearedFields[injectsubmission.FieldRubric]
+	return ok
+}
+
 // ResetRubric resets all changes to the "rubric" field.
 func (m *InjectSubmissionMutation) ResetRubric() {
 	m.rubric = nil
+	delete(m.clearedFields, injectsubmission.FieldRubric)
 }
 
 // SetGraded sets the "graded" field.
@@ -3026,7 +3039,11 @@ func (m *InjectSubmissionMutation) AddField(name string, value ent.Value) error 
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *InjectSubmissionMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(injectsubmission.FieldRubric) {
+		fields = append(fields, injectsubmission.FieldRubric)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -3039,6 +3056,11 @@ func (m *InjectSubmissionMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *InjectSubmissionMutation) ClearField(name string) error {
+	switch name {
+	case injectsubmission.FieldRubric:
+		m.ClearRubric()
+		return nil
+	}
 	return fmt.Errorf("unknown InjectSubmission nullable field %s", name)
 }
 

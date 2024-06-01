@@ -109,6 +109,10 @@ func init() {
 	injectsubmission.DefaultUpdateTime = injectsubmissionDescUpdateTime.Default.(func() time.Time)
 	// injectsubmission.UpdateDefaultUpdateTime holds the default value on update for the update_time field.
 	injectsubmission.UpdateDefaultUpdateTime = injectsubmissionDescUpdateTime.UpdateDefault.(func() time.Time)
+	// injectsubmissionDescGraded is the schema descriptor for graded field.
+	injectsubmissionDescGraded := injectsubmissionFields[6].Descriptor()
+	// injectsubmission.DefaultGraded holds the default value on creation for the graded field.
+	injectsubmission.DefaultGraded = injectsubmissionDescGraded.Default.(bool)
 	// injectsubmissionDescID is the schema descriptor for id field.
 	injectsubmissionDescID := injectsubmissionFields[0].Descriptor()
 	// injectsubmission.DefaultID holds the default value on creation for the id field.
