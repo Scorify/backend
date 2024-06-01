@@ -4469,14 +4469,11 @@ func (ec *executionContext) _InjectSubmission_rubric(ctx context.Context, field 
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
 	res := resTmp.(structs.Rubric)
 	fc.Result = res
-	return ec.marshalNRubric2githubᚗcomᚋscorifyᚋbackendᚋpkgᚋstructsᚐRubric(ctx, field.Selections, res)
+	return ec.marshalORubric2githubᚗcomᚋscorifyᚋbackendᚋpkgᚋstructsᚐRubric(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_InjectSubmission_rubric(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -13570,9 +13567,6 @@ func (ec *executionContext) _InjectSubmission(ctx context.Context, sel ast.Selec
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "rubric":
 			out.Values[i] = ec._InjectSubmission_rubric(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
-			}
 		case "graded":
 			out.Values[i] = ec._InjectSubmission_graded(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -16028,10 +16022,6 @@ func (ec *executionContext) marshalNRound2ᚖgithubᚗcomᚋscorifyᚋbackendᚋ
 	return ec._Round(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNRubric2githubᚗcomᚋscorifyᚋbackendᚋpkgᚋstructsᚐRubric(ctx context.Context, sel ast.SelectionSet, v structs.Rubric) graphql.Marshaler {
-	return ec._Rubric(ctx, sel, &v)
-}
-
 func (ec *executionContext) marshalNRubricField2githubᚗcomᚋscorifyᚋbackendᚋpkgᚋstructsᚐRubricField(ctx context.Context, sel ast.SelectionSet, v structs.RubricField) graphql.Marshaler {
 	return ec._RubricField(ctx, sel, &v)
 }
@@ -17121,6 +17111,10 @@ func (ec *executionContext) marshalORole2ᚖgithubᚗcomᚋscorifyᚋbackendᚋp
 	}
 	res := graphql.MarshalString(string(*v))
 	return res
+}
+
+func (ec *executionContext) marshalORubric2githubᚗcomᚋscorifyᚋbackendᚋpkgᚋstructsᚐRubric(ctx context.Context, sel ast.SelectionSet, v structs.Rubric) graphql.Marshaler {
+	return ec._Rubric(ctx, sel, &v)
 }
 
 func (ec *executionContext) unmarshalORubricTemplateInput2ᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋgraphᚋmodelᚐRubricTemplateInput(ctx context.Context, v interface{}) (*model.RubricTemplateInput, error) {
