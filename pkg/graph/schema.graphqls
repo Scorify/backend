@@ -197,7 +197,7 @@ type InjectSubmission {
   user_id: ID!
   user: User!
   inject: Inject!
-  rubric: Rubric!
+  rubric: Rubric
   graded: Boolean!
   notes: String!
 }
