@@ -76,6 +76,12 @@ func (isu *InjectSubmissionUpdate) SetNillableRubric(s *structs.Rubric) *InjectS
 	return isu
 }
 
+// ClearRubric clears the value of the "rubric" field.
+func (isu *InjectSubmissionUpdate) ClearRubric() *InjectSubmissionUpdate {
+	isu.mutation.ClearRubric()
+	return isu
+}
+
 // SetGraded sets the "graded" field.
 func (isu *InjectSubmissionUpdate) SetGraded(b bool) *InjectSubmissionUpdate {
 	isu.mutation.SetGraded(b)
@@ -171,6 +177,9 @@ func (isu *InjectSubmissionUpdate) sqlSave(ctx context.Context) (n int, err erro
 	if value, ok := isu.mutation.Rubric(); ok {
 		_spec.SetField(injectsubmission.FieldRubric, field.TypeJSON, value)
 	}
+	if isu.mutation.RubricCleared() {
+		_spec.ClearField(injectsubmission.FieldRubric, field.TypeJSON)
+	}
 	if value, ok := isu.mutation.Graded(); ok {
 		_spec.SetField(injectsubmission.FieldGraded, field.TypeBool, value)
 	}
@@ -237,6 +246,12 @@ func (isuo *InjectSubmissionUpdateOne) SetNillableRubric(s *structs.Rubric) *Inj
 	if s != nil {
 		isuo.SetRubric(*s)
 	}
+	return isuo
+}
+
+// ClearRubric clears the value of the "rubric" field.
+func (isuo *InjectSubmissionUpdateOne) ClearRubric() *InjectSubmissionUpdateOne {
+	isuo.mutation.ClearRubric()
 	return isuo
 }
 
@@ -364,6 +379,9 @@ func (isuo *InjectSubmissionUpdateOne) sqlSave(ctx context.Context) (_node *Inje
 	}
 	if value, ok := isuo.mutation.Rubric(); ok {
 		_spec.SetField(injectsubmission.FieldRubric, field.TypeJSON, value)
+	}
+	if isuo.mutation.RubricCleared() {
+		_spec.ClearField(injectsubmission.FieldRubric, field.TypeJSON)
 	}
 	if value, ok := isuo.mutation.Graded(); ok {
 		_spec.SetField(injectsubmission.FieldGraded, field.TypeBool, value)

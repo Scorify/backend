@@ -82,9 +82,25 @@ func (isc *InjectSubmissionCreate) SetRubric(s structs.Rubric) *InjectSubmission
 	return isc
 }
 
+// SetNillableRubric sets the "rubric" field if the given value is not nil.
+func (isc *InjectSubmissionCreate) SetNillableRubric(s *structs.Rubric) *InjectSubmissionCreate {
+	if s != nil {
+		isc.SetRubric(*s)
+	}
+	return isc
+}
+
 // SetGraded sets the "graded" field.
 func (isc *InjectSubmissionCreate) SetGraded(b bool) *InjectSubmissionCreate {
 	isc.mutation.SetGraded(b)
+	return isc
+}
+
+// SetNillableGraded sets the "graded" field if the given value is not nil.
+func (isc *InjectSubmissionCreate) SetNillableGraded(b *bool) *InjectSubmissionCreate {
+	if b != nil {
+		isc.SetGraded(*b)
+	}
 	return isc
 }
 
@@ -155,6 +171,10 @@ func (isc *InjectSubmissionCreate) defaults() {
 		v := injectsubmission.DefaultUpdateTime()
 		isc.mutation.SetUpdateTime(v)
 	}
+	if _, ok := isc.mutation.Graded(); !ok {
+		v := injectsubmission.DefaultGraded
+		isc.mutation.SetGraded(v)
+	}
 	if _, ok := isc.mutation.ID(); !ok {
 		v := injectsubmission.DefaultID()
 		isc.mutation.SetID(v)
@@ -180,9 +200,6 @@ func (isc *InjectSubmissionCreate) check() error {
 	}
 	if _, ok := isc.mutation.Notes(); !ok {
 		return &ValidationError{Name: "notes", err: errors.New(`ent: missing required field "InjectSubmission.notes"`)}
-	}
-	if _, ok := isc.mutation.Rubric(); !ok {
-		return &ValidationError{Name: "rubric", err: errors.New(`ent: missing required field "InjectSubmission.rubric"`)}
 	}
 	if _, ok := isc.mutation.Graded(); !ok {
 		return &ValidationError{Name: "graded", err: errors.New(`ent: missing required field "InjectSubmission.graded"`)}

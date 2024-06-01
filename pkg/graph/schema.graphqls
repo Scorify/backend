@@ -197,8 +197,9 @@ type InjectSubmission {
   user_id: ID!
   user: User!
   inject: Inject!
-  rubric: Rubric!
+  rubric: Rubric
   graded: Boolean!
+  notes: String!
 }
 
 type Notification {
@@ -306,6 +307,9 @@ type Mutation {
   ): Inject! @hasRole(roles: [admin])
   deleteInject(id: ID!): Boolean! @hasRole(roles: [admin])
 
-  submitInject(injectID: ID!, files: [Upload!]!): InjectSubmission!
-    @hasRole(roles: [user])
+  submitInject(
+    injectID: ID!
+    notes: String!
+    files: [Upload!]!
+  ): InjectSubmission! @hasRole(roles: [user])
 }
