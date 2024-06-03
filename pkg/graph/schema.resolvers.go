@@ -136,6 +136,9 @@ func (r *injectResolver) Submissions(ctx context.Context, obj *ent.Inject) ([]*e
 func (r *injectSubmissionResolver) Files(ctx context.Context, obj *ent.InjectSubmission) ([]*model.File, error) {
 	files := make([]*model.File, len(obj.Files))
 
+	fmt.Println(obj.Files)
+	fmt.Println(obj.ID)
+
 	for i, file := range obj.Files {
 		url, err := file.APIPath(structs.FileTypeSubmission, obj.ID)
 		if err != nil {
@@ -1063,19 +1066,26 @@ func (r *mutationResolver) SubmitInject(ctx context.Context, injectID uuid.UUID,
 			ID:   uuid.New(),
 			Name: file.Filename,
 		}
-
-		err := structFiles[i].WriteFile(structs.FileTypeSubmission, injectID, file.File)
-		if err != nil {
-			return nil, fmt.Errorf("failed to write file: %v", err)
-		}
 	}
 
-	return r.Ent.InjectSubmission.Create().
+	entSubmission, err := r.Ent.InjectSubmission.Create().
 		SetUser(entUser).
 		SetInjectID(injectID).
 		SetFiles(structFiles).
 		SetNotes(notes).
 		Save(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create submission: %v", err)
+	}
+
+	for i, file := range files {
+		err := structFiles[i].WriteFile(structs.FileTypeSubmission, entSubmission.ID, file.File)
+		if err != nil {
+			return nil, fmt.Errorf("failed to write file: %v", err)
+		}
+	}
+
+	return entSubmission, nil
 }
 
 // Me is the resolver for the me field.
