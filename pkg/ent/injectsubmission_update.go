@@ -63,16 +63,8 @@ func (isu *InjectSubmissionUpdate) SetNillableNotes(s *string) *InjectSubmission
 }
 
 // SetRubric sets the "rubric" field.
-func (isu *InjectSubmissionUpdate) SetRubric(s structs.Rubric) *InjectSubmissionUpdate {
+func (isu *InjectSubmissionUpdate) SetRubric(s *structs.Rubric) *InjectSubmissionUpdate {
 	isu.mutation.SetRubric(s)
-	return isu
-}
-
-// SetNillableRubric sets the "rubric" field if the given value is not nil.
-func (isu *InjectSubmissionUpdate) SetNillableRubric(s *structs.Rubric) *InjectSubmissionUpdate {
-	if s != nil {
-		isu.SetRubric(*s)
-	}
 	return isu
 }
 
@@ -236,16 +228,8 @@ func (isuo *InjectSubmissionUpdateOne) SetNillableNotes(s *string) *InjectSubmis
 }
 
 // SetRubric sets the "rubric" field.
-func (isuo *InjectSubmissionUpdateOne) SetRubric(s structs.Rubric) *InjectSubmissionUpdateOne {
+func (isuo *InjectSubmissionUpdateOne) SetRubric(s *structs.Rubric) *InjectSubmissionUpdateOne {
 	isuo.mutation.SetRubric(s)
-	return isuo
-}
-
-// SetNillableRubric sets the "rubric" field if the given value is not nil.
-func (isuo *InjectSubmissionUpdateOne) SetNillableRubric(s *structs.Rubric) *InjectSubmissionUpdateOne {
-	if s != nil {
-		isuo.SetRubric(*s)
-	}
 	return isuo
 }
 

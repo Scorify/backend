@@ -36,7 +36,7 @@ type InjectSubmission struct {
 	// The notes of the inject submission
 	Notes string `json:"notes"`
 	// The rubric of the inject submission
-	Rubric structs.Rubric `json:"rubric"`
+	Rubric *structs.Rubric `json:"rubric"`
 	// The graded status of the inject submission
 	Graded bool `json:"graded"`
 	// Edges holds the relations/edges for other nodes in the graph.
