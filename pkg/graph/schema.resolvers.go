@@ -136,9 +136,6 @@ func (r *injectResolver) Submissions(ctx context.Context, obj *ent.Inject) ([]*e
 func (r *injectSubmissionResolver) Files(ctx context.Context, obj *ent.InjectSubmission) ([]*model.File, error) {
 	files := make([]*model.File, len(obj.Files))
 
-	fmt.Println(obj.Files)
-	fmt.Println(obj.ID)
-
 	for i, file := range obj.Files {
 		url, err := file.APIPath(structs.FileTypeSubmission, obj.ID)
 		if err != nil {
