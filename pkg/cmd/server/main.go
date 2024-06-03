@@ -176,7 +176,7 @@ func injectSubmissionFileHandler(entClient *ent.Client) gin.HandlerFunc {
 
 		parentID := c.Param("parentID")
 		fileID := c.Param("fileID")
-		fileName := c.Param("fileName")
+		fileName := c.Param("filename")
 
 		parentUUID, err := uuid.Parse(parentID)
 		if err != nil {
@@ -216,6 +216,9 @@ func injectSubmissionFileHandler(entClient *ent.Client) gin.HandlerFunc {
 		}
 
 		var file *structs.File
+
+		fmt.Println(entInjectSubmission.Files)
+		fmt.Println(fileUUID, fileName)
 
 		for _, f := range entInjectSubmission.Files {
 			if f.ID == fileUUID && f.Name == fileName {
