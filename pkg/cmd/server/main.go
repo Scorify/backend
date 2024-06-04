@@ -217,9 +217,6 @@ func injectSubmissionFileHandler(entClient *ent.Client) gin.HandlerFunc {
 
 		var file *structs.File
 
-		fmt.Println(entInjectSubmission.Files)
-		fmt.Println(fileUUID, fileName)
-
 		for _, f := range entInjectSubmission.Files {
 			if f.ID == fileUUID && f.Name == fileName {
 				file = &structs.File{
