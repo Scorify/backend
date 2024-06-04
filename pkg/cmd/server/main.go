@@ -176,7 +176,7 @@ func injectSubmissionFileHandler(entClient *ent.Client) gin.HandlerFunc {
 
 		parentID := c.Param("parentID")
 		fileID := c.Param("fileID")
-		fileName := c.Param("fileName")
+		fileName := c.Param("filename")
 
 		parentUUID, err := uuid.Parse(parentID)
 		if err != nil {

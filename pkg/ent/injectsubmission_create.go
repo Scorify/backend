@@ -77,16 +77,8 @@ func (isc *InjectSubmissionCreate) SetNotes(s string) *InjectSubmissionCreate {
 }
 
 // SetRubric sets the "rubric" field.
-func (isc *InjectSubmissionCreate) SetRubric(s structs.Rubric) *InjectSubmissionCreate {
+func (isc *InjectSubmissionCreate) SetRubric(s *structs.Rubric) *InjectSubmissionCreate {
 	isc.mutation.SetRubric(s)
-	return isc
-}
-
-// SetNillableRubric sets the "rubric" field if the given value is not nil.
-func (isc *InjectSubmissionCreate) SetNillableRubric(s *structs.Rubric) *InjectSubmissionCreate {
-	if s != nil {
-		isc.SetRubric(*s)
-	}
 	return isc
 }
 

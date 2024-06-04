@@ -2351,7 +2351,7 @@ type InjectSubmissionMutation struct {
 	files         *[]structs.File
 	appendfiles   []structs.File
 	notes         *string
-	rubric        *structs.Rubric
+	rubric        **structs.Rubric
 	graded        *bool
 	clearedFields map[string]struct{}
 	inject        *uuid.UUID
@@ -2699,12 +2699,12 @@ func (m *InjectSubmissionMutation) ResetNotes() {
 }
 
 // SetRubric sets the "rubric" field.
-func (m *InjectSubmissionMutation) SetRubric(s structs.Rubric) {
+func (m *InjectSubmissionMutation) SetRubric(s *structs.Rubric) {
 	m.rubric = &s
 }
 
 // Rubric returns the value of the "rubric" field in the mutation.
-func (m *InjectSubmissionMutation) Rubric() (r structs.Rubric, exists bool) {
+func (m *InjectSubmissionMutation) Rubric() (r *structs.Rubric, exists bool) {
 	v := m.rubric
 	if v == nil {
 		return
@@ -2715,7 +2715,7 @@ func (m *InjectSubmissionMutation) Rubric() (r structs.Rubric, exists bool) {
 // OldRubric returns the old "rubric" field's value of the InjectSubmission entity.
 // If the InjectSubmission object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *InjectSubmissionMutation) OldRubric(ctx context.Context) (v structs.Rubric, err error) {
+func (m *InjectSubmissionMutation) OldRubric(ctx context.Context) (v *structs.Rubric, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldRubric is only allowed on UpdateOne operations")
 	}
@@ -2997,7 +2997,7 @@ func (m *InjectSubmissionMutation) SetField(name string, value ent.Value) error 
 		m.SetNotes(v)
 		return nil
 	case injectsubmission.FieldRubric:
-		v, ok := value.(structs.Rubric)
+		v, ok := value.(*structs.Rubric)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
