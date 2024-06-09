@@ -312,4 +312,7 @@ type Mutation {
     notes: String!
     files: [Upload!]!
   ): InjectSubmission! @hasRole(roles: [user])
+
+  gradeSubmission(submissionID: ID!, rubric: RubricInput!): InjectSubmission!
+    @hasRole(roles: [admin])
 }
