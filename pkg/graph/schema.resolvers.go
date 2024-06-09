@@ -1085,6 +1085,11 @@ func (r *mutationResolver) SubmitInject(ctx context.Context, injectID uuid.UUID,
 	return entSubmission, nil
 }
 
+// GradeSubmission is the resolver for the gradeSubmission field.
+func (r *mutationResolver) GradeSubmission(ctx context.Context, submissionID uuid.UUID, rubric model.RubricInput) (*ent.InjectSubmission, error) {
+	panic(fmt.Errorf("not implemented: GradeSubmission - gradeSubmission"))
+}
+
 // Me is the resolver for the me field.
 func (r *queryResolver) Me(ctx context.Context) (*ent.User, error) {
 	entUser, err := auth.Parse(ctx)
