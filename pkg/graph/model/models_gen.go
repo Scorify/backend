@@ -39,10 +39,8 @@ type RubricFieldInput struct {
 }
 
 type RubricInput struct {
-	Fields   []*RubricFieldInput `json:"fields"`
-	Score    int                 `json:"score"`
-	MaxScore int                 `json:"max_score"`
-	Notes    *string             `json:"notes,omitempty"`
+	Fields []*RubricFieldInput `json:"fields"`
+	Notes  *string             `json:"notes,omitempty"`
 }
 
 type RubricTemplateFieldInput struct {

@@ -171,8 +171,6 @@ type Rubric {
 
 input RubricInput {
   fields: [RubricFieldInput!]!
-  score: Int!
-  max_score: Int!
   notes: String
 }
 
@@ -312,4 +310,7 @@ type Mutation {
     notes: String!
     files: [Upload!]!
   ): InjectSubmission! @hasRole(roles: [user])
+
+  gradeSubmission(submissionID: ID!, rubric: RubricInput!): InjectSubmission!
+    @hasRole(roles: [admin])
 }
