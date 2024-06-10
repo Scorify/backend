@@ -12733,7 +12733,7 @@ func (ec *executionContext) unmarshalInputRubricInput(ctx context.Context, obj i
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"fields", "score", "max_score", "notes"}
+	fieldsInOrder := [...]string{"fields", "notes"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -12747,20 +12747,6 @@ func (ec *executionContext) unmarshalInputRubricInput(ctx context.Context, obj i
 				return it, err
 			}
 			it.Fields = data
-		case "score":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("score"))
-			data, err := ec.unmarshalNInt2int(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Score = data
-		case "max_score":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("max_score"))
-			data, err := ec.unmarshalNInt2int(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.MaxScore = data
 		case "notes":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("notes"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
