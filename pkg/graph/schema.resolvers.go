@@ -1087,7 +1087,27 @@ func (r *mutationResolver) SubmitInject(ctx context.Context, injectID uuid.UUID,
 
 // GradeSubmission is the resolver for the gradeSubmission field.
 func (r *mutationResolver) GradeSubmission(ctx context.Context, submissionID uuid.UUID, rubric model.RubricInput) (*ent.InjectSubmission, error) {
-	panic(fmt.Errorf("not implemented: GradeSubmission - gradeSubmission"))
+	entRubric := structs.Rubric{}
+
+	if rubric.Notes != nil {
+		entRubric.Notes = *rubric.Notes
+	}
+
+	entRubric.Fields = make([]structs.RubricField, len(rubric.Fields))
+	for i, field := range rubric.Fields {
+		entRubric.Fields[i] = structs.RubricField{
+			Name:  field.Name,
+			Score: field.Score,
+		}
+
+		if field.Notes != nil {
+			entRubric.Fields[i].Notes = *field.Notes
+		}
+	}
+
+	return r.Ent.InjectSubmission.UpdateOneID(submissionID).
+		SetRubric(&entRubric).
+		Save(ctx)
 }
 
 // Me is the resolver for the me field.
