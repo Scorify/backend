@@ -129,6 +129,11 @@ type ComplexityRoot struct {
 		UserID     func(childComplexity int) int
 	}
 
+	InjectSubmissionByUser struct {
+		Submissions func(childComplexity int) int
+		User        func(childComplexity int) int
+	}
+
 	LoginOutput struct {
 		Domain   func(childComplexity int) int
 		Expires  func(childComplexity int) int
@@ -167,19 +172,20 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Check             func(childComplexity int, id *uuid.UUID, name *string) int
-		Checks            func(childComplexity int) int
-		Config            func(childComplexity int, id uuid.UUID) int
-		Configs           func(childComplexity int) int
-		Inject            func(childComplexity int, id uuid.UUID) int
-		InjectSubmission  func(childComplexity int, id uuid.UUID) int
-		InjectSubmissions func(childComplexity int) int
-		Injects           func(childComplexity int) int
-		Me                func(childComplexity int) int
-		Scoreboard        func(childComplexity int, round *int) int
-		Source            func(childComplexity int, name string) int
-		Sources           func(childComplexity int) int
-		Users             func(childComplexity int) int
+		Check                   func(childComplexity int, id *uuid.UUID, name *string) int
+		Checks                  func(childComplexity int) int
+		Config                  func(childComplexity int, id uuid.UUID) int
+		Configs                 func(childComplexity int) int
+		Inject                  func(childComplexity int, id uuid.UUID) int
+		InjectSubmission        func(childComplexity int, id uuid.UUID) int
+		InjectSubmissions       func(childComplexity int) int
+		InjectSubmissionsByUser func(childComplexity int, id uuid.UUID) int
+		Injects                 func(childComplexity int) int
+		Me                      func(childComplexity int) int
+		Scoreboard              func(childComplexity int, round *int) int
+		Source                  func(childComplexity int, name string) int
+		Sources                 func(childComplexity int) int
+		Users                   func(childComplexity int) int
 	}
 
 	Round struct {
@@ -342,6 +348,7 @@ type QueryResolver interface {
 	Inject(ctx context.Context, id uuid.UUID) (*ent.Inject, error)
 	InjectSubmissions(ctx context.Context) ([]*ent.InjectSubmission, error)
 	InjectSubmission(ctx context.Context, id uuid.UUID) (*ent.InjectSubmission, error)
+	InjectSubmissionsByUser(ctx context.Context, id uuid.UUID) ([]*model.InjectSubmissionByUser, error)
 }
 type RoundResolver interface {
 	Statuses(ctx context.Context, obj *ent.Round) ([]*ent.Status, error)
@@ -703,6 +710,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.InjectSubmission.UserID(childComplexity), true
 
+	case "InjectSubmissionByUser.submissions":
+		if e.complexity.InjectSubmissionByUser.Submissions == nil {
+			break
+		}
+
+		return e.complexity.InjectSubmissionByUser.Submissions(childComplexity), true
+
+	case "InjectSubmissionByUser.user":
+		if e.complexity.InjectSubmissionByUser.User == nil {
+			break
+		}
+
+		return e.complexity.InjectSubmissionByUser.User(childComplexity), true
+
 	case "LoginOutput.domain":
 		if e.complexity.LoginOutput.Domain == nil {
 			break
@@ -1052,6 +1073,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.InjectSubmissions(childComplexity), true
+
+	case "Query.injectSubmissionsByUser":
+		if e.complexity.Query.InjectSubmissionsByUser == nil {
+			break
+		}
+
+		args, err := ec.field_Query_injectSubmissionsByUser_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.InjectSubmissionsByUser(childComplexity, args["id"].(uuid.UUID)), true
 
 	case "Query.injects":
 		if e.complexity.Query.Injects == nil {
@@ -2267,6 +2300,21 @@ func (ec *executionContext) field_Query_config_args(ctx context.Context, rawArgs
 }
 
 func (ec *executionContext) field_Query_injectSubmission_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 uuid.UUID
+	if tmp, ok := rawArgs["id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+		arg0, err = ec.unmarshalNID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_injectSubmissionsByUser_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 uuid.UUID
@@ -4616,6 +4664,140 @@ func (ec *executionContext) fieldContext_InjectSubmission_notes(ctx context.Cont
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InjectSubmissionByUser_user(ctx context.Context, field graphql.CollectedField, obj *model.InjectSubmissionByUser) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InjectSubmissionByUser_user(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.User, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*ent.User)
+	fc.Result = res
+	return ec.marshalNUser2ᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚐUser(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InjectSubmissionByUser_user(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InjectSubmissionByUser",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_User_id(ctx, field)
+			case "username":
+				return ec.fieldContext_User_username(ctx, field)
+			case "role":
+				return ec.fieldContext_User_role(ctx, field)
+			case "number":
+				return ec.fieldContext_User_number(ctx, field)
+			case "create_time":
+				return ec.fieldContext_User_create_time(ctx, field)
+			case "update_time":
+				return ec.fieldContext_User_update_time(ctx, field)
+			case "configs":
+				return ec.fieldContext_User_configs(ctx, field)
+			case "statuses":
+				return ec.fieldContext_User_statuses(ctx, field)
+			case "score_caches":
+				return ec.fieldContext_User_score_caches(ctx, field)
+			case "inject_submissions":
+				return ec.fieldContext_User_inject_submissions(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _InjectSubmissionByUser_submissions(ctx context.Context, field graphql.CollectedField, obj *model.InjectSubmissionByUser) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_InjectSubmissionByUser_submissions(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Submissions, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*ent.InjectSubmission)
+	fc.Result = res
+	return ec.marshalNInjectSubmission2ᚕᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚐInjectSubmissionᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_InjectSubmissionByUser_submissions(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "InjectSubmissionByUser",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_InjectSubmission_id(ctx, field)
+			case "create_time":
+				return ec.fieldContext_InjectSubmission_create_time(ctx, field)
+			case "update_time":
+				return ec.fieldContext_InjectSubmission_update_time(ctx, field)
+			case "files":
+				return ec.fieldContext_InjectSubmission_files(ctx, field)
+			case "inject_id":
+				return ec.fieldContext_InjectSubmission_inject_id(ctx, field)
+			case "user_id":
+				return ec.fieldContext_InjectSubmission_user_id(ctx, field)
+			case "user":
+				return ec.fieldContext_InjectSubmission_user(ctx, field)
+			case "inject":
+				return ec.fieldContext_InjectSubmission_inject(ctx, field)
+			case "rubric":
+				return ec.fieldContext_InjectSubmission_rubric(ctx, field)
+			case "graded":
+				return ec.fieldContext_InjectSubmission_graded(ctx, field)
+			case "notes":
+				return ec.fieldContext_InjectSubmission_notes(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type InjectSubmission", field.Name)
 		},
 	}
 	return fc, nil
@@ -7675,6 +7857,87 @@ func (ec *executionContext) fieldContext_Query_injectSubmission(ctx context.Cont
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_injectSubmission_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_injectSubmissionsByUser(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_injectSubmissionsByUser(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Query().InjectSubmissionsByUser(rctx, fc.Args["id"].(uuid.UUID))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.IsAuthenticated == nil {
+				return nil, errors.New("directive isAuthenticated is not implemented")
+			}
+			return ec.directives.IsAuthenticated(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.([]*model.InjectSubmissionByUser); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*github.com/scorify/backend/pkg/graph/model.InjectSubmissionByUser`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.InjectSubmissionByUser)
+	fc.Result = res
+	return ec.marshalNInjectSubmissionByUser2ᚕᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋgraphᚋmodelᚐInjectSubmissionByUserᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_injectSubmissionsByUser(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "user":
+				return ec.fieldContext_InjectSubmissionByUser_user(ctx, field)
+			case "submissions":
+				return ec.fieldContext_InjectSubmissionByUser_submissions(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type InjectSubmissionByUser", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_injectSubmissionsByUser_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -13727,6 +13990,50 @@ func (ec *executionContext) _InjectSubmission(ctx context.Context, sel ast.Selec
 	return out
 }
 
+var injectSubmissionByUserImplementors = []string{"InjectSubmissionByUser"}
+
+func (ec *executionContext) _InjectSubmissionByUser(ctx context.Context, sel ast.SelectionSet, obj *model.InjectSubmissionByUser) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, injectSubmissionByUserImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("InjectSubmissionByUser")
+		case "user":
+			out.Values[i] = ec._InjectSubmissionByUser_user(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "submissions":
+			out.Values[i] = ec._InjectSubmissionByUser_submissions(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var loginOutputImplementors = []string{"LoginOutput"}
 
 func (ec *executionContext) _LoginOutput(ctx context.Context, sel ast.SelectionSet, obj *model.LoginOutput) graphql.Marshaler {
@@ -14305,6 +14612,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_injectSubmission(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "injectSubmissionsByUser":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_injectSubmissionsByUser(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -16056,6 +16385,60 @@ func (ec *executionContext) marshalNInjectSubmission2ᚖgithubᚗcomᚋscorify�
 		return graphql.Null
 	}
 	return ec._InjectSubmission(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNInjectSubmissionByUser2ᚕᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋgraphᚋmodelᚐInjectSubmissionByUserᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.InjectSubmissionByUser) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNInjectSubmissionByUser2ᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋgraphᚋmodelᚐInjectSubmissionByUser(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNInjectSubmissionByUser2ᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋgraphᚋmodelᚐInjectSubmissionByUser(ctx context.Context, sel ast.SelectionSet, v *model.InjectSubmissionByUser) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._InjectSubmissionByUser(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v interface{}) (int, error) {

@@ -17,6 +17,11 @@ type File struct {
 	URL  string    `json:"url"`
 }
 
+type InjectSubmissionByUser struct {
+	User        *ent.User               `json:"user"`
+	Submissions []*ent.InjectSubmission `json:"submissions"`
+}
+
 type LoginOutput struct {
 	Name     string `json:"name"`
 	Token    string `json:"token"`
