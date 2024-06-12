@@ -1280,6 +1280,42 @@ func (r *queryResolver) InjectSubmission(ctx context.Context, id uuid.UUID) (*en
 		).Only(ctx)
 }
 
+// InjectSubmissionsByUser is the resolver for the injectSubmissionsByUser field.
+func (r *queryResolver) InjectSubmissionsByUser(ctx context.Context, id uuid.UUID) ([]*model.InjectSubmissionByUser, error) {
+	entUsers, err := r.Ent.User.Query().
+		WithSubmissions(
+			func(subquery *ent.InjectSubmissionQuery) {
+				subquery.Where(
+					injectsubmission.HasInjectWith(
+						inject.IDEQ(id),
+					),
+				).Order(
+					ent.Desc(injectsubmission.FieldCreateTime),
+				)
+			},
+		).
+		Where(
+			user.RoleEQ(user.RoleUser),
+		).
+		Order(
+			ent.Asc(user.FieldNumber),
+		).All(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	injectSubmissionsByUser := make([]*model.InjectSubmissionByUser, len(entUsers))
+
+	for i, entUser := range entUsers {
+		injectSubmissionsByUser[i] = &model.InjectSubmissionByUser{
+			User:        entUser,
+			Submissions: entUser.Edges.Submissions,
+		}
+	}
+
+	return injectSubmissionsByUser, nil
+}
+
 // Statuses is the resolver for the statuses field.
 func (r *roundResolver) Statuses(ctx context.Context, obj *ent.Round) ([]*ent.Status, error) {
 	return r.Ent.Status.Query().
