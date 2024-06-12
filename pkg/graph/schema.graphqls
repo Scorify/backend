@@ -218,6 +218,11 @@ type Scoreboard {
   scores: [Score]!
 }
 
+type InjectSubmissionByUser {
+  user: User!
+  submissions: [InjectSubmission!]!
+}
+
 type Subscription {
   globalNotification: Notification!
   engineState: EngineState!
@@ -244,6 +249,7 @@ type Query {
   inject(id: ID!): Inject!
   injectSubmissions: [InjectSubmission!]! @isAuthenticated
   injectSubmission(id: ID!): InjectSubmission! @isAuthenticated
+  injectSubmissionsByUser(id: ID!): [InjectSubmissionByUser!]! @isAuthenticated
 }
 
 type Mutation {
