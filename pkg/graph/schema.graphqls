@@ -249,7 +249,8 @@ type Query {
   inject(id: ID!): Inject!
   injectSubmissions: [InjectSubmission!]! @isAuthenticated
   injectSubmission(id: ID!): InjectSubmission! @isAuthenticated
-  injectSubmissionsByUser(id: ID!): [InjectSubmissionByUser!]! @isAuthenticated
+  injectSubmissionsByUser(id: ID!): [InjectSubmissionByUser!]!
+    @hasRole(roles: [admin])
 }
 
 type Mutation {
