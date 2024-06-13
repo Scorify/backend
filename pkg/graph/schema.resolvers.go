@@ -129,7 +129,20 @@ func (r *injectResolver) Files(ctx context.Context, obj *ent.Inject) ([]*model.F
 
 // Submissions is the resolver for the submissions field.
 func (r *injectResolver) Submissions(ctx context.Context, obj *ent.Inject) ([]*ent.InjectSubmission, error) {
-	return obj.QuerySubmissions().All(ctx)
+	entUser, err := auth.Parse(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("invalid user")
+	}
+
+	if entUser.Role == user.RoleAdmin {
+		return obj.QuerySubmissions().All(ctx)
+	} else {
+		return obj.QuerySubmissions().Where(
+			injectsubmission.HasUserWith(
+				user.IDEQ(entUser.ID),
+			),
+		).All(ctx)
+	}
 }
 
 // Files is the resolver for the files field.
@@ -1269,7 +1282,23 @@ func (r *queryResolver) Inject(ctx context.Context, id uuid.UUID) (*ent.Inject, 
 
 // InjectSubmissions is the resolver for the injectSubmissions field.
 func (r *queryResolver) InjectSubmissions(ctx context.Context) ([]*ent.InjectSubmission, error) {
-	return r.Ent.InjectSubmission.Query().All(ctx)
+	entUser, err := auth.Parse(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("invalid user")
+	}
+
+	if entUser.Role == user.RoleAdmin {
+		return r.Ent.InjectSubmission.Query().All(ctx)
+	} else {
+		return r.Ent.InjectSubmission.Query().
+			Where(
+				injectsubmission.HasUserWith(
+					user.IDEQ(
+						entUser.ID,
+					),
+				),
+			).All(ctx)
+	}
 }
 
 // InjectSubmission is the resolver for the injectSubmission field.
@@ -1506,7 +1535,23 @@ func (r *userResolver) ScoreCaches(ctx context.Context, obj *ent.User) ([]*ent.S
 
 // InjectSubmissions is the resolver for the inject_submissions field.
 func (r *userResolver) InjectSubmissions(ctx context.Context, obj *ent.User) ([]*ent.InjectSubmission, error) {
-	return obj.QuerySubmissions().All(ctx)
+	entUser, err := auth.Parse(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("invalid user")
+	}
+
+	if entUser.Role == user.RoleAdmin {
+		return obj.QuerySubmissions().All(ctx)
+	} else {
+		return obj.QuerySubmissions().
+			Where(
+				injectsubmission.HasUserWith(
+					user.IDEQ(
+						entUser.ID,
+					),
+				),
+			).All(ctx)
+	}
 }
 
 // Check returns CheckResolver implementation.
