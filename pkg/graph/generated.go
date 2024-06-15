@@ -7881,10 +7881,14 @@ func (ec *executionContext) _Query_injectSubmissionsByUser(ctx context.Context, 
 			return ec.resolvers.Query().InjectSubmissionsByUser(rctx, fc.Args["id"].(uuid.UUID))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			if ec.directives.IsAuthenticated == nil {
-				return nil, errors.New("directive isAuthenticated is not implemented")
+			roles, err := ec.unmarshalORole2ᚕᚖgithubᚗcomᚋscorifyᚋbackendᚋpkgᚋentᚋuserᚐRole(ctx, []interface{}{"admin"})
+			if err != nil {
+				return nil, err
 			}
-			return ec.directives.IsAuthenticated(ctx, nil, directive0)
+			if ec.directives.HasRole == nil {
+				return nil, errors.New("directive hasRole is not implemented")
+			}
+			return ec.directives.HasRole(ctx, nil, directive0, roles)
 		}
 
 		tmp, err := directive1(rctx)
