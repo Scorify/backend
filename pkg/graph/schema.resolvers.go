@@ -958,7 +958,13 @@ func (r *mutationResolver) UpdateInject(ctx context.Context, id uuid.UUID, title
 		return nil, fmt.Errorf("failed to get inject: %v", err)
 	}
 
-	injectUpdate := r.Ent.Inject.UpdateOneID(id)
+	tx, err := r.Ent.Tx(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to start transaction: %v", err)
+	}
+	defer tx.Rollback()
+
+	injectUpdate := tx.Inject.UpdateOneID(id)
 
 	if title != nil {
 		injectUpdate.SetTitle(*title)
@@ -1020,23 +1026,133 @@ func (r *mutationResolver) UpdateInject(ctx context.Context, id uuid.UUID, title
 	}
 
 	if rubric != nil {
-		rubricTemplateFields := make([]structs.RubricTemplateField, len(rubric.Fields))
-		for i, field := range rubric.Fields {
-			rubricTemplateFields[i] = structs.RubricTemplateField{
-				Name:     field.Name,
-				MaxScore: field.MaxScore,
-			}
-		}
-
 		rubricTemplate := structs.RubricTemplate{
-			Fields:   rubricTemplateFields,
+			Fields: helpers.MapSlice(rubric.Fields, func(field *model.RubricTemplateFieldInput) structs.RubricTemplateField {
+				return structs.RubricTemplateField{
+					Name:     field.Name,
+					MaxScore: field.MaxScore,
+				}
+			}),
 			MaxScore: rubric.MaxScore,
 		}
 
 		injectUpdate.SetRubric(rubricTemplate)
+
+		deletedRubricFields := helpers.FilterSlice(
+			entInject.Rubric.Fields,
+			func(field structs.RubricTemplateField) bool {
+				for _, rubricField := range rubricTemplate.Fields {
+					if field.Name == rubricField.Name {
+						return false
+					}
+				}
+
+				return true
+			},
+		)
+
+		createdRubricFields := helpers.FilterSlice(
+			rubricTemplate.Fields,
+			func(field structs.RubricTemplateField) bool {
+				for _, rubricField := range entInject.Rubric.Fields {
+					if field.Name == rubricField.Name {
+						return false
+					}
+				}
+
+				return true
+			},
+		)
+
+		maxScoreDecreasedFields := helpers.FilterSlice(
+			rubricTemplate.Fields,
+			func(field structs.RubricTemplateField) bool {
+				// Check if field was already deleted
+				for _, rubricField := range deletedRubricFields {
+					if field.Name == rubricField.Name {
+						return false
+					}
+				}
+
+				// Check if field max score was decreased
+				for _, rubricField := range entInject.Rubric.Fields {
+					if field.Name == rubricField.Name {
+						if field.MaxScore < rubricField.MaxScore {
+							return true
+						}
+					}
+				}
+
+				return false
+			},
+		)
+
+		// Fields were added or removed, update all submissions
+		if len(deletedRubricFields)+len(createdRubricFields)+len(maxScoreDecreasedFields) > 0 {
+			entSubmissions, err := tx.InjectSubmission.Query().
+				Where(
+					injectsubmission.Graded(true),
+					injectsubmission.HasInjectWith(
+						inject.IDEQ(id),
+					),
+				).All(ctx)
+			if err != nil {
+				return nil, err
+			}
+
+			// Update all submission rubrics with new rubric fields
+			for _, entSubmission := range entSubmissions {
+				entRubric := entSubmission.Rubric
+
+				// Decrease score if max score was decreased
+				for _, decreasedField := range maxScoreDecreasedFields {
+					for i, field := range entRubric.Fields {
+						if field.Name == decreasedField.Name {
+							entRubric.Fields[i].Score = min(field.Score, decreasedField.MaxScore)
+						}
+					}
+				}
+
+				// Remove deleted fields
+				for _, deleteField := range deletedRubricFields {
+					for i, field := range entRubric.Fields {
+						if field.Name == deleteField.Name {
+							entRubric.Fields = append(entRubric.Fields[:i], entRubric.Fields[i+1:]...)
+							break
+						}
+					}
+				}
+
+				// Add new fields
+				for _, createField := range createdRubricFields {
+					entRubric.Fields = append(entRubric.Fields, structs.RubricField{
+						Name:  createField.Name,
+						Score: 0,
+						Notes: "",
+					})
+				}
+
+				_, err = tx.InjectSubmission.UpdateOneID(entSubmission.ID).
+					SetRubric(entRubric).
+					Save(ctx)
+				if err != nil {
+					return nil, err
+				}
+			}
+		}
 	}
 
-	return injectUpdate.Save(ctx)
+	entInject, err = injectUpdate.Save(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update inject: %v", err)
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %v", err)
+	}
+
+	return entInject, nil
 }
 
 // DeleteInject is the resolver for the deleteInject field.
