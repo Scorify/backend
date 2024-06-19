@@ -1120,6 +1120,7 @@ func (r *mutationResolver) GradeSubmission(ctx context.Context, submissionID uui
 
 	return r.Ent.InjectSubmission.UpdateOneID(submissionID).
 		SetRubric(&entRubric).
+		SetGraded(true).
 		Save(ctx)
 }
 
