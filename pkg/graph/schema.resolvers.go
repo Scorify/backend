@@ -1244,7 +1244,7 @@ func (r *mutationResolver) GradeSubmission(ctx context.Context, submissionID uui
 func (r *queryResolver) Me(ctx context.Context) (*ent.User, error) {
 	entUser, err := auth.Parse(ctx)
 	if err != nil {
-		return nil, nil
+		return nil, fmt.Errorf("not authenticated")
 	}
 	return entUser, nil
 }
